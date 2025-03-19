@@ -1,62 +1,62 @@
-import asyncio
-from aiogram import Bot, Dispatcher
-from aiogram.types import Message, ParseMode
-from aiogram.utils.exceptions import TelegramAPIError
+import logging
+import traceback
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import ParseMode
+from aiogram.utils import executor
+from aiogram.types import Message
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
 
-# Токен бота
-API_TOKEN = '7705193251:AAH_ourDVEerK6BIPZQTd_oZuFz7EingxrQ'
+# Токен твоего бота (замени на свой)
+BOT_TOKEN = '7705193251:AAH_ourDVEerK6BIPZQTd_oZuFz7EingxrQ'
 
-# ID группы, куда будут отправляться репорты
-ADMIN_GROUP_CHAT_ID = '2651165474'  # Заменить на настоящий chat_id группы администраторов
+# chat_id группы администратора (замени на свой chat_id)
+ADMIN_GROUP_CHAT_ID = 2651165474
 
-# Создание экземпляра бота и диспетчера
-bot = Bot(token=API_TOKEN)
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Инициализация бота и диспетчера
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
 
-# Приветственное сообщение и инструкция по использованию
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: Message):
-    await message.reply("Привет! Для отправки репорта о нарушении напиши: `/report Причина нарушения`")
-
-# Обработчик для команды /report
+# Обработчик команды /report
 @dp.message_handler(commands=['report'])
 async def handle_report(message: Message):
-    # Извлекаем текст репорта (после команды /report)
     report_text = message.get_args()
 
-    # Проверяем, указал ли пользователь текст репорта
     if not report_text:
         await message.reply("Пожалуйста, напиши, кого и за что нужно заблокировать. Пример: `/report Спам`")
         return
 
-    # Создание и отправка репорта в группу администраторов
     try:
-        # Формирование сообщения для отправки в группу
         report_message = f"🚨 **Новый репорт о нарушении!** 🚨\n\n" \
                          f"**Пользователь:** {message.from_user.full_name}\n" \
                          f"**ID пользователя:** {message.from_user.id}\n" \
                          f"**Причина нарушения:** {report_text}\n" \
                          f"**Дата:** {message.date.strftime('%Y-%m-%d %H:%M:%S')}"
-        
-        # Отправка репорта в группу
+
+        # Логирование попытки отправки сообщения
+        print(f"Попытка отправить сообщение в группу с chat_id: {ADMIN_GROUP_CHAT_ID}")
+
+        # Отправка сообщения в группу администраторов
         await bot.send_message(ADMIN_GROUP_CHAT_ID, report_message, parse_mode=ParseMode.MARKDOWN)
 
-        # Подтверждение отправки репорта пользователю
+        # Ответ пользователю
         await message.reply("Ваш репорт был отправлен администраторам для рассмотрения. Спасибо за помощь!")
-    except TelegramAPIError as e:
-        print(f"Ошибка при отправке репорта: {e}")
-        await message.reply("Произошла ошибка при отправке репорта. Попробуйте позже.")
 
-# Главная функция для запуска бота с обработкой ошибок
-async def main():
-    try:
-        print("Бот запущен...")
-        await dp.start_polling()
-    except TelegramAPIError as e:
-        print(f"Ошибка при получении обновлений: {e}")
     except Exception as e:
-        print(f"Произошла ошибка: {e}")
+        # Логирование ошибки
+        print(f"Ошибка при отправке репорта: {e}")
+        traceback.print_exc()  # Показывает более подробную информацию об ошибке
+        await message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
 
-# Запуск асинхронной функции main
+# Получение chat_id группы при отправке сообщения
+@dp.message_handler(content_types=['text'])
+async def get_chat_id(message: Message):
+    print(f"Chat ID: {message.chat.id}")  # Выведет chat_id группы, в которую отправлено сообщение
+
+# Запуск бота
 if __name__ == '__main__':
-    asyncio.run(main())
+    executor.start_polling(dp, skip_updates=True)
