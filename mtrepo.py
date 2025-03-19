@@ -1,62 +1,33 @@
-import logging
-import traceback
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ParseMode
 from aiogram.utils import executor
-from aiogram.types import Message
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
 
-# Токен твоего бота (замени на свой)
-BOT_TOKEN = '7705193251:AAH_ourDVEerK6BIPZQTd_oZuFz7EingxrQ'
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
+ADMIN_CHAT_ID = '2651165474'  # ID группы администрации
 
-# chat_id группы администратора (замени на свой chat_id)
-ADMIN_GROUP_CHAT_ID = -1002651165474
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Инициализация бота и диспетчера
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
-dp.middleware.setup(LoggingMiddleware())
 
-# Обработчик команды /report
+# Хэндлер для команды /report
 @dp.message_handler(commands=['report'])
-async def handle_report(message: Message):
-    report_text = message.get_args()
-
-    if not report_text:
-        await message.reply("Пожалуйста, напиши, кого и за что нужно заблокировать. Пример: `/report Спам`")
-        return
-
+async def handle_report(message: types.Message):
     try:
-        report_message = f"🚨 **Новый репорт о нарушении!** 🚨\n\n" \
-                         f"**Пользователь:** {message.from_user.full_name}\n" \
-                         f"**ID пользователя:** {message.from_user.id}\n" \
-                         f"**Причина нарушения:** {report_text}\n" \
-                         f"**Дата:** {message.date.strftime('%Y-%m-%d %H:%M:%S')}"
+        # Получаем текст отчета
+        report_text = message.text
 
-        # Логирование попытки отправки сообщения
-        print(f"Попытка отправить сообщение в группу с chat_id: {ADMIN_GROUP_CHAT_ID}")
-
-        # Отправка сообщения в группу администраторов
-        await bot.send_message(ADMIN_GROUP_CHAT_ID, report_message, parse_mode=ParseMode.MARKDOWN)
-
-        # Ответ пользователю
-        await message.reply("Ваш репорт был отправлен администраторам для рассмотрения. Спасибо за помощь!")
+        # Экранируем все специальные символы для MarkdownV2
+        report_text = report_text.replace('*', r'\*').replace('_', r'\_').replace('[', r'\[').replace(']', r'\]')
+        
+        # Отправляем репорт в группу администрации
+        await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode=ParseMode.MARKDOWN_V2)
+        
+        # Подтверждаем пользователю, что репорт отправлен
+        await message.reply("Репорт успешно отправлен!")
 
     except Exception as e:
-        # Логирование ошибки
-        print(f"Ошибка при отправке репорта: {e}")
-        traceback.print_exc()  # Показывает более подробную информацию об ошибке
+        # Логируем и информируем пользователя о возможной ошибке
         await message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
 
-# Получение chat_id группы при отправке сообщения
-@dp.message_handler(content_types=['text'])
-async def get_chat_id(message: Message):
-    print(f"Chat ID: {message.chat.id}")  # Выведет chat_id группы, в которую отправлено сообщение
-
-# Запуск бота
 if __name__ == '__main__':
+    from aiogram import executor
     executor.start_polling(dp, skip_updates=True)
