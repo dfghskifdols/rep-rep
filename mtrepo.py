@@ -19,6 +19,8 @@ async def handle_report(message: types.Message):
         if message.reply_to_message:
             reported_message = message.reply_to_message
             message_link = f"https://t.me/{message.chat.username}/{reported_message.message_id}"  # Формируем ссылку на сообщение
+            # Экранируем точку в ссылке
+            message_link = message_link.replace('.', r'\.')  
             report_text += f"\n\nСсылка на сообщение: {message_link}"
 
         # Экранируем все специальные символы для MarkdownV2
