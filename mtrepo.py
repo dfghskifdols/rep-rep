@@ -7,7 +7,7 @@ from aiogram.utils.exceptions import TelegramAPIError
 API_TOKEN = '7705193251:AAH_ourDVEerK6BIPZQTd_oZuFz7EingxrQ'
 
 # ID группы, куда будут отправляться репорты
-ADMIN_GROUP_CHAT_ID = '-1002651165474'  # Заменить на настоящий chat_id группы администраторов
+ADMIN_GROUP_CHAT_ID = '2651165474'  # Заменить на настоящий chat_id группы администраторов
 
 # Создание экземпляра бота и диспетчера
 bot = Bot(token=API_TOKEN)
