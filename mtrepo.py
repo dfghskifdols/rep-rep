@@ -10,7 +10,7 @@ from aiogram.contrib.middlewares.logging import LoggingMiddleware
 BOT_TOKEN = '7705193251:AAH_ourDVEerK6BIPZQTd_oZuFz7EingxrQ'
 
 # chat_id группы администратора (замени на свой chat_id)
-ADMIN_GROUP_CHAT_ID = 2651165474
+ADMIN_GROUP_CHAT_ID = -1002651165474
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
