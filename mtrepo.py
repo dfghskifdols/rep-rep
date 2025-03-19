@@ -3,8 +3,8 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import ParseMode
 from aiogram.utils import executor
 
-API_TOKEN = 'YOUR_BOT_TOKEN'  # Замени на токен твоего бота
-ADMIN_CHAT_ID = 'YOUR_ADMIN_CHAT_ID'  # Замени на ID твоей группы
+API_TOKEN = '7705193251:AAFQPcT5iNqlu4bnlcjV_lYjjZ7GZWzZHj4'  # Замени на токен твоего бота
+ADMIN_CHAT_ID = '-1002651165474'  # Замени на ID твоей группы
 
 logging.basicConfig(level=logging.INFO)
 
