@@ -4,9 +4,9 @@ from aiogram.types import Message, ParseMode
 from aiogram.utils.exceptions import TelegramAPIError
 
 # Токен бота
-API_TOKEN = '7705193251:AAFQPcT5iNqlu4bnlcjV_lYjjZ7GZWzZHj4'
+API_TOKEN = '7705193251:AAH_ourDVEerK6BIPZQTd_oZuFz7EingxrQ'
 
-# ID группы, куда будут отправляться репорты (получить с помощью getidsbot или из логов)
+# ID группы, куда будут отправляться репорты
 ADMIN_GROUP_CHAT_ID = '-1002651165474'  # Заменить на настоящий chat_id группы администраторов
 
 # Создание экземпляра бота и диспетчера
@@ -24,8 +24,9 @@ async def handle_report(message: Message):
     # Извлекаем текст репорта (после команды /report)
     report_text = message.get_args()
 
+    # Проверяем, указал ли пользователь текст репорта
     if not report_text:
-        await message.reply("Пожалуйста, укажи причину нарушения после команды. Пример: `/report Спам`")
+        await message.reply("Пожалуйста, напиши, кого и за что нужно заблокировать. Пример: `/report Спам`")
         return
 
     # Создание и отправка репорта в группу администраторов
@@ -45,12 +46,6 @@ async def handle_report(message: Message):
     except TelegramAPIError as e:
         print(f"Ошибка при отправке репорта: {e}")
         await message.reply("Произошла ошибка при отправке репорта. Попробуйте позже.")
-
-# Обработчик обычных сообщений
-@dp.message_handler()
-async def echo_message(message: Message):
-    # Эхо-бот: бот повторяет все сообщения
-    await message.answer(message.text)
 
 # Главная функция для запуска бота с обработкой ошибок
 async def main():
