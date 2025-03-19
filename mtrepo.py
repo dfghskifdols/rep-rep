@@ -3,7 +3,7 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
-ADMIN_CHAT_ID = '2651165474'  # ID группы администрации
+ADMIN_CHAT_USERNAME = '@nekoclubrepo'  # Юзернейм группы администрации
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
@@ -19,7 +19,7 @@ async def handle_report(message: types.Message):
         report_text = report_text.replace('*', r'\*').replace('_', r'\_').replace('[', r'\[').replace(']', r'\]')
         
         # Отправляем репорт в группу администрации
-        await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode=ParseMode.MARKDOWN_V2)
+        await bot.send_message(ADMIN_CHAT_USERNAME, report_text, parse_mode=ParseMode.MARKDOWN_V2)
         
         # Подтверждаем пользователю, что репорт отправлен
         await message.reply("Репорт успешно отправлен!")
