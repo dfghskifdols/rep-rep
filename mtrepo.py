@@ -21,7 +21,7 @@ app = Application.builder().token(API_TOKEN).build()
 
 # Хэндлер для команды /start
 async def start(update: Update, context):
-    await update.message.reply("Привет! Напиши /report чтобы отправить репорт.")
+    await update.message.reply_text("Привет! Напиши /report чтобы отправить репорт.")
 
 # Хэндлер для команды /report
 async def handle_report(update: Update, context):
@@ -39,11 +39,11 @@ async def handle_report(update: Update, context):
         await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode='HTML')
 
         # Подтверждаем пользователю, что репорт отправлен и благодарим его
-        await update.message.reply("Спасибо! Репорт успешно отправлен!")
+        await update.message.reply_text("Спасибо! Репорт успешно отправлен!")
 
     except Exception as e:
         # Логируем и информируем пользователя о возможной ошибке
-        await update.message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
+        await update.message.reply_text(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
 
 # Основная функция для запуска
 async def main():
