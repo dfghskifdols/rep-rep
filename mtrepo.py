@@ -26,11 +26,14 @@ def handle_report(message):
         # Получаем текст отчета
         report_text = message.get('text', '')
 
-        # Если сообщение является репортом на конкретное сообщение, добавляем ссылку на это сообщение
+        # Проверяем, является ли сообщение ответом на другое
         if 'reply_to_message' in message:
             reported_message = message['reply_to_message']
-            message_link = f"https://t.me/{message['chat']['username']}/{reported_message['message_id']}"  # Формируем ссылку на сообщение
-            report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
+            chat_username = message['chat'].get('username', '')  # Получаем имя чата (если оно есть)
+            if chat_username:
+                # Формируем ссылку на сообщение
+                message_link = f"https://t.me/{chat_username}/{reported_message['message_id']}"
+                report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
 
         # Отправляем репорт в группу администрации с использованием HTML-форматирования
         send_message(ADMIN_CHAT_ID, report_text)
@@ -66,4 +69,3 @@ if __name__ == '__main__':
 
     # Запуск Flask приложения
     run_simple('0.0.0.0', 3001, app)
-
