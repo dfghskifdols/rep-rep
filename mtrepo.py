@@ -39,7 +39,6 @@ async def handle_report(update: Update, context):
         await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode='HTML')
 
         # Подтверждаем пользователю, что репорт отправлен
-        await update.message.reply("Репорт успешно отправлен!")  # Отправляем "Спасибо! Репорт отправлен!"
         await update.message.reply("Спасибо! Репорт успешно отправлен!")  # Ответ с благодарностью
 
     except Exception as e:
