@@ -38,8 +38,8 @@ async def handle_report(update: Update, context):
         # Отправляем репорт в группу администрации с использованием HTML-форматирования
         await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode='HTML')
 
-        # Подтверждаем пользователю, что репорт отправлен
-        await update.message.reply("Спасибо! Репорт успешно отправлен!")  # Ответ с благодарностью
+        # Подтверждаем пользователю, что репорт отправлен и благодарим его
+        await update.message.reply("Спасибо! Репорт успешно отправлен!")
 
     except Exception as e:
         # Логируем и информируем пользователя о возможной ошибке
