@@ -1,12 +1,27 @@
+import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ParseMode
 from aiogram.utils import executor
+import aiohttp
 
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
+
+# Асинхронная функция для поддержания активности бота
+async def keep_alive():
+    while True:
+        try:
+            # Отправляем запрос, чтобы избежать отключений
+            async with aiohttp.ClientSession() as session:
+                async with session.get('https://www.google.com/') as response:
+                    if response.status == 200:
+                        print("Bot is still alive!")
+        except Exception as e:
+            print(f"Error keeping bot alive: {e}")
+        await asyncio.sleep(300)  # Пауза между запросами в 5 минут (300 секунд)
 
 # Хэндлер для команды /report
 @dp.message_handler(commands=['report'])
@@ -32,5 +47,10 @@ async def handle_report(message: types.Message):
         await message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
 
 if __name__ == '__main__':
+    # Запуск пингования в фоне
+    loop = asyncio.get_event_loop()
+    loop.create_task(keep_alive())  # Запускаем задачу keep_alive
+
+    # Запуск бота
     from aiogram import executor
     executor.start_polling(dp, skip_updates=True)
