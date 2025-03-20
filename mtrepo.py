@@ -1,55 +1,69 @@
 import os
-from flask import Flask, request
 import requests
+from flask import Flask, request
+from werkzeug.serving import run_simple
 
-API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
+# Конфигурация бота
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен вашего бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
-WEBHOOK_URL = 'https://yourdomain.com/{}/'.format(API_TOKEN)  # URL для Webhook (замените на ваш)
+WEBHOOK_HOST = 'https://rep-rep-1.onrender.com'  # Ваш публичный URL для вебхука
+WEBHOOK_PATH = f'/{API_TOKEN}'  # Путь для вашего вебхука
+WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'  # Полный URL вебхука
 
-# Flask приложение
+# Инициализация Flask
 app = Flask(__name__)
 
-# Функция отправки сообщений через Telegram API
+# Функция для отправки сообщений в Telegram
 def send_message(chat_id, text):
-    url = f'https://api.telegram.org/bot{API_TOKEN}/sendMessage'
-    data = {
-        'chat_id': chat_id,
-        'text': text
-    }
-    response = requests.post(url, data=data)
+    url = f"https://api.telegram.org/bot{API_TOKEN}/sendMessage"
+    payload = {'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'}
+    response = requests.post(url, data=payload)
     return response
-
 
 # Хэндлер для команды /report
+def handle_report(message):
+    try:
+        # Получаем текст отчета
+        report_text = message.get('text', '')
+
+        # Если сообщение является репортом на конкретное сообщение, добавляем ссылку на это сообщение
+        if 'reply_to_message' in message:
+            reported_message = message['reply_to_message']
+            message_link = f"https://t.me/{message['chat']['username']}/{reported_message['message_id']}"  # Формируем ссылку на сообщение
+            report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
+
+        # Отправляем репорт в группу администрации с использованием HTML-форматирования
+        send_message(ADMIN_CHAT_ID, report_text)
+
+    except Exception as e:
+        print(f"Произошла ошибка при отправке репорта: {e}")
+
+# Обработка входящих запросов от Telegram
 @app.route(f'/{API_TOKEN}', methods=['POST'])
 def webhook():
-    data = request.get_json()
+    if request.method == 'POST':
+        data = request.json
+        print(f"Received update: {data}")
+        
+        # Обрабатываем входящее сообщение
+        if 'message' in data:
+            message = data['message']
+            if message.get('text') == '/report':
+                handle_report(message)
+        
+        return 'OK'
 
-    if data.get('message'):
-        chat_id = data['message']['chat']['id']
-        text = data['message']['text']
-
-        # Проверка команды /report
-        if text.lower().startswith('/report'):
-            report_text = text[len('/report '):]  # Извлекаем текст репорта
-            send_message(ADMIN_CHAT_ID, report_text)  # Отправляем репорт в группу
-            send_message(chat_id, "Репорт успешно отправлен!")  # Подтверждаем отправку репорта
-
-        # Если это просто сообщение, отвечаем на него
-        elif text.lower() == "hello":
-            send_message(chat_id, "Hello!")
-
-    return '', 200
-
-
-# Устанавливаем Webhook для бота
+# Устанавливаем вебхук с Telegram
 def set_webhook():
-    url = f'https://api.telegram.org/bot{API_TOKEN}/setWebhook?url={WEBHOOK_URL}'
-    response = requests.get(url)
-    return response
+    url = f"https://api.telegram.org/bot{API_TOKEN}/setWebhook"
+    payload = {'url': WEBHOOK_URL}
+    response = requests.post(url, data=payload)
+    print(f"Webhook set: {response.text}")
 
-
-# Запуск Flask сервера и Webhook
+# Запуск веб-сервера
 if __name__ == '__main__':
-    set_webhook()  # Устанавливаем Webhook при старте сервера
-    app.run(host='0.0.0.0', port=5000)  # Запускаем сервер Flask
+    set_webhook()  # Устанавливаем вебхук
+
+    # Запуск Flask приложения
+    run_simple('0.0.0.0', 3001, app)
+
