@@ -1,44 +1,59 @@
-import logging
-import requests
-from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import asyncio
+import nest_asyncio
+from telegram import Bot, Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+import logging
 
-TOKEN = "7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU"
-ADMIN_CHAT_ID = -1002651165474
-bot = Bot(token=TOKEN)
+# Применяем nest_asyncio для работы с асинхронными задачами
+nest_asyncio.apply()
 
-logging.basicConfig(level=logging.INFO)
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
+ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 
-async def report(update: Update, context: CallbackContext):
-    message = update.message
-    report_text = message.text
-    
-    if message.reply_to_message:
-        reported_message = message.reply_to_message
-        chat = message.chat
-        message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
-        report_text += f"\n\nСсылка на сообщение: [Перейти к сообщению]({message_link})"
+# Настроим логгирование
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    await bot.send_message(chat_id=ADMIN_CHAT_ID, text=report_text, parse_mode="Markdown")
-    await message.reply_text("Репорт успешно отправлен!")
+# Создаем экземпляры бота и приложения
+bot = Bot(API_TOKEN)
+app = Application.builder().token(API_TOKEN).build()
 
-async def keep_alive():
-    while True:
-        try:
-            requests.get("https://rep-rep-1.onrender.com")
-        except Exception as e:
-            logging.error(f"Ошибка keep_alive: {e}")
-        await asyncio.sleep(300)
+# Хэндлер для команды /start
+async def start(update: Update, context):
+    await update.message.reply("Привет! Напиши /report чтобы отправить репорт.")
 
+# Хэндлер для команды /report
+async def handle_report(update: Update, context):
+    try:
+        # Получаем текст отчета
+        report_text = update.message.text
+
+        # Если сообщение является репортом на конкретное сообщение, добавляем ссылку на это сообщение
+        if update.message.reply_to_message:
+            reported_message = update.message.reply_to_message
+            message_link = f"https://t.me/{update.message.chat.username}/{reported_message.message_id}"  # Формируем ссылку на сообщение
+            report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
+
+        # Отправляем репорт в группу администрации с использованием HTML-форматирования
+        await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode='HTML')
+
+        # Подтверждаем пользователю, что репорт отправлен
+        await update.message.reply("Репорт успешно отправлен!")
+
+    except Exception as e:
+        # Логируем и информируем пользователя о возможной ошибке
+        await update.message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
+
+# Основная функция для запуска
 async def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("report", report))
-    
-    loop = asyncio.get_event_loop()
-    loop.create_task(keep_alive())
-    
+    # Регистрация хэндлеров
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("report", handle_report))
+
+    # Запуск бота
     await app.run_polling()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# Запуск приложения
+if __name__ == '__main__':
+    asyncio.get_event_loop().run_until_complete(main())
