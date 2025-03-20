@@ -47,12 +47,17 @@ async def handle_report(update: Update, context):
 
 # Основная функция для запуска
 async def main():
+    # Останавливаем предыдущие сессии поллинга
+    await app.shutdown()  # Завершаем активные сессии поллинга, если есть
+    logger.info("Предыдущий поллинг был завершен.")
+
+    # Убедимся, что поллинг был отключен (если был включен)
+    await bot.delete_webhook()  # Убираем вебхук (если он был)
+    logger.info("Webhook удален, поллинг будет запущен.")
+
     # Регистрация хэндлеров
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", handle_report))
-
-    # Убедимся, что вебхуки отключены
-    await bot.delete_webhook()
 
     # Запуск бота с использованием polling
     await app.run_polling()
