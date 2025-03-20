@@ -1,12 +1,26 @@
+import logging
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ParseMode
 from aiogram.utils import executor
+from flask import Flask
+from threading import Thread
 
+# Токен бота и ID чата для репортов
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 
+# Настройка бота
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
+
+# Создаем приложение Flask
+app = Flask(__name__)
+
+# Основная страница для Flask, чтобы приложение не засыпало
+@app.route('/')
+def index():
+    return "Bot is running!"
 
 # Хэндлер для команды /report
 @dp.message_handler(commands=['report'])
@@ -31,6 +45,20 @@ async def handle_report(message: types.Message):
         # Логируем и информируем пользователя о возможной ошибке
         await message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
 
-if __name__ == '__main__':
+# Запуск aiogram в отдельном потоке
+def start_polling():
     from aiogram import executor
     executor.start_polling(dp, skip_updates=True)
+
+# Запуск Flask-сервера
+def start_flask():
+    app.run(host='0.0.0.0', port=5000)
+
+# Запуск приложения
+if __name__ == "__main__":
+    # Запуск aiogram в фоне (в отдельном потоке)
+    thread = Thread(target=start_polling)
+    thread.start()
+    
+    # Запуск Flask-сервера
+    start_flask()
