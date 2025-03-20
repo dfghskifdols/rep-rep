@@ -2,7 +2,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram import ParseMode
 from aiogram.utils import executor
-import aiohttp
+import time
 
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
@@ -10,18 +10,16 @@ ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-# Асинхронная функция для поддержания активности бота
+# Асинхронная функция для отправки сообщений каждые 10 минут
 async def keep_alive():
     while True:
         try:
-            # Отправляем запрос, чтобы избежать отключений
-            async with aiohttp.ClientSession() as session:
-                async with session.get('https://www.google.com/') as response:
-                    if response.status == 200:
-                        print("Bot is still alive!")
+            # Отправляем сообщение самому себе (можно настроить ID)
+            await bot.send_message(ADMIN_CHAT_ID, "Бот активен! Это сообщение для поддержания активности.", parse_mode=ParseMode.HTML)
+            print("Бот активен!")
         except Exception as e:
-            print(f"Error keeping bot alive: {e}")
-        await asyncio.sleep(300)  # Пауза между запросами в 5 минут (300 секунд)
+            print(f"Ошибка при поддержке активности: {e}")
+        await asyncio.sleep(600)  # Пауза между запросами в 10 минут (600 секунд)
 
 # Хэндлер для команды /report
 @dp.message_handler(commands=['report'])
