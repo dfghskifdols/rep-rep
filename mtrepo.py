@@ -21,7 +21,7 @@ app = Application.builder().token(API_TOKEN).build()
 
 # Хэндлер для команды /start
 async def start(update: Update, context):
-    await update.message.reply("Привет! Напиши /report чтобы отправить репорт.")
+    await update.message.reply_text("Привет! Напиши /report чтобы отправить репорт.")
 
 # Хэндлер для команды /report
 async def handle_report(update: Update, context):
@@ -39,22 +39,17 @@ async def handle_report(update: Update, context):
         await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode='HTML')
 
         # Подтверждаем пользователю, что репорт отправлен
-        await update.message.reply("Спасибо! Репорт успешно отправлен!")
+        await update.message.reply_text("Спасибо! Репорт успешно отправлен!")
 
     except Exception as e:
         # Логируем и информируем пользователя о возможной ошибке
-        await update.message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
+        await update.message.reply_text(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
 
 # Основная функция для запуска
 async def main():
-    # Останавливаем предыдущие сессии поллинга
-    await app.shutdown()  # Завершаем активные сессии поллинга, если есть
-    logger.info("Предыдущий поллинг был завершен.")
-
-    # Убедимся, что поллинг был отключен (если был включен)
-    await bot.delete_webhook()  # Убираем вебхук (если он был)
-    logger.info("Webhook удален, поллинг будет запущен.")
-
+    # Отключаем все активные long polling запросы перед запуском нового
+    await bot.delete_webhook(drop_pending_updates=True)
+    
     # Регистрация хэндлеров
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", handle_report))
