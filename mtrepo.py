@@ -1,72 +1,79 @@
 import os
-import logging
-import requests
-import threading
-import time
 from flask import Flask, request
+import requests
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import ParseMode
+import logging
 
-API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
-ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
-WEBHOOK_HOST = 'https://yourdomain.com'  # Замените на ваш домен с поддержкой HTTPS
-WEBHOOK_PATH = '/webhook/'  # Путь для Webhook
-WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
-
-app = Flask(__name__)
-
-# Настройка логирования
+# Логирование
 logging.basicConfig(level=logging.INFO)
 
-# Функция для отправки сообщений через Telegram API
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
+ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
+WEBHOOK_URL = 'https://yourdomain.com/{}/'.format(API_TOKEN)  # URL для Webhook (замените на ваш)
+
+# Инициализация бота и диспетчера
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+
+# Flask приложение
+app = Flask(__name__)
+
+# Хэндлер для команды /report
+@dp.message_handler(commands=['report'])
+async def handle_report(message: types.Message):
+    try:
+        # Получаем текст отчета
+        report_text = message.text
+
+        # Если сообщение является репортом на конкретное сообщение, добавляем ссылку на это сообщение
+        if message.reply_to_message:
+            reported_message = message.reply_to_message
+            message_link = f"https://t.me/{message.chat.username}/{reported_message.message_id}"  # Формируем ссылку на сообщение
+            report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
+
+        # Отправляем репорт в группу администрации с использованием HTML-форматирования
+        await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode=ParseMode.HTML)
+
+        # Подтверждаем пользователю, что репорт отправлен
+        await message.reply("Репорт успешно отправлен!")
+
+    except Exception as e:
+        # Логируем и информируем пользователя о возможной ошибке
+        await message.reply(f"Произошла ошибка при отправке репорта: {e}. Попробуйте позже.")
+
+
+# Асинхронная функция для обработки Webhook
+@app.route(f'/{API_TOKEN}', methods=['POST'])
+def webhook():
+    data = request.get_json()
+    if data.get('message'):
+        chat_id = data['message']['chat']['id']
+        text = data['message']['text']
+
+        # Простой ответ на команду "hello"
+        if text.lower() == "hello":
+            send_message(chat_id, "Hello!")
+    return '', 200
+
+
+# Функция отправки сообщений через Telegram API
 def send_message(chat_id, text):
     url = f'https://api.telegram.org/bot{API_TOKEN}/sendMessage'
-    params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'}
-    response = requests.get(url, params=params)
-    return response
+    data = {
+        'chat_id': chat_id,
+        'text': text
+    }
+    requests.post(url, data=data)
 
-# Хэндлер для команд
-@app.route(WEBHOOK_PATH, methods=['POST'])
-def webhook():
-    json_str = request.get_data(as_text=True)
-    update = request.get_json()
 
-    if 'message' in update:
-        message = update['message']
-        if message.get('text') == '/report':
-            send_message(ADMIN_CHAT_ID, "Поступил новый репорт от пользователя.")
-            send_message(message['chat']['id'], "Репорт успешно отправлен!")
-        else:
-            send_message(message['chat']['id'], "Команда не распознана.")
-    
-    return 'OK'
+# Устанавливаем Webhook для бота
+def set_webhook():
+    url = f'https://api.telegram.org/bot{API_TOKEN}/setWebhook?url={WEBHOOK_URL}'
+    requests.get(url)
 
-# Функция для анти-сна
-def keep_alive():
-    while True:
-        try:
-            # Отправляем запрос к Telegram API (пинг) для поддержания активности
-            url = f'https://api.telegram.org/bot{API_TOKEN}/getMe'
-            response = requests.get(url)
-            if response.status_code == 200:
-                print("Bot is still alive!")
-            else:
-                print("Error: Unable to ping bot!")
-        except Exception as e:
-            print(f"Error during keep alive: {e}")
-        time.sleep(60)  # Пауза 60 секунд (1 минута)
 
+# Запуск Flask сервера и Webhook
 if __name__ == '__main__':
-    # Устанавливаем Webhook
-    url = f'https://api.telegram.org/bot{API_TOKEN}/setWebhook'
-    params = {'url': WEBHOOK_URL}
-    response = requests.get(url, params=params)
-
-    if response.status_code == 200:
-        print("Webhook установлен!")
-    else:
-        print("Ошибка установки Webhook:", response.text)
-
-    # Запуск фоновой задачи анти-сна
-    threading.Thread(target=keep_alive, daemon=True).start()
-
-    # Запуск Flask-сервера
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    set_webhook()  # Устанавливаем Webhook при старте сервера
+    app.run(host='0.0.0.0', port=5000)  # Запускаем сервер Flask
