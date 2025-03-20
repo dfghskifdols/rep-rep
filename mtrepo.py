@@ -8,7 +8,7 @@ from threading import Thread
 
 # Токен бота и ID чата для репортов
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
-ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
+ADMIN_CHAT_ID = '-1002651165474'  # ID группы администрации
 
 # Настройка бота
 bot = Bot(token=API_TOKEN)
