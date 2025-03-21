@@ -56,12 +56,12 @@ async def handle_report(update: Update, context):
 
 # Основная функция для запуска
 async def main():
+    # Отключаем вебхуки перед запуском бота с пуллингом
+    await bot.delete_webhook(drop_pending_updates=True)
+
     # Регистрация хэндлеров
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", handle_report))
-
-    # Убедимся, что вебхуки отключены
-    await bot.delete_webhook(drop_pending_updates=True)
 
     # Запуск бота с использованием polling
     await app.run_polling()
