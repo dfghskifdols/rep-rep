@@ -4,6 +4,7 @@ from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import logging
 from flask import Flask
+from threading import Thread
 
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
@@ -60,13 +61,15 @@ async def main():
     app.add_handler(CommandHandler("report", handle_report))
 
     # Убедимся, что вебхуки отключены
-    await bot.delete_webhook()
+    await bot.delete_webhook(drop_pending_updates=True)
 
     # Запуск бота с использованием polling
     await app.run_polling()
 
 # Запуск бота и Flask-сервера
 if __name__ == '__main__':
-    from threading import Thread
+    # Запускаем Flask-сервер в отдельном потоке
     Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080)).start()
-    asyncio.get_event_loop().run_until_complete(main())
+    
+    # Запускаем основной асинхронный цикл для бота
+    asyncio.run(main())
