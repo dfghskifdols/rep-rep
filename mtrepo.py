@@ -4,6 +4,7 @@ from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import logging
 from flask import Flask
+from threading import Thread
 
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
@@ -11,7 +12,7 @@ nest_asyncio.apply()
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 
-# Настроим логгирование
+# Настроим логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -67,6 +68,5 @@ async def main():
 
 # Запуск бота и Flask-сервера
 if __name__ == '__main__':
-    from threading import Thread
-    Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080)).start()
-    asyncio.get_event_loop().run_until_complete(main())
+    Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080, threaded=True)).start()
+    asyncio.run(main())
