@@ -9,7 +9,7 @@ from threading import Thread
 # Применяем nest_asyncio
 nest_asyncio.apply()
 
-API_TOKEN = 'ТВОЙ_ТОКЕН'
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 
 # Логирование
