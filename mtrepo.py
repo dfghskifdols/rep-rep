@@ -3,6 +3,7 @@ import nest_asyncio
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import logging
+from flask import Flask
 
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
@@ -18,6 +19,13 @@ logger = logging.getLogger(__name__)
 # Создаем экземпляры бота и приложения
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
+
+# Flask-сервер для поддержки активности на Render
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def home():
+    return "Bot is running"
 
 # Хэндлер для команды /start
 async def start(update: Update, context):
@@ -47,16 +55,18 @@ async def handle_report(update: Update, context):
 
 # Основная функция для запуска
 async def main():
-    # Отключаем все активные long polling запросы перед запуском нового
-    await bot.delete_webhook(drop_pending_updates=True)
-    
     # Регистрация хэндлеров
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", handle_report))
 
+    # Убедимся, что вебхуки отключены
+    await bot.delete_webhook()
+
     # Запуск бота с использованием polling
     await app.run_polling()
 
-# Запуск приложения
+# Запуск бота и Flask-сервера
 if __name__ == '__main__':
+    from threading import Thread
+    Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080)).start()
     asyncio.get_event_loop().run_until_complete(main())
