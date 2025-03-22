@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler
 import logging
 from flask import Flask
 from threading import Thread
-import html  # Импортируем модуль для экранирования текста
+import urllib.parse
 
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
@@ -43,8 +43,10 @@ async def handle_report(update: Update, context):
         if update.message.reply_to_message:
             reported_message = update.message.reply_to_message
             chat = update.message.chat
-            message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"  
-            report_text += f"\n\nСсылка на сообщение: <a href='{html.escape(message_link)}'>Перейти к сообщению</a>"
+            message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
+            # Экранируем ссылку и добавляем ее в текст отчета
+            message_link_escaped = urllib.parse.quote(message_link)
+            report_text += f"\n\nСсылка на сообщение: <a href='{message_link_escaped}'>Перейти к сообщению</a>"
 
         # Получаем всех администраторов группы
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
@@ -60,19 +62,23 @@ async def handle_report(update: Update, context):
         first_half = mention_users[:mid]
         second_half = mention_users[mid:]
 
-        # Отправляем сообщение с репортом
-        message = f"Внимание! Новый репорт: \n\n{html.escape(report_text)}"
+        # Отправляем сообщение с репортом в HTML-формате
+        message = f"Внимание! Новый репорт: \n\n{report_text}"
         await bot.send_message(ADMIN_CHAT_ID, message, parse_mode=ParseMode.HTML)
 
         # Отправляем пинг первой половины администраторов
         if first_half:
             message_ping_first_half = f"Пинг первой половины администраторов: \n\n{' '.join(first_half)}"
             await bot.send_message(ADMIN_CHAT_ID, message_ping_first_half, parse_mode=ParseMode.MARKDOWN)
+        elif not first_half:  # Если первой половины нет, отправим второй пинг
+            logger.info("Первая половина администраторов пуста.")
 
         # Отправляем пинг второй половины администраторов
         if second_half:
             message_ping_second_half = f"Пинг второй половины администраторов: \n\n{' '.join(second_half)}"
             await bot.send_message(ADMIN_CHAT_ID, message_ping_second_half, parse_mode=ParseMode.MARKDOWN)
+        elif not second_half:  # Если второй половины нет, выводим информацию в лог
+            logger.info("Вторая половина администраторов пуста.")
 
         # Подтверждаем пользователю отправку репорта
         await update.message.reply_text("Спасибо! Репорт успешно отправлен!")
