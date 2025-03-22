@@ -1,6 +1,7 @@
 import asyncio
 import nest_asyncio
-from telegram import Bot, Update, ParseMode
+from telegram import Bot, Update
+from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler
 import logging
 from flask import Flask
