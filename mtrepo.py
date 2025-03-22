@@ -1,9 +1,10 @@
 import asyncio
 import nest_asyncio
 from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler
 import logging
 from flask import Flask
+from threading import Thread
 
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
@@ -64,8 +65,9 @@ async def main():
     await app.run_polling()
 
 if __name__ == '__main__':
-    from threading import Thread
+    # Запуск Flask-сервера в отдельном потоке
     Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080)).start()
 
+    # Запуск основного цикла бота
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
