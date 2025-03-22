@@ -8,19 +8,19 @@ from flask import Flask
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
 
-API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен твоего бота
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 
-# Настроим логгирование
+# Настроим логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Создаем экземпляры бота и приложения
+# Создаём экземпляры бота и приложения
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
 
-# Flask-сервер для поддержки активности на Render
+# Flask-сервер для поддержки активности
 flask_app = Flask(__name__)
 
 @flask_app.route('/')
@@ -36,29 +36,36 @@ async def handle_report(update: Update, context):
     try:
         report_text = update.message.text
 
+        # Если сообщение является репортом на конкретное сообщение, добавляем ссылку
         if update.message.reply_to_message:
             reported_message = update.message.reply_to_message
-            message_link = f"https://t.me/{update.message.chat.username}/{reported_message.message_id}"
+            chat = update.message.chat
+            message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"  
             report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
 
+        # Отправляем репорт в группу администрации
         await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode='HTML')
-        await update.message.reply_text("Спасибо! Репорт успешно отправлен!")
-    except Exception as e:
-        await update.message.reply_text(f"Произошла ошибка: {e}")
 
+        # Подтверждаем пользователю отправку репорта
+        await update.message.reply_text("Спасибо! Репорт успешно отправлен!")
+
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка при отправке репорта: {e}. Попробуйте позже.")
+
+# Основная функция
 async def main():
-    # Удаляем вебхук перед polling
-    await bot.delete_webhook(drop_pending_updates=True)
-    
-    # Регистрация хэндлеров
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", handle_report))
-    
-    # Запуск бота с использованием polling
+
+    # Удаляем вебхук перед запуском polling
+    await bot.delete_webhook(drop_pending_updates=True)
+
+    print("Бот запущен!")
     await app.run_polling()
 
-# Запуск бота и Flask-сервера
 if __name__ == '__main__':
     from threading import Thread
     Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080)).start()
-    asyncio.run(main())
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
