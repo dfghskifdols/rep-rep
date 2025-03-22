@@ -8,7 +8,7 @@ from flask import Flask
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
 
-API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
+API_TOKEN = '8057776309:AAFK-niojKYWYynUl6o35agMjeIGzjNNmbQ'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 
 # Настроим логирование
