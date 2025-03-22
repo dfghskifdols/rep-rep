@@ -1,10 +1,12 @@
 import asyncio
 import nest_asyncio
-from telegram import Bot, Update, ParseMode
+from telegram import Bot, Update
+from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler
 import logging
 from flask import Flask
 from threading import Thread
+import html  # Импортируем модуль для экранирования текста
 
 # Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
@@ -42,7 +44,7 @@ async def handle_report(update: Update, context):
             reported_message = update.message.reply_to_message
             chat = update.message.chat
             message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"  
-            report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
+            report_text += f"\n\nСсылка на сообщение: <a href='{html.escape(message_link)}'>Перейти к сообщению</a>"
 
         # Получаем всех администраторов группы
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
@@ -59,8 +61,8 @@ async def handle_report(update: Update, context):
         second_half = mention_users[mid:]
 
         # Отправляем сообщение с репортом
-        message = f"Внимание! Новый репорт: \n\n{report_text}"
-        await bot.send_message(ADMIN_CHAT_ID, message, parse_mode=ParseMode.MARKDOWN)
+        message = f"Внимание! Новый репорт: \n\n{html.escape(report_text)}"
+        await bot.send_message(ADMIN_CHAT_ID, message, parse_mode=ParseMode.HTML)
 
         # Отправляем пинг первой половины администраторов
         if first_half:
