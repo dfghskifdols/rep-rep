@@ -1,6 +1,6 @@
 import asyncio
 import nest_asyncio
-from telegram import Bot, Update
+from telegram import Bot, Update, ParseMode
 from telegram.ext import Application, CommandHandler
 import logging
 from flask import Flask
@@ -44,8 +44,18 @@ async def handle_report(update: Update, context):
             message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"  
             report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
 
-        # Отправляем репорт в группу администрации
-        await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode='HTML')
+        # Получаем список участников группы
+        chat_members = await bot.get_chat_members(ADMIN_CHAT_ID)
+
+        # Создаем сообщение с упоминанием всех участников
+        mention_users = ""
+        for member in chat_members:
+            if member.user.username:
+                mention_users += f"@{member.user.username} "
+
+        # Отправляем сообщение в группу с пингом всех
+        message = f"Внимание! Новый репорт: \n\n{mention_users}\n{report_text}"
+        await bot.send_message(ADMIN_CHAT_ID, message, parse_mode=ParseMode.HTML)
 
         # Подтверждаем пользователю отправку репорта
         await update.message.reply_text("Спасибо! Репорт успешно отправлен!")
