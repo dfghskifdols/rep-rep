@@ -75,13 +75,13 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            # Получаем оригинальное сообщение, на которое был ответ
-            reported_message = await bot.get_message(chat_id=query.message.chat.id, message_id=message_id).reply_to_message
+            # Получаем сообщение, на которое был отправлен репорт
+            reported_message = update.callback_query.message.reply_to_message
             reported_user = reported_message.from_user
 
             # Формируем ссылку на сообщение (если возможно)
-            if query.message.chat.username:
-                message_link = f"https://t.me/{query.message.chat.username}/{reported_message.message_id}"
+            if update.callback_query.message.chat.username:
+                message_link = f"https://t.me/{update.callback_query.message.chat.username}/{reported_message.message_id}"
                 link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
             else:
                 link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
