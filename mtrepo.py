@@ -71,7 +71,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
         logger.info("Попытка взаимодействия с чужим репортом!")
-        # Отправляем всплывающее сообщение, если это не тот, кто отправил репорт
+        # Отправляем всплывающее сообщение и НЕ изменяем оригинальное сообщение
         await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
         return
 
