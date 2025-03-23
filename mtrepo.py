@@ -1,9 +1,9 @@
 import asyncio
 import nest_asyncio
 import html
-from telegram import Bot, Update
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 import logging
 from flask import Flask
 from threading import Thread
@@ -27,20 +27,33 @@ flask_app = Flask(__name__)
 def home():
     return "Bot is running"
 
-async def start(update: Update, context):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-async def handle_report(update: Update, context):
-    try:
-        if not update.message.reply_to_message:
-            await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
-            return
+async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message.reply_to_message:
+        await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
+        return
+    
+    keyboard = [[
+        InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{update.message.message_id}"),
+        InlineKeyboardButton("❌ Нет", callback_data="cancel_report")
+    ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
-        reported_message = update.message.reply_to_message
+async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, message_id: int):
+    try:
+        query = update.callback_query
+        await query.answer()
+        
+        original_message = await query.message.chat.get_message(message_id)
+        reported_message = original_message.reply_to_message
         reported_user = reported_message.from_user
 
         # Формируем ссылку на сообщение (если возможно)
-        chat = update.message.chat
+        chat = query.message.chat
         if chat.username:
             message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
             link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
@@ -94,10 +107,14 @@ async def handle_report(update: Update, context):
                 disable_web_page_preview=True
             )
 
-        await update.message.reply_text("✅ Репорт успешно отправлен!")
-
+        await query.message.edit_text("✅ Репорт успешно отправлен!")
     except Exception as e:
-        await update.message.reply_text(f"❌ Ошибка при отправке репорта: {e}. Попробуйте позже.")
+        await query.message.edit_text(f"❌ Ошибка при отправке репорта: {e}. Попробуйте позже.")
+
+async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.message.edit_text("❌ Репорт отменен.")
 
 async def notify_user_on_shutdown():
     try:
@@ -113,7 +130,9 @@ async def notify_user_on_start():
 
 async def main():
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("report", handle_report))
+    app.add_handler(CommandHandler("report", report_command))
+    app.add_handler(CallbackQueryHandler(cancel_report, pattern="^cancel_report$"))
+    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, int(update.callback_query.data.split("_")[2])), pattern="^confirm_report_\\d+$"))
 
     await bot.delete_webhook(drop_pending_updates=True)
 
