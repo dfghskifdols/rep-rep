@@ -9,6 +9,8 @@ import random
 nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
+ADMIN_CHAT_ID = -1002651165474  # ID группы с администраторами, из которой будет выбран случайный админ
+USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -19,7 +21,7 @@ app = Application.builder().token(API_TOKEN).build()
 
 # Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
-    await bot.send_message(chat_id=5283100992, text="Доброе утро, мой господин!")
+    await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
 
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,12 +78,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            # Получаем оригинальное сообщение
-            reported_message = update.message.reply_to_message
-            if reported_message is None:
-                await query.message.edit_text("❌ Сообщение не найдено!")
-                return
-            
+            original_message = await query.message.chat.get_message(message_id)
+            reported_message = original_message.reply_to_message
             reported_user = reported_message.from_user
 
             # Формируем ссылку на сообщение (если возможно)
@@ -104,23 +102,19 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"{link_text}"
             )
 
-            # Получаем список администраторов из текущего чата
-            try:
-                admins = await bot.get_chat_administrators(query.message.chat.id)
-                admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
+            # Получаем список администраторов из другого чата
+            admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+            admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-                # Отправляем репорт
-                await bot.send_message(
-                    query.message.chat.id, report_text,
-                    parse_mode=ParseMode.HTML,
-                    protect_content=True,
-                    disable_web_page_preview=True
-                )
+            # Отправляем репорт
+            await bot.send_message(
+                ADMIN_CHAT_ID, report_text,
+                parse_mode=ParseMode.HTML,
+                protect_content=True,
+                disable_web_page_preview=True
+            )
 
-                await query.message.edit_text("✅ Репорт успешно отправлен!")
-            except Exception as e:
-                logger.error(f"Ошибка при получении администраторов: {e}")
-                await query.message.edit_text("❌ Ошибка при получении администраторов для репорта.")
+            await query.message.edit_text("✅ Репорт успешно отправлен!")
         elif action == "cancel":
             await query.message.edit_text("❌ Репорт отменен.")
     except Exception as e:
@@ -131,32 +125,29 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция для обработки текстовых сообщений
 async def handle_message(update: Update, context):
     message = update.message.text
-    
-    # Ответ на "Пинг"
     if "Пинг" in message:
         await update.message.reply_text("А нахуя он тебе")
 
     if "Неко" in message:
-        # Получаем администраторов из текущего чата
-        try:
-            admins = await bot.get_chat_administrators(update.message.chat.id)
-            if admins:
-                random_admin = random.choice(admins)
-                random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
-                
-                # Отправляем первое сообщение
-                sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
-                
-                # Задержка 5 секунд, чтобы изменить сообщение
-                await asyncio.sleep(5)
-                
-                # Обновляем сообщение с использованием случайного администратора
-                await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
-            else:
-                await update.message.reply_text("❌ Нет администраторов в этом чате!")
-        except Exception as e:
-            logger.error(f"Ошибка при получении администраторов: {e}")
-            await update.message.reply_text("❌ Ошибка при получении администраторов.")
+        # Получаем администраторов из другого чата
+        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+        
+        # Проверяем, что администраторы существуют
+        if admins:
+            # Выбираем случайного администратора
+            random_admin = random.choice(admins)
+            random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
+            
+            # Отправляем первое сообщение
+            sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
+            
+            # Задержка 5 секунд, чтобы изменить сообщение
+            await asyncio.sleep(5)
+            
+            # Обновляем сообщение с использованием случайного администратора
+            await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
+        else:
+            await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
 # Основная функция
 async def main():
