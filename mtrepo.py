@@ -54,6 +54,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = int(data[1])  # Преобразуем второй элемент в int (user_id)
     message_id = int(data[2])  # Преобразуем третий элемент в int (message_id)
 
+    logger.info(f"action: {action}, user_id: {user_id}, message_id: {message_id}")
+
     if query.from_user.id != user_id:
         await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
         return
@@ -117,4 +119,3 @@ async def main():
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
-
