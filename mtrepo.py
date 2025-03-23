@@ -70,8 +70,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
-        # Показываем текст, не редактируя исходное сообщение
-        await query.message.reply_text("❌ Нельзя жмякать чужие репорты!")
+        # Показываем всплывающее сообщение
+        await bot.send_message(
+            query.message.chat.id,
+            text="❌ Нельзя жмякать чужие репорты!",
+            reply_to_message_id=query.message.message_id
+        )
         return
 
     try:
@@ -128,17 +132,25 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             # Отправляем пользователю сообщение об успешном репорте
-            await query.message.reply_text("✅ Репорт успешно отправлен!")
+            await bot.send_message(
+                query.message.chat.id,
+                text="✅ Репорт успешно отправлен!",
+                reply_to_message_id=query.message.message_id
+            )
         elif action == "cancel":
-            await query.message.reply_text("❌ Репорт отменен.")
+            await bot.send_message(
+                query.message.chat.id,
+                text="❌ Репорт отменен.",
+                reply_to_message_id=query.message.message_id
+            )
     except Exception as e:
         # Логирование ошибки
         logger.error(f"Ошибка при обработке репорта: {e}")
-        await query.message.reply_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
-        
-        # Если это не администратор, покажем сообщение "Нельзя жмякать чужие репорты"
-        if query.from_user.id != user_id:
-            await query.message.reply_text("❌ Нельзя жмякать чужие репорты!")
+        await bot.send_message(
+            query.message.chat.id,
+            text=f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.",
+            reply_to_message_id=query.message.message_id
+        )
 
 # Основная функция
 async def main():
