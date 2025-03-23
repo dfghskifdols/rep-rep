@@ -128,25 +128,13 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             # Отправляем пользователю сообщение об успешном репорте
-            await bot.send_message(
-                query.message.chat.id,
-                text="✅ Репорт успешно отправлен!",
-                reply_to_message_id=query.message.message_id
-            )
+            await query.message.edit_text("✅ Репорт успешно отправлен!")
         elif action == "cancel":
-            await bot.send_message(
-                query.message.chat.id,
-                text="❌ Репорт отменен.",
-                reply_to_message_id=query.message.message_id
-            )
+            await query.message.edit_text("❌ Репорт отменен.")
     except Exception as e:
         # Логирование ошибки
         logger.error(f"Ошибка при обработке репорта: {e}")
-        await bot.send_message(
-            query.message.chat.id,
-            text=f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.",
-            reply_to_message_id=query.message.message_id
-        )
+        await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
 
 # Основная функция
 async def main():
