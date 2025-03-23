@@ -83,8 +83,14 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.message.edit_text("❌ Ошибка: сообщение не найдено!")
                 return
             
-            # Получаем сообщение по ID с использованием update.message.chat
-            original_message = await update.message.chat.get_message(message_id)
+            # Пытаемся получить сообщение из чата
+            try:
+                original_message = await update.message.chat.get_message(message_id)
+                logger.info(f"Сообщение найдено: {original_message}")
+            except Exception as e:
+                logger.error(f"Ошибка при получении сообщения: {e}")
+                await query.message.edit_text("❌ Сообщение не найдено или ошибка доступа.")
+                return
 
             if not original_message or not original_message.reply_to_message:
                 await query.message.edit_text("❌ Сообщение, на которое был отправлен репорт, не найдено.")
