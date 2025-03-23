@@ -78,7 +78,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            original_message = await query.message.chat.get_message(message_id)
+            # Получаем оригинальное сообщение с помощью bot.get_chat_message
+            original_message = await bot.get_chat_message(query.message.chat.id, message_id)
             reported_message = original_message.reply_to_message
             reported_user = reported_message.from_user
 
@@ -127,7 +128,7 @@ async def handle_message(update: Update, context):
     message = update.message.text
     if "Пинг" in message:
         await update.message.reply_text("А нахуя он тебе")
-
+    
     if "Неко" in message:
         # Получаем администраторов из другого чата
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
