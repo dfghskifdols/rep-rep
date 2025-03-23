@@ -78,8 +78,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            # Проверяем, что сообщение, на которое был отправлен репорт, существует
-            original_message = await bot.get_message(query.message.chat.id, message_id)
+            # Получаем чат, в котором был отправлен репорт
+            chat = query.message.chat
+
+            # Получаем сообщение по ID, используя метод get_chat
+            original_message = await chat.get_message(message_id)
+            
             if not original_message.reply_to_message:
                 await query.message.edit_text("❌ Сообщение, на которое был отправлен репорт, не найдено.")
                 return
@@ -88,7 +92,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reported_user = reported_message.from_user
 
             # Формируем ссылку на сообщение (если возможно)
-            chat = query.message.chat
             if chat.username:
                 message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
                 link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
@@ -130,9 +133,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция для обработки текстовых сообщений
 async def handle_message(update: Update, context):
     message = update.message.text
-    if "Пинг" in message:
-        await update.message.reply_text("А нахуя он тебе")
-    
     if "Неко" in message:
         # Получаем администраторов из другого чата
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
