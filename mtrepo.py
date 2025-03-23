@@ -129,7 +129,7 @@ async def main():
     app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm_report|cancel_report)_\d+_\d+$"))
 
     print("Бот запущен!")
-    await app.run_polling()
+    await app.run_polling(drop_pending_updates=True)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
