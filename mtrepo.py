@@ -9,7 +9,7 @@ import random
 nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
-ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
+ADMIN_CHAT_ID = -1002651165474  # ID группы с администраторами, из которой будет выбран случайный админ
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -100,7 +100,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"{link_text}"
             )
 
-            # Получаем список администраторов
+            # Получаем список администраторов из другого чата
             admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
@@ -124,21 +124,25 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context):
     message = update.message.text
     if "Неко" in message:
-        # Получаем администраторов чата
-        admins = await bot.get_chat_administrators(update.message.chat.id)
+        # Получаем администраторов из другого чата
+        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         
-        # Выбираем случайного администратора
-        random_admin = random.choice(admins)
-        random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
-        
-        # Отправляем первое сообщение
-        sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
-        
-        # Задержка 5 секунд, чтобы изменить сообщение
-        await asyncio.sleep(5)
-        
-        # Обновляем сообщение с использованием случайного администратора
-        await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
+        # Проверяем, что администраторы существуют
+        if admins:
+            # Выбираем случайного администратора
+            random_admin = random.choice(admins)
+            random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
+            
+            # Отправляем первое сообщение
+            sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
+            
+            # Задержка 5 секунд, чтобы изменить сообщение
+            await asyncio.sleep(5)
+            
+            # Обновляем сообщение с использованием случайного администратора
+            await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
+        else:
+            await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
 # Основная функция
 async def main():
