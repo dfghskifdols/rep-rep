@@ -15,12 +15,12 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-bot = Bot(API_TOKEN)
+# Создаем приложение бота
 app = Application.builder().token(API_TOKEN).build()
 
 # Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
-    await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
+    await app.bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
 
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -31,8 +31,8 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
-    
-    message_id = update.message.reply_to_message.message_id
+
+    message_id = update.message.message_id
     user_id = update.message.from_user.id
 
     keyboard = [[
@@ -72,15 +72,28 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            chat = update.effective_chat
-            reported_message = await bot.forward_message(chat_id=ADMIN_CHAT_ID, from_chat_id=chat.id, message_id=message_id)
-            
-            report_text = (
-                f"⚠️ <b>Новый репорт!</b>\n"
-                f"👤 Репорт отправил: @{query.from_user.username or query.from_user.id}\n"
-                f"💬 Сообщение: <a href='https://t.me/c/{chat.id}/{reported_message.message_id}'>Перейти</a>"
+            chat = query.message.chat
+            reported_message = await context.bot.forward_message(
+                chat_id=USER_CHAT_ID, from_chat_id=chat.id, message_id=message_id
             )
-            await bot.send_message(ADMIN_CHAT_ID, report_text, parse_mode=ParseMode.HTML)
+            reported_user = reported_message.from_user
+
+            message_text = reported_message.text if reported_message.text else "(медиа-файл)"
+            reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
+
+            report_text = (
+                f"⚠️ <b>Новый репорт!</b>\n\n"
+                f"👤 Пользователь: {reported_user_mention}\n"
+                f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
+            )
+
+            await context.bot.send_message(
+                ADMIN_CHAT_ID, report_text,
+                parse_mode=ParseMode.HTML,
+                protect_content=True,
+                disable_web_page_preview=True
+            )
+
             await query.message.edit_text("✅ Репорт успешно отправлен!")
         elif action == "cancel":
             await query.message.edit_text("❌ Репорт отменен.")
@@ -90,13 +103,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Основная функция
 async def main():
-    await send_welcome_message()
-    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\\d+_\\d+$"))
+    app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 
-    print("Бот запущен!")
+    await send_welcome_message()
+    logger.info("Бот запущен!")
     await app.run_polling(drop_pending_updates=True)
 
 if __name__ == '__main__':
