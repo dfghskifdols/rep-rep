@@ -54,7 +54,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Проверка на правильность формата данных
     if len(data) < 3:  # Если данных меньше, чем нужно
-        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
+        await query.message.reply_text("❌ Ошибка: неправильный формат данных!")
         return
 
     action = data[0]
@@ -63,14 +63,15 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message_id = int(data[2])  # Преобразуем третий элемент в int (message_id)
     except ValueError:
         logger.error(f"Ошибка преобразования данных: {data}")  # Логируем ошибку преобразования
-        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
+        await query.message.reply_text("❌ Ошибка: неверные данные для обработки репорта!")
         return
 
     logger.info(f"action: {action}, user_id: {user_id}, message_id: {message_id}")
 
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
-        await query.message.edit_text("❌ Нельзя жмякать чужие репорты!")
+        # Показываем текст, не редактируя исходное сообщение
+        await query.message.reply_text("❌ Нельзя жмякать чужие репорты!")
         return
 
     try:
@@ -126,17 +127,18 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 disable_web_page_preview=True
             )
 
-            await query.message.edit_text("✅ Репорт успешно отправлен!")
+            # Отправляем пользователю сообщение об успешном репорте
+            await query.message.reply_text("✅ Репорт успешно отправлен!")
         elif action == "cancel":
-            await query.message.edit_text("❌ Репорт отменен.")
+            await query.message.reply_text("❌ Репорт отменен.")
     except Exception as e:
         # Логирование ошибки
         logger.error(f"Ошибка при обработке репорта: {e}")
-        await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
+        await query.message.reply_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
         
         # Если это не администратор, покажем сообщение "Нельзя жмякать чужие репорты"
         if query.from_user.id != user_id:
-            await query.message.edit_text("❌ Нельзя жмякать чужие репорты!")
+            await query.message.reply_text("❌ Нельзя жмякать чужие репорты!")
 
 # Основная функция
 async def main():
