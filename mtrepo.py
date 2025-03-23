@@ -70,7 +70,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
-        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
+        await query.message.edit_text("❌ Нельзя жмякать чужие репорты!")
         return
 
     try:
@@ -133,6 +133,10 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Логирование ошибки
         logger.error(f"Ошибка при обработке репорта: {e}")
         await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
+        
+        # Если это не администратор, покажем сообщение "Нельзя жмякать чужие репорты"
+        if query.from_user.id != user_id:
+            await query.message.edit_text("❌ Нельзя жмякать чужие репорты!")
 
 # Основная функция
 async def main():
@@ -149,4 +153,3 @@ async def main():
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
-
