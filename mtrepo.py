@@ -35,58 +35,52 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
     
-    # Сохраняем ID пользователя, который отправил репорт
+    # Сохраняем ID оригинального сообщения для дальнейшего использования
+    message_id = update.message.message_id
     user_id = update.message.from_user.id
-    
+
     keyboard = [[
-        InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{user_id}_{update.message.message_id}"),
-        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_report_{user_id}")
+        InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{user_id}_{message_id}"),
+        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_report_{user_id}_{message_id}")
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
-async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    # Извлекаем user_id из callback_data
-    user_id, message_id = map(int, query.data.split("_")[1:])
-    
-    # Проверяем, совпадает ли user_id с тем, кто отправил репорт
-    if user_id != query.from_user.id:
-        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт.")
-        return
-
-    # Проверяем, что есть сообщение и оно на что-то отвечает
-    if not query.message.reply_to_message:
-        await query.message.edit_text("❌ Ошибка! Не удалось найти сообщение для репорта.")
-        return
-
-    reported_message = query.message.reply_to_message
-    reported_user = reported_message.from_user
-
-    # Формируем ссылку на сообщение (если возможно)
-    chat = query.message.chat
-    if chat.username:
-        message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
-        link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
-    else:
-        link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
-
-    # Цитируем текст сообщения
-    message_text = html.escape(reported_message.text) if reported_message.text else "(медиа-файл)"
-    reported_user_mention = f"<b>{html.escape(reported_user.full_name)}</b> (@{reported_user.username})"
-
-    # Текст репорта
-    report_text = (
-        f"⚠️ <b>Новый репорт!</b>\n\n"
-        f"👤 Пользователь: {reported_user_mention}\n"
-        f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
-        f"{link_text}"
-    )
-
+async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
     try:
+        query = update.callback_query
+        await query.answer()
+
+        # Проверяем, что это тот же человек, кто отправил репорт
+        if query.from_user.id != user_id:
+            await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
+            return
+        
+        original_message = await query.message.chat.get_message(message_id)
+        reported_message = original_message.reply_to_message
+        reported_user = reported_message.from_user
+
+        # Формируем ссылку на сообщение (если возможно)
+        chat = query.message.chat
+        if chat.username:
+            message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
+            link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
+        else:
+            link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
+
+        # Цитируем текст сообщения
+        message_text = html.escape(reported_message.text) if reported_message.text else "(медиа-файл)"
+        reported_user_mention = f"<b>{html.escape(reported_user.full_name)}</b> (@{reported_user.username})"
+
+        # Текст репорта
+        report_text = (
+            f"⚠️ <b>Новый репорт!</b>\n\n"
+            f"👤 Пользователь: {reported_user_mention}\n"
+            f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
+            f"{link_text}"
+        )
+
         # Получаем список администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
@@ -126,18 +120,15 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await query.message.edit_text(f"❌ Ошибка при отправке репорта: {e}. Попробуйте позже.")
 
-async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
     query = update.callback_query
     await query.answer()
 
-    # Извлекаем user_id из callback_data
-    user_id = int(query.data.split("_")[1])
-
-    # Проверяем, совпадает ли user_id с тем, кто отправил репорт
-    if user_id != query.from_user.id:
-        await query.message.edit_text("❌ Вы не можете отменить этот репорт.")
+    # Проверяем, что это тот же человек, кто отправил репорт
+    if query.from_user.id != user_id:
+        await query.message.edit_text("❌ Вы не можете отменить этот репорт!")
         return
-
+    
     await query.message.edit_text("❌ Репорт отменен.")
 
 async def notify_user_on_shutdown():
@@ -155,10 +146,10 @@ async def notify_user_on_start():
 async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(cancel_report, pattern="^cancel_report_\\d+$"))
-    app.add_handler(CallbackQueryHandler(handle_report, pattern="^confirm_report_\\d+_\\d+$"))
+    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, int(update.callback_query.data.split("_")[1]), int(update.callback_query.data.split("_")[2])), pattern="^confirm_report_\\d+_\\d+$"))
+    app.add_handler(CallbackQueryHandler(lambda update, context: cancel_report(update, context, int(update.callback_query.data.split("_")[1]), int(update.callback_query.data.split("_")[2])), pattern="^cancel_report_\\d+_\\d+$"))
 
-    await bot.delete_webhook(drop_pending_updates=True)  # Удаление вебхуков
+    await bot.delete_webhook(drop_pending_updates=True)
 
     print("Бот запущен!")
     await notify_user_on_start()  # Отправляем сообщение при запуске
