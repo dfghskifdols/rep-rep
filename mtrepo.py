@@ -60,6 +60,9 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка, что данные имеют формат "action_user_id_message_id"
     try:
         data = query.data.split('_')
+        if len(data) != 3:
+            raise ValueError(f"Неверный формат callback_data: {query.data}")
+
         action = data[0]
         user_id = int(data[1])
         message_id = int(data[2])
