@@ -50,9 +50,19 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     data = query.data.split("_")
+    logger.info(f"Callback data: {data}")  # Логируем данные
+
+    if len(data) < 3:  # Проверяем, что данных достаточно
+        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
+        return
+
     action = data[0]
-    user_id = int(data[1])  # Преобразуем второй элемент в int (user_id)
-    message_id = int(data[2])  # Преобразуем третий элемент в int (message_id)
+    try:
+        user_id = int(data[1])  # Преобразуем второй элемент в int (user_id)
+        message_id = int(data[2])  # Преобразуем третий элемент в int (message_id)
+    except ValueError:
+        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
+        return
 
     logger.info(f"action: {action}, user_id: {user_id}, message_id: {message_id}")
 
