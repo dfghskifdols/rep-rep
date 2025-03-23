@@ -44,8 +44,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = query.data.split("_")
     action = data[0]
-    user_id = int(data[1])
-    message_id = int(data[2])
+    user_id = int(data[1])  # Преобразуем второй элемент в int (user_id)
+    message_id = int(data[2])  # Преобразуем третий элемент в int (message_id)
 
     if query.from_user.id != user_id:
         await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
