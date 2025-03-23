@@ -78,8 +78,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            # Получаем оригинальное сообщение с помощью bot.get_chat_message
-            original_message = await bot.get_chat_message(query.message.chat.id, message_id)
+            # Получаем оригинальное сообщение с помощью bot.get_message
+            original_message = await bot.get_message(query.message.chat.id, message_id)
             reported_message = original_message.reply_to_message
             reported_user = reported_message.from_user
 
