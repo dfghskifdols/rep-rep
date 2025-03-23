@@ -47,17 +47,16 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Получаем исходное сообщение, на которое был ответ
-    reported_message = update.callback_query.message.reply_to_message
-
-    if not reported_message:
+    # Проверяем, что есть сообщение и оно на что-то отвечает
+    if not query.message.reply_to_message:
         await query.message.edit_text("❌ Ошибка! Не удалось найти сообщение для репорта.")
         return
 
+    reported_message = query.message.reply_to_message
     reported_user = reported_message.from_user
 
     # Формируем ссылку на сообщение (если возможно)
-    chat = update.message.chat
+    chat = query.message.chat
     if chat.username:
         message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
         link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
