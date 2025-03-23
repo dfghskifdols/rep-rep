@@ -4,6 +4,7 @@ from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 import logging
+import random
 
 nest_asyncio.apply()
 
@@ -123,9 +124,21 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context):
     message = update.message.text
     if "Неко" in message:
+        # Получаем участников чата
+        chat_members = await bot.get_chat_members(ADMIN_CHAT_ID)
+        
+        # Выбираем случайного пользователя
+        random_user = random.choice(chat_members)
+        random_username = random_user.user.username if random_user.user.username else "unknown_user"
+        
+        # Отправляем первое сообщение
         sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
+        
+        # Задержка 5 секунд, чтобы изменить сообщение
         await asyncio.sleep(5)
-        await sent_message.edit_text("Кошко-девочка вычислена! Она находится у @Shadowhou")
+        
+        # Обновляем сообщение с использованием случайного пользователя
+        await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
 
 # Основная функция
 async def main():
