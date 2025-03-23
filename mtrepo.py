@@ -62,6 +62,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = int(data[1])  # Преобразуем второй элемент в int (user_id)
         message_id = int(data[2])  # Преобразуем третий элемент в int (message_id)
     except ValueError:
+        logger.error(f"Ошибка преобразования данных: {data}")  # Логируем ошибку преобразования
         await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
         return
 
