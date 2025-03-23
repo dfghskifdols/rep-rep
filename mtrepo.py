@@ -102,19 +102,29 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-            # Отправляем репорт с упоминанием администраторов
+            # Разделяем администраторов на две группы
+            mid = len(admin_mentions) // 2
+            first_group = admin_mentions[:mid]
+            second_group = admin_mentions[mid:]
+
+            # Отправляем пинг администраторов в два сообщения
+            if first_group:
+                await bot.send_message(
+                    ADMIN_CHAT_ID, "Администраторы (часть 1), обратите внимание!\n" + " ".join(first_group)
+                )
+
+            if second_group:
+                await bot.send_message(
+                    ADMIN_CHAT_ID, "Администраторы (часть 2), обратите внимание!\n" + " ".join(second_group)
+                )
+
+            # Отправляем сам репорт
             await bot.send_message(
                 ADMIN_CHAT_ID, report_text,
                 parse_mode=ParseMode.HTML,
                 protect_content=True,
                 disable_web_page_preview=True
             )
-
-            # Упоминаем администраторов в сообщении
-            if admin_mentions:
-                await bot.send_message(
-                    ADMIN_CHAT_ID, "Администраторы, обратите внимание!\n" + " ".join(admin_mentions)
-                )
 
             await query.message.edit_text("✅ Репорт успешно отправлен!")
         elif action == "cancel":
@@ -139,3 +149,4 @@ async def main():
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
+
