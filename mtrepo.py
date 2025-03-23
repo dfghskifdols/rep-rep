@@ -4,12 +4,12 @@ from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 import logging
-import random
 
 nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
-ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
+ADMIN_CHAT_ID_1 = -1002651165474  # ID первой группы администраторов
+ADMIN_CHAT_ID_2 = -1001234567890  # ID второй группы администраторов
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -100,12 +100,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             # Получаем список администраторов
-            admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+            admins = await bot.get_chat_administrators(ADMIN_CHAT_ID_1)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
             # Отправляем репорт
             await bot.send_message(
-                ADMIN_CHAT_ID, report_text,
+                ADMIN_CHAT_ID_1, report_text,
                 parse_mode=ParseMode.HTML,
                 protect_content=True,
                 disable_web_page_preview=True
@@ -122,28 +122,27 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция для обработки текстовых сообщений
 async def handle_message(update: Update, context):
     message = update.message.text
-    if "Неко" in message:
-        # Получаем администраторов из другого чата
-        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
-        
-        # Проверяем, что администраторы существуют
-        if admins:
-            # Выбираем случайного администратора
-            random_admin = random.choice(admins)
-            random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
-            
-            # Отправляем первое сообщение
-            sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
-            
-            # Задержка 5 секунд, чтобы изменить сообщение
-            await asyncio.sleep(5)
-            
-            # Обновляем сообщение с использованием случайного администратора
-            await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
-        else:
-            await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
-    elif "Пинг" in message:
-        await update.message.reply_text("🏓 Понг! Бот жив!")
+    if "Пинг" in message:
+        # Получаем администраторов из первой группы
+        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID_1)
+        half_len = len(admins) // 2
+        first_half = admins[:half_len]
+        second_half = admins[half_len:]
+
+        if len(first_half) > 0:
+            # Пинг первой половины
+            for admin in first_half:
+                admin_username = admin.user.username if admin.user.username else "unknown_user"
+                await update.message.reply_text(f"🏓 Понг 1! @ {admin_username}")
+
+        # Задержка 5 секунд перед пингом второй половины
+        await asyncio.sleep(5)
+
+        if len(second_half) > 0:
+            # Пинг второй половины
+            for admin in second_half:
+                admin_username = admin.user.username if admin.user.username else "unknown_user"
+                await update.message.reply_text(f"🏓 Понг 2! @ {admin_username}")
 
 # Основная функция
 async def main():
