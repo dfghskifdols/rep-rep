@@ -50,9 +50,10 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     data = query.data.split("_")
-    logger.info(f"Callback data: {data}")  # Логируем данные
+    logger.info(f"Callback data: {data}")  # Логируем данные для отладки
 
-    if len(data) < 3:  # Проверяем, что данных достаточно
+    # Проверка на правильность формата данных
+    if len(data) < 3:  # Если данных меньше, чем нужно
         await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
@@ -66,6 +67,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     logger.info(f"action: {action}, user_id: {user_id}, message_id: {message_id}")
 
+    # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
         await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
         return
@@ -112,6 +114,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif action == "cancel_report":
             await query.message.edit_text("❌ Репорт отменен.")
     except Exception as e:
+        # Логирование ошибки
+        logger.error(f"Ошибка при обработке репорта: {e}")
         await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
 
 # Основная функция
