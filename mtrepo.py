@@ -55,23 +55,30 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Разбираем данные из callback
-    data = query.data.split('_')
-    action = data[0]
-    user_id = int(data[1])
-    message_id = int(data[2])
+    logger.info(f"Callback data: {query.data}")
 
-    logger.info(f"Received callback data: {data}")
+    # Проверка, что данные имеют формат "action_user_id_message_id"
+    try:
+        data = query.data.split('_')
+        action = data[0]
+        user_id = int(data[1])
+        message_id = int(data[2])
 
-    # Проверяем, что это тот же человек, кто отправил репорт
-    if query.from_user.id != user_id:
-        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
-        return
-    
-    if action == "confirm_report":
-        await confirm_report(update, context, user_id, message_id)
-    elif action == "cancel_report":
-        await cancel_report(update, context, user_id, message_id)
+        # Логируем полученные данные
+        logger.info(f"Parsed data - Action: {action}, User ID: {user_id}, Message ID: {message_id}")
+
+        # Проверяем, что это тот же человек, кто отправил репорт
+        if query.from_user.id != user_id:
+            await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
+            return
+
+        if action == "confirm_report":
+            await confirm_report(update, context, user_id, message_id)
+        elif action == "cancel_report":
+            await cancel_report(update, context, user_id, message_id)
+    except Exception as e:
+        logger.error(f"Ошибка при обработке callback данных: {e}")
+        await query.message.edit_text("❌ Ошибка при обработке вашего запроса. Попробуйте позже.")
 
 async def confirm_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
     query = update.callback_query
