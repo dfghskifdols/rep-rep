@@ -18,9 +18,15 @@ logger = logging.getLogger(__name__)
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
 
+# Функция отправки сообщения "Доброе утро, мой господин!"
+async def send_welcome_message():
+    await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
+
+# Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
+# Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
@@ -38,6 +44,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
+# Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -95,7 +102,11 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
 
+# Основная функция
 async def main():
+    # Отправка "Доброе утро" после запуска бота
+    await send_welcome_message()
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm_report|cancel_report)_\d+_\d+$"))
@@ -106,3 +117,4 @@ async def main():
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
+
