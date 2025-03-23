@@ -78,11 +78,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            # Получаем чат, в котором был отправлен репорт
-            chat = query.message.chat
-
-            # Получаем сообщение по ID, используя метод get_chat
-            original_message = await chat.get_message(message_id)
+            # Получаем сообщение по ID с использованием update.message.chat
+            original_message = await update.message.chat.get_message(message_id)
             
             if not original_message.reply_to_message:
                 await query.message.edit_text("❌ Сообщение, на которое был отправлен репорт, не найдено.")
@@ -92,8 +89,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reported_user = reported_message.from_user
 
             # Формируем ссылку на сообщение (если возможно)
-            if chat.username:
-                message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
+            if update.message.chat.username:
+                message_link = f"https://t.me/{update.message.chat.username}/{reported_message.message_id}"
                 link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
             else:
                 link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
