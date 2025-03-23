@@ -78,10 +78,15 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
+            # Проверяем, что update.message существует
+            if not update.message or not update.message.chat:
+                await query.message.edit_text("❌ Ошибка: сообщение не найдено!")
+                return
+            
             # Получаем сообщение по ID с использованием update.message.chat
             original_message = await update.message.chat.get_message(message_id)
-            
-            if not original_message.reply_to_message:
+
+            if not original_message or not original_message.reply_to_message:
                 await query.message.edit_text("❌ Сообщение, на которое был отправлен репорт, не найдено.")
                 return
 
