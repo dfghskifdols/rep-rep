@@ -102,13 +102,19 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-            # Отправляем репорт
+            # Отправляем репорт с упоминанием администраторов
             await bot.send_message(
                 ADMIN_CHAT_ID, report_text,
                 parse_mode=ParseMode.HTML,
                 protect_content=True,
                 disable_web_page_preview=True
             )
+
+            # Упоминаем администраторов в сообщении
+            if admin_mentions:
+                await bot.send_message(
+                    ADMIN_CHAT_ID, "Администраторы, обратите внимание!\n" + " ".join(admin_mentions)
+                )
 
             await query.message.edit_text("✅ Репорт успешно отправлен!")
         elif action == "cancel":
