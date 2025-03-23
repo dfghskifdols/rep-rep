@@ -72,7 +72,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.from_user.id != user_id:
         logger.info("Попытка взаимодействия с чужим репортом!")
         # Отправляем всплывающее сообщение и НЕ изменяем оригинальное сообщение
-        await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
+        await query.answer_callback_query(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
         return
 
     try:
