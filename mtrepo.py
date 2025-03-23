@@ -75,15 +75,45 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{link_text}"
     )
 
-    # Отправляем репорт
-    await bot.send_message(
-        ADMIN_CHAT_ID, report_text,
-        parse_mode=ParseMode.HTML,
-        protect_content=True,
-        disable_web_page_preview=True
-    )
+    try:
+        # Получаем список администраторов
+        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+        admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-    await query.message.edit_text("✅ Репорт успешно отправлен!")
+        # Разделяем список админов на две части
+        mid = len(admin_mentions) // 2
+        first_half = admin_mentions[:mid]
+        second_half = admin_mentions[mid:]
+
+        # Отправляем репорт
+        await bot.send_message(
+            ADMIN_CHAT_ID, report_text,
+            parse_mode=ParseMode.HTML,
+            protect_content=True,
+            disable_web_page_preview=True
+        )
+
+        # Пингуем первую половину админов
+        if first_half:
+            await bot.send_message(
+                ADMIN_CHAT_ID, f"👥 Пинг админов (1-я часть): {' '.join(first_half)}",
+                parse_mode=ParseMode.HTML,
+                protect_content=True,
+                disable_web_page_preview=True
+            )
+
+        # Пингуем вторую половину админов
+        if second_half:
+            await bot.send_message(
+                ADMIN_CHAT_ID, f"👥 Пинг админов (2-я часть): {' '.join(second_half)}",
+                parse_mode=ParseMode.HTML,
+                protect_content=True,
+                disable_web_page_preview=True
+            )
+
+        await query.message.edit_text("✅ Репорт успешно отправлен!")
+    except Exception as e:
+        await query.message.edit_text(f"❌ Ошибка при отправке репорта: {e}. Попробуйте позже.")
 
 async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
