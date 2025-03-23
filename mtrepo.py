@@ -35,9 +35,12 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
     
+    # Сохраняем ID пользователя, который отправил репорт
+    user_id = update.message.from_user.id
+    
     keyboard = [[
-        InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{update.message.message_id}"),
-        InlineKeyboardButton("❌ Нет", callback_data="cancel_report")
+        InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{user_id}_{update.message.message_id}"),
+        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_report_{user_id}")
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -46,6 +49,14 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    # Извлекаем user_id из callback_data
+    user_id, message_id = map(int, query.data.split("_")[1:])
+    
+    # Проверяем, совпадает ли user_id с тем, кто отправил репорт
+    if user_id != query.from_user.id:
+        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт.")
+        return
 
     # Проверяем, что есть сообщение и оно на что-то отвечает
     if not query.message.reply_to_message:
@@ -118,6 +129,15 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    # Извлекаем user_id из callback_data
+    user_id = int(query.data.split("_")[1])
+
+    # Проверяем, совпадает ли user_id с тем, кто отправил репорт
+    if user_id != query.from_user.id:
+        await query.message.edit_text("❌ Вы не можете отменить этот репорт.")
+        return
+
     await query.message.edit_text("❌ Репорт отменен.")
 
 async def notify_user_on_shutdown():
@@ -135,8 +155,8 @@ async def notify_user_on_start():
 async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(cancel_report, pattern="^cancel_report$"))
-    app.add_handler(CallbackQueryHandler(handle_report, pattern="^confirm_report_\\d+$"))
+    app.add_handler(CallbackQueryHandler(cancel_report, pattern="^cancel_report_\\d+$"))
+    app.add_handler(CallbackQueryHandler(handle_report, pattern="^confirm_report_\\d+_\\d+$"))
 
     await bot.delete_webhook(drop_pending_updates=True)  # Удаление вебхуков
 
