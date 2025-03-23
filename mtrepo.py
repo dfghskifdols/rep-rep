@@ -43,46 +43,48 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
-async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, message_id: int):
-    try:
-        query = update.callback_query
-        await query.answer()
-        
-        # Используем сообщение из reply_to_message, не пытаясь заново его получать
-        reported_message = update.callback_query.message.reply_to_message
-        reported_user = reported_message.from_user
+async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
 
-        # Формируем ссылку на сообщение (если возможно)
-        chat = update.message.chat
-        if chat.username:
-            message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
-            link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
-        else:
-            link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
+    # Получаем исходное сообщение, на которое был ответ
+    reported_message = update.callback_query.message.reply_to_message
 
-        # Цитируем текст сообщения
-        message_text = html.escape(reported_message.text) if reported_message.text else "(медиа-файл)"
-        reported_user_mention = f"<b>{html.escape(reported_user.full_name)}</b> (@{reported_user.username})"
+    if not reported_message:
+        await query.message.edit_text("❌ Ошибка! Не удалось найти сообщение для репорта.")
+        return
 
-        # Текст репорта
-        report_text = (
-            f"⚠️ <b>Новый репорт!</b>\n\n"
-            f"👤 Пользователь: {reported_user_mention}\n"
-            f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
-            f"{link_text}"
-        )
+    reported_user = reported_message.from_user
 
-        # Отправляем репорт
-        await bot.send_message(
-            ADMIN_CHAT_ID, report_text,
-            parse_mode=ParseMode.HTML,
-            protect_content=True,
-            disable_web_page_preview=True
-        )
+    # Формируем ссылку на сообщение (если возможно)
+    chat = update.message.chat
+    if chat.username:
+        message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
+        link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
+    else:
+        link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
 
-        await query.message.edit_text("✅ Репорт успешно отправлен!")
-    except Exception as e:
-        await query.message.edit_text(f"❌ Ошибка при отправке репорта: {e}. Попробуйте позже.")
+    # Цитируем текст сообщения
+    message_text = html.escape(reported_message.text) if reported_message.text else "(медиа-файл)"
+    reported_user_mention = f"<b>{html.escape(reported_user.full_name)}</b> (@{reported_user.username})"
+
+    # Текст репорта
+    report_text = (
+        f"⚠️ <b>Новый репорт!</b>\n\n"
+        f"👤 Пользователь: {reported_user_mention}\n"
+        f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
+        f"{link_text}"
+    )
+
+    # Отправляем репорт
+    await bot.send_message(
+        ADMIN_CHAT_ID, report_text,
+        parse_mode=ParseMode.HTML,
+        protect_content=True,
+        disable_web_page_preview=True
+    )
+
+    await query.message.edit_text("✅ Репорт успешно отправлен!")
 
 async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -105,7 +107,7 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CallbackQueryHandler(cancel_report, pattern="^cancel_report$"))
-    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, int(update.callback_query.data.split("_")[2])), pattern="^confirm_report_\\d+$"))
+    app.add_handler(CallbackQueryHandler(handle_report, pattern="^confirm_report_\\d+$"))
 
     await bot.delete_webhook(drop_pending_updates=True)  # Удаление вебхуков
 
