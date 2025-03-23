@@ -1,5 +1,6 @@
 import asyncio
 import nest_asyncio
+import html
 from telegram import Bot, Update
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler
@@ -7,78 +8,123 @@ import logging
 from flask import Flask
 from threading import Thread
 
-# Применяем nest_asyncio для работы с асинхронными задачами
 nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
+USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 
-# Настроим логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Создаём экземпляры бота и приложения
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
 
-# Flask-сервер для поддержки активности
 flask_app = Flask(__name__)
 
 @flask_app.route('/')
 def home():
     return "Bot is running"
 
-# Хэндлер для команды /start
 async def start(update: Update, context):
-    await update.message.reply_text("Привет! Напиши /report чтобы отправить репорт.")
+    await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-# Хэндлер для команды /report
 async def handle_report(update: Update, context):
     try:
-        report_text = update.message.text
+        if not update.message.reply_to_message:
+            await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
+            return
 
-        # Если сообщение является репортом на конкретное сообщение, добавляем ссылку
-        if update.message.reply_to_message:
-            reported_message = update.message.reply_to_message
-            chat = update.message.chat
-            message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"  
-            report_text += f"\n\nСсылка на сообщение: <a href='{message_link}'>Перейти к сообщению</a>"
+        reported_message = update.message.reply_to_message
+        reported_user = reported_message.from_user
 
-        # Получаем список администраторов группы
-        chat_administrators = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+        # Формируем ссылку на сообщение (если возможно)
+        chat = update.message.chat
+        if chat.username:
+            message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
+            link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
+        else:
+            link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
 
-        # Создаем сообщение с упоминанием администраторов
-        mention_users = ""
-        for admin in chat_administrators:
-            if admin.user.username:
-                mention_users += f"@{admin.user.username} "
+        # Цитируем текст сообщения
+        message_text = html.escape(reported_message.text) if reported_message.text else "(медиа-файл)"
+        reported_user_mention = f"<b>{html.escape(reported_user.full_name)}</b> (@{reported_user.username})"
 
-        # Отправляем сообщение в группу с пингом администраторов
-        message = f"Внимание! Новый репорт: \n\n{mention_users}\n{report_text}"
-        await bot.send_message(ADMIN_CHAT_ID, message, parse_mode=ParseMode.HTML)
+        # Текст репорта
+        report_text = (
+            f"⚠️ <b>Новый репорт!</b>\n\n"
+            f"👤 Пользователь: {reported_user_mention}\n"
+            f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
+            f"{link_text}"
+        )
 
-        # Подтверждаем пользователю отправку репорта
-        await update.message.reply_text("Спасибо! Репорт успешно отправлен!")
+        # Получаем список администраторов
+        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+        admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
+
+        # Разделяем список админов на две части
+        mid = len(admin_mentions) // 2
+        first_half = admin_mentions[:mid]
+        second_half = admin_mentions[mid:]
+
+        # Отправляем репорт
+        await bot.send_message(
+            ADMIN_CHAT_ID, report_text,
+            parse_mode=ParseMode.HTML,
+            protect_content=True,
+            disable_web_page_preview=True
+        )
+
+        # Пингуем первую половину админов
+        if first_half:
+            await bot.send_message(
+                ADMIN_CHAT_ID, f"👥 Пинг админов (1-я часть): {' '.join(first_half)}",
+                parse_mode=ParseMode.HTML,
+                protect_content=True,
+                disable_web_page_preview=True
+            )
+
+        # Пингуем вторую половину админов
+        if second_half:
+            await bot.send_message(
+                ADMIN_CHAT_ID, f"👥 Пинг админов (2-я часть): {' '.join(second_half)}",
+                parse_mode=ParseMode.HTML,
+                protect_content=True,
+                disable_web_page_preview=True
+            )
+
+        await update.message.reply_text("✅ Репорт успешно отправлен!")
 
     except Exception as e:
-        await update.message.reply_text(f"Ошибка при отправке репорта: {e}. Попробуйте позже.")
+        await update.message.reply_text(f"❌ Ошибка при отправке репорта: {e}. Попробуйте позже.")
 
-# Основная функция
+async def notify_user_on_shutdown():
+    try:
+        await bot.send_message(USER_CHAT_ID, "👋 Мой господин... прощайте")
+    except Exception as e:
+        logger.error(f"Не удалось отправить сообщение пользователю при выключении: {e}")
+
+async def notify_user_on_start():
+    try:
+        await bot.send_message(USER_CHAT_ID, "Доброе утро, мой господин!")
+    except Exception as e:
+        logger.error(f"Не удалось отправить сообщение пользователю при запуске: {e}")
+
 async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", handle_report))
 
-    # Удаляем вебхук перед запуском polling
     await bot.delete_webhook(drop_pending_updates=True)
 
     print("Бот запущен!")
+    await notify_user_on_start()  # Отправляем сообщение при запуске
     await app.run_polling()
 
+    await notify_user_on_shutdown()  # Отправляем сообщение перед остановкой
+
 if __name__ == '__main__':
-    # Запуск Flask-сервера в отдельном потоке
     Thread(target=lambda: flask_app.run(host='0.0.0.0', port=8080)).start()
 
-    # Запуск основного цикла бота
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
