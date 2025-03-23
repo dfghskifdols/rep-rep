@@ -48,8 +48,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, mess
         query = update.callback_query
         await query.answer()
         
-        # Используем message_id для поиска оригинального сообщения
-        reported_message = await bot.get_message(update.message.chat_id, message_id)
+        # Используем сообщение из reply_to_message, не пытаясь заново его получать
+        reported_message = update.callback_query.message.reply_to_message
         reported_user = reported_message.from_user
 
         # Формируем ссылку на сообщение (если возможно)
