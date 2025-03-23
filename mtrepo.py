@@ -70,9 +70,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
-        logger.info("Попытка взаимодействия с чужим репортом!")
-        # Отправляем всплывающее сообщение и НЕ изменяем оригинальное сообщение
-        await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
+        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
         return
 
     try:
@@ -125,7 +123,9 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context):
     message = update.message.text
     if "Неко" in message:
-        await update.message.reply_text("А че собственно надо?")
+        sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
+        await asyncio.sleep(5)
+        await sent_message.edit_text("Кошко-девочка вычислена! Она находится у @Shadowhou")
 
 # Основная функция
 async def main():
