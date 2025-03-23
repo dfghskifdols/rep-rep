@@ -39,6 +39,10 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_id = update.message.message_id
     user_id = update.message.from_user.id
 
+    # Сохраняем информацию о репорте в контексте (будет доступна при обработке callback)
+    context.user_data['report_user_id'] = user_id
+    context.user_data['report_message_id'] = message_id
+
     keyboard = [[
         InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{user_id}_{message_id}"),
         InlineKeyboardButton("❌ Нет", callback_data=f"cancel_report_{user_id}_{message_id}")
@@ -47,15 +51,30 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
-async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
+async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    # Разбираем данные из callback
+    data = query.data.split('_')
+    action = data[0]
+    user_id = int(data[1])
+    message_id = int(data[2])
 
     # Проверяем, что это тот же человек, кто отправил репорт
     if query.from_user.id != user_id:
         await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
         return
     
+    if action == "confirm_report":
+        await confirm_report(update, context, user_id, message_id)
+    elif action == "cancel_report":
+        await cancel_report(update, context, user_id, message_id)
+
+async def confirm_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
+    query = update.callback_query
+    await query.answer()
+
     try:
         original_message = await query.message.chat.get_message(message_id)
         reported_message = original_message.reply_to_message
@@ -146,14 +165,7 @@ async def notify_user_on_start():
 async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, 
-                                                                            int(update.callback_query.data.split("_")[1]), 
-                                                                            int(update.callback_query.data.split("_")[2])), 
-                                         pattern="^confirm_report_\\d+_\\d+$"))
-    app.add_handler(CallbackQueryHandler(lambda update, context: cancel_report(update, context, 
-                                                                             int(update.callback_query.data.split("_")[1]), 
-                                                                             int(update.callback_query.data.split("_")[2])), 
-                                         pattern="^cancel_report_\\d+_\\d+$"))
+    app.add_handler(CallbackQueryHandler(handle_report))
 
     print("Бот запущен!")
     await notify_user_on_start()  # Отправляем сообщение при запуске
