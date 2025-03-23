@@ -61,6 +61,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = int(data[1])
     message_id = int(data[2])
 
+    logger.info(f"Received callback data: {data}")
+
     # Проверяем, что это тот же человек, кто отправил репорт
     if query.from_user.id != user_id:
         await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
