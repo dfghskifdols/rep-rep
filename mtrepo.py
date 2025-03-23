@@ -67,7 +67,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     logger.info(f"action: {action}, user_id: {user_id}, message_id: {message_id}")
 
- # Проверка, что запрос пришел от пользователя, который отправил репорт
+    # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
         logger.info("Попытка взаимодействия с чужим репортом!")
         # Отправляем всплывающее сообщение и НЕ изменяем оригинальное сообщение
@@ -76,8 +76,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            original_message = await query.message.chat.get_message(message_id)
-            reported_message = original_message.reply_to_message
+            # Получаем оригинальное сообщение
+            reported_message = update.message.reply_to_message
+            if reported_message is None:
+                await query.message.edit_text("❌ Сообщение не найдено!")
+                return
+            
             reported_user = reported_message.from_user
 
             # Формируем ссылку на сообщение (если возможно)
