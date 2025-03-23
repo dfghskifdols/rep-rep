@@ -35,7 +35,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
     
-    # Сохраняем ID оригинального сообщения для дальнейшего использования
+    # Сохраняем ID оригинального сообщения и ID пользователя, который отправил репорт
     message_id = update.message.message_id
     user_id = update.message.from_user.id
 
@@ -48,15 +48,15 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
-    try:
-        query = update.callback_query
-        await query.answer()
+    query = update.callback_query
+    await query.answer()
 
-        # Проверяем, что это тот же человек, кто отправил репорт
-        if query.from_user.id != user_id:
-            await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
-            return
-        
+    # Проверяем, что это тот же человек, кто отправил репорт
+    if query.from_user.id != user_id:
+        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
+        return
+    
+    try:
         original_message = await query.message.chat.get_message(message_id)
         reported_message = original_message.reply_to_message
         reported_user = reported_message.from_user
@@ -146,8 +146,14 @@ async def notify_user_on_start():
 async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, int(update.callback_query.data.split("_")[1]), int(update.callback_query.data.split("_")[2])), pattern="^confirm_report_\\d+_\\d+$"))
-    app.add_handler(CallbackQueryHandler(lambda update, context: cancel_report(update, context, int(update.callback_query.data.split("_")[1]), int(update.callback_query.data.split("_")[2])), pattern="^cancel_report_\\d+_\\d+$"))
+    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, 
+                                                                            int(update.callback_query.data.split("_")[1]), 
+                                                                            int(update.callback_query.data.split("_")[2])), 
+                                         pattern="^confirm_report_\\d+_\\d+$"))
+    app.add_handler(CallbackQueryHandler(lambda update, context: cancel_report(update, context, 
+                                                                             int(update.callback_query.data.split("_")[1]), 
+                                                                             int(update.callback_query.data.split("_")[2])), 
+                                         pattern="^cancel_report_\\d+_\\d+$"))
 
     await bot.delete_webhook(drop_pending_updates=True)
 
