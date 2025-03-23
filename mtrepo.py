@@ -5,8 +5,9 @@ from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 import logging
-from flask import Flask
+from flask import Flask, request
 from threading import Thread
+import requests
 
 nest_asyncio.apply()
 
@@ -27,6 +28,13 @@ flask_app = Flask(__name__)
 def home():
     return "Bot is running"
 
+@flask_app.route('/rep-rep', methods=['POST'])
+def webhook():
+    json_str = request.get_data(as_text=True)
+    update = Update.de_json(json_str, bot)
+    app.process_update(update)
+    return 'OK'
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
@@ -35,28 +43,19 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
     
-    # Сохраняем ID оригинального сообщения и ID пользователя, который отправил репорт
-    message_id = update.message.message_id
-    user_id = update.message.from_user.id
-
     keyboard = [[
-        InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{user_id}_{message_id}"),
-        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_report_{user_id}_{message_id}")
+        InlineKeyboardButton("✅ Да", callback_data=f"confirm_report_{update.message.message_id}"),
+        InlineKeyboardButton("❌ Нет", callback_data="cancel_report")
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
-async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
-    query = update.callback_query
-    await query.answer()
-
-    # Проверяем, что это тот же человек, кто отправил репорт
-    if query.from_user.id != user_id:
-        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
-        return
-    
+async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, message_id: int):
     try:
+        query = update.callback_query
+        await query.answer()
+        
         original_message = await query.message.chat.get_message(message_id)
         reported_message = original_message.reply_to_message
         reported_user = reported_message.from_user
@@ -120,15 +119,9 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user
     except Exception as e:
         await query.message.edit_text(f"❌ Ошибка при отправке репорта: {e}. Попробуйте позже.")
 
-async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, message_id: int):
+async def cancel_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
-    # Проверяем, что это тот же человек, кто отправил репорт
-    if query.from_user.id != user_id:
-        await query.message.edit_text("❌ Вы не можете отменить этот репорт!")
-        return
-    
     await query.message.edit_text("❌ Репорт отменен.")
 
 async def notify_user_on_shutdown():
@@ -146,20 +139,23 @@ async def notify_user_on_start():
 async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, 
-                                                                            int(update.callback_query.data.split("_")[1]), 
-                                                                            int(update.callback_query.data.split("_")[2])), 
-                                         pattern="^confirm_report_\\d+_\\d+$"))
-    app.add_handler(CallbackQueryHandler(lambda update, context: cancel_report(update, context, 
-                                                                             int(update.callback_query.data.split("_")[1]), 
-                                                                             int(update.callback_query.data.split("_")[2])), 
-                                         pattern="^cancel_report_\\d+_\\d+$"))
+    app.add_handler(CallbackQueryHandler(cancel_report, pattern="^cancel_report$"))
+    app.add_handler(CallbackQueryHandler(lambda update, context: handle_report(update, context, int(update.callback_query.data.split("_")[2])), pattern="^confirm_report_\\d+$"))
 
-    await bot.delete_webhook(drop_pending_updates=True)
+    # Установка вебхука
+    webhook_url = 'https://okay-aurora.koyeb.app/rep-rep'  # Замените на ваш реальный URL
+    set_webhook_url = f'https://api.telegram.org/bot{API_TOKEN}/setWebhook?url={webhook_url}'
+    response = requests.get(set_webhook_url)
 
-    print("Бот запущен!")
+    if response.status_code == 200:
+        print("Вебхук успешно установлен!")
+    else:
+        print(f"Ошибка установки вебхука: {response.text}")
+
     await notify_user_on_start()  # Отправляем сообщение при запуске
-    await app.run_polling()
+    print("Бот запущен!")
+
+    await app.run_webhook(listen="0.0.0.0", port=8080, url_path="/rep-rep")
 
     await notify_user_on_shutdown()  # Отправляем сообщение перед остановкой
 
