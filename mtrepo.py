@@ -78,59 +78,50 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if action == "confirm":
-            # Проверяем, что update.message существует
-            if not update.message or not update.message.chat:
-                await query.message.edit_text("❌ Ошибка: сообщение не найдено!")
-                return
-            
-            # Пытаемся получить сообщение из чата
             try:
-                original_message = await update.message.chat.get_message(message_id)
-                logger.info(f"Сообщение найдено: {original_message}")
+                original_message = await query.message.chat.get_message(message_id)
+                if original_message and original_message.reply_to_message:
+                    reported_message = original_message.reply_to_message
+                    reported_user = reported_message.from_user
+
+                    # Формируем ссылку на сообщение (если возможно)
+                    chat = query.message.chat
+                    if chat.username:
+                        message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
+                        link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
+                    else:
+                        link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
+
+                    # Цитируем текст сообщения
+                    message_text = reported_message.text if reported_message.text else "(медиа-файл)"
+                    reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
+
+                    # Текст репорта
+                    report_text = (
+                        f"⚠️ <b>Новый репорт!</b>\n\n"
+                        f"👤 Пользователь: {reported_user_mention}\n"
+                        f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
+                        f"{link_text}"
+                    )
+
+                    # Получаем список администраторов из другого чата
+                    admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+                    admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
+
+                    # Отправляем репорт
+                    await bot.send_message(
+                        ADMIN_CHAT_ID, report_text,
+                        parse_mode=ParseMode.HTML,
+                        protect_content=True,
+                        disable_web_page_preview=True
+                    )
+
+                    await query.message.edit_text("✅ Репорт успешно отправлен!")
+                else:
+                    await query.message.edit_text("❌ Сообщение, на которое был отправлен репорт, не найдено.")
             except Exception as e:
                 logger.error(f"Ошибка при получении сообщения: {e}")
-                await query.message.edit_text("❌ Сообщение не найдено или ошибка доступа.")
-                return
-
-            if not original_message or not original_message.reply_to_message:
-                await query.message.edit_text("❌ Сообщение, на которое был отправлен репорт, не найдено.")
-                return
-
-            reported_message = original_message.reply_to_message
-            reported_user = reported_message.from_user
-
-            # Формируем ссылку на сообщение (если возможно)
-            if update.message.chat.username:
-                message_link = f"https://t.me/{update.message.chat.username}/{reported_message.message_id}"
-                link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
-            else:
-                link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
-
-            # Цитируем текст сообщения
-            message_text = reported_message.text if reported_message.text else "(медиа-файл)"
-            reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
-
-            # Текст репорта
-            report_text = (
-                f"⚠️ <b>Новый репорт!</b>\n\n"
-                f"👤 Пользователь: {reported_user_mention}\n"
-                f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
-                f"{link_text}"
-            )
-
-            # Получаем список администраторов из другого чата
-            admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
-            admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
-
-            # Отправляем репорт
-            await bot.send_message(
-                ADMIN_CHAT_ID, report_text,
-                parse_mode=ParseMode.HTML,
-                protect_content=True,
-                disable_web_page_preview=True
-            )
-
-            await query.message.edit_text("✅ Репорт успешно отправлен!")
+                await query.message.edit_text("❌ Ошибка при получении сообщения. Попробуйте позже.")
         elif action == "cancel":
             await query.message.edit_text("❌ Репорт отменен.")
     except Exception as e:
