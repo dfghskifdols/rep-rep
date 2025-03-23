@@ -124,12 +124,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context):
     message = update.message.text
     if "Неко" in message:
-        # Получаем участников чата
-        chat_members = await bot.get_chat_members(ADMIN_CHAT_ID)
+        # Получаем администраторов чата
+        admins = await bot.get_chat_administrators(update.message.chat.id)
         
-        # Выбираем случайного пользователя
-        random_user = random.choice(chat_members)
-        random_username = random_user.user.username if random_user.user.username else "unknown_user"
+        # Выбираем случайного администратора
+        random_admin = random.choice(admins)
+        random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
         
         # Отправляем первое сообщение
         sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
@@ -137,7 +137,7 @@ async def handle_message(update: Update, context):
         # Задержка 5 секунд, чтобы изменить сообщение
         await asyncio.sleep(5)
         
-        # Обновляем сообщение с использованием случайного пользователя
+        # Обновляем сообщение с использованием случайного администратора
         await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
 
 # Основная функция
