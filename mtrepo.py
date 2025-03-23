@@ -48,12 +48,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE, mess
         query = update.callback_query
         await query.answer()
         
-        original_message = await query.message.chat.get_message(message_id)
-        reported_message = original_message.reply_to_message
+        # Используем message_id для поиска оригинального сообщения
+        reported_message = await bot.get_message(update.message.chat_id, message_id)
         reported_user = reported_message.from_user
 
         # Формируем ссылку на сообщение (если возможно)
-        chat = query.message.chat
+        chat = update.message.chat
         if chat.username:
             message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
             link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
