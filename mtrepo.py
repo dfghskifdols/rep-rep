@@ -2,7 +2,7 @@ import asyncio
 import nest_asyncio
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 import logging
 
 nest_asyncio.apply()
@@ -54,7 +54,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Проверка на правильность формата данных
     if len(data) < 3:  # Если данных меньше, чем нужно
-        await query.message.reply_text("❌ Ошибка: неправильный формат данных!")
+        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
     action = data[0]
@@ -63,27 +63,26 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message_id = int(data[2])  # Преобразуем третий элемент в int (message_id)
     except ValueError:
         logger.error(f"Ошибка преобразования данных: {data}")  # Логируем ошибку преобразования
-        await query.message.reply_text("❌ Ошибка: неверные данные для обработки репорта!")
+        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
         return
 
     logger.info(f"action: {action}, user_id: {user_id}, message_id: {message_id}")
 
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
-        logger.info("Попытка взаимодействия с чужим репортом!")
-        # Отправляем всплывающее сообщение и НЕ изменяем оригинальное сообщение
-        await query.answer_callback_query(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
+        await query.message.edit_text("❌ Вы не можете подтвердить или отменить этот репорт!")
         return
 
     try:
         if action == "confirm":
-            # Получаем сообщение, на которое был отправлен репорт
-            reported_message = update.callback_query.message.reply_to_message
+            original_message = await query.message.chat.get_message(message_id)
+            reported_message = original_message.reply_to_message
             reported_user = reported_message.from_user
 
             # Формируем ссылку на сообщение (если возможно)
-            if update.callback_query.message.chat.username:
-                message_link = f"https://t.me/{update.callback_query.message.chat.username}/{reported_message.message_id}"
+            chat = query.message.chat
+            if chat.username:
+                message_link = f"https://t.me/{chat.username}/{reported_message.message_id}"
                 link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
             else:
                 link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
@@ -104,23 +103,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-            # Разделяем администраторов на две группы
-            mid = len(admin_mentions) // 2
-            first_group = admin_mentions[:mid]
-            second_group = admin_mentions[mid:]
-
-            # Отправляем пинг администраторов в два сообщения
-            if first_group:
-                await bot.send_message(
-                    ADMIN_CHAT_ID, "Администраторы (часть 1), обратите внимание!\n" + " ".join(first_group)
-                )
-
-            if second_group:
-                await bot.send_message(
-                    ADMIN_CHAT_ID, "Администраторы (часть 2), обратите внимание!\n" + " ".join(second_group)
-                )
-
-            # Отправляем сам репорт
+            # Отправляем репорт
             await bot.send_message(
                 ADMIN_CHAT_ID, report_text,
                 parse_mode=ParseMode.HTML,
@@ -128,7 +111,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 disable_web_page_preview=True
             )
 
-            # Отправляем пользователю сообщение об успешном репорте
             await query.message.edit_text("✅ Репорт успешно отправлен!")
         elif action == "cancel":
             await query.message.edit_text("❌ Репорт отменен.")
@@ -136,6 +118,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Логирование ошибки
         logger.error(f"Ошибка при обработке репорта: {e}")
         await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
+
+# Функция для обработки текстовых сообщений
+async def handle_message(update: Update, context):
+    message = update.message.text
+    if "Неко" in message:
+        await update.message.reply_text("дя")
 
 # Основная функция
 async def main():
@@ -145,6 +133,7 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Бот запущен!")
     await app.run_polling(drop_pending_updates=True)
