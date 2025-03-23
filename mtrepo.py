@@ -71,11 +71,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
         # Показываем всплывающее сообщение
-        await bot.send_message(
-            query.message.chat.id,
-            text="❌ Нельзя жмякать чужие репорты!",
-            reply_to_message_id=query.message.message_id
-        )
+        await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
         return
 
     try:
