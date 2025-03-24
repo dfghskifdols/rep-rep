@@ -218,8 +218,7 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Сталася помилка при відправці повідомлення: {e}")
 
 # Додаємо команду /send
-app.add_handler(CommandHandler("send", send_message, pass_args=True))
-
+app.add_handler(CommandHandler("send", send_message))
 
 # Основная функция
 async def main():
