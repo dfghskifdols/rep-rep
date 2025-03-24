@@ -200,12 +200,12 @@ async def handle_message(update: Update, context):
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Перевірка на доступ
     if update.message.from_user.id != USER_CHAT_ID:
-        await update.message.reply_text("❌ У вас немає доступу до цієї команди.")
+        await update.message.reply_text("❌ У вас нету доступа к этой команде.")
         return
 
     # Перевіряємо наявність параметрів
     if len(context.args) < 2:
-        await update.message.reply_text("❌ Використання: /send [chat_id] [текст повідомлення]")
+        await update.message.reply_text("❌ Использование: /send [chat_id] [текст сообщения]")
         return
 
     chat_id = context.args[0]
@@ -213,9 +213,9 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         await bot.send_message(chat_id=chat_id, text=text)
-        await update.message.reply_text(f"✅ Повідомлення надіслано до чату {chat_id}")
+        await update.message.reply_text(f"✅ Сообщение отправлено {chat_id}")
     except Exception as e:
-        await update.message.reply_text(f"❌ Сталася помилка при відправці повідомлення: {e}")
+        await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
 # Додаємо команду /send
 app.add_handler(CommandHandler("send", send_message))
