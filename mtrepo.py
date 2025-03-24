@@ -108,19 +108,28 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{link_text}"
         )
 
-        await query.message.edit_text("⏳Отправка...")
+        # Отправка сообщения с репортом
+        await query.message.edit_text("⏳ Отправка...")
 
-        # Запрос о пинге администраторов
-        keyboard_ping = [
-            [InlineKeyboardButton("✅ Да", callback_data=f"ping_yes_{user_id}_{message_id}"),
-             InlineKeyboardButton("❌ Нет", callback_data=f"ping_no_{user_id}_{message_id}")]
-        ]
+        # Сначала отправляем репорт админам
+        await bot.send_message(
+            ADMIN_CHAT_ID, report_text,
+            parse_mode=ParseMode.HTML,
+            protect_content=True,
+            disable_web_page_preview=True
+        )
+
+        # После отправки репорта — задаём вопрос о пинге
+        keyboard_ping = [[
+            InlineKeyboardButton("✅ Да", callback_data=f"ping_yes_{user_id}_{message_id}"),
+            InlineKeyboardButton("❌ Нет", callback_data=f"ping_no_{user_id}_{message_id}")
+        ]]
         reply_markup_ping = InlineKeyboardMarkup(keyboard_ping)
 
-        await query.message.edit_text("Пинговать администраторов?", reply_markup=reply_markup_ping)
+        await query.message.reply_text("Пинговать администраторов?", reply_markup=reply_markup_ping)
+
         confirmed_reports.add(report_key)
-        await query.message.edit_text("✅ Репорт успешно отправлен, ожидайте решение по пингу администраторов.")
-        
+
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
 
@@ -138,11 +147,6 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = int(data[1])
     message_id = int(data[2])
 
-    # Проверяем, что только тот, кто отправил репорт, может пинговать
-    if query.from_user.id != user_id:
-        await query.answer(text="❌ Нельзя жмякать чужие вопросы о пинге!", show_alert=True)
-        return
-
     if action == "ping_yes":
         # Пинг администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
@@ -156,9 +160,8 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
         await query.message.edit_text("✅ Администраторы пингованы.")
-
     elif action == "ping_no":
-        await query.message.edit_text("❌ Пинг администраторов отменён.")
+        await query.message.edit_text("❌ Пинг администраторам отменен.")
 
 # Функция обработки сообщений
 async def handle_message(update: Update, context):
