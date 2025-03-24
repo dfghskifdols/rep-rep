@@ -110,10 +110,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.edit_text("⏳Отправка...")
 
-        # Получаем администраторов
-        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
-        admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
-
         # Запрос о пинге администраторов
         keyboard_ping = [
             [InlineKeyboardButton("✅ Да", callback_data=f"ping_yes_{user_id}_{message_id}"),
@@ -122,16 +118,9 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup_ping = InlineKeyboardMarkup(keyboard_ping)
 
         await query.message.edit_text("Пинговать администраторов?", reply_markup=reply_markup_ping)
-
-        if admin_mentions:
-            half = len(admin_mentions) // 2
-            await asyncio.sleep(5)
-            await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
-            await asyncio.sleep(5)
-            await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
-
         confirmed_reports.add(report_key)
-        await query.message.edit_text("✅Репорт успешно отправлен!")
+        await query.message.edit_text("✅ Репорт успешно отправлен, ожидайте решение по пингу администраторов.")
+        
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
 
@@ -149,17 +138,24 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = int(data[1])
     message_id = int(data[2])
 
+    # Проверяем, что только тот, кто отправил репорт, может пинговать
+    if query.from_user.id != user_id:
+        await query.answer(text="❌ Нельзя жмякать чужие вопросы о пинге!", show_alert=True)
+        return
+
     if action == "ping_yes":
         # Пинг администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-        # Отправка администраторов в два сообщения
+        # Отправка администраторов в два сообщения с задержкой 4 секунды между ними
         half = len(admin_mentions) // 2
-        await asyncio.sleep(5)
+        await asyncio.sleep(4)  # Задержка перед первым сообщением
         await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
-        await asyncio.sleep(5)
+        await asyncio.sleep(4)  # Задержка перед вторым сообщением
         await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
+
+        await query.message.edit_text("✅ Администраторы пингованы.")
 
     elif action == "ping_no":
         await query.message.edit_text("❌ Пинг администраторов отменён.")
