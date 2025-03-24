@@ -8,7 +8,7 @@ import random
 
 nest_asyncio.apply()
 
-API_TOKEN = 'YOUR_BOT_TOKEN'  # Токен бота
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 
@@ -128,17 +128,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await asyncio.sleep(4)
             await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
-        # Задаем вопрос о пинге
-        keyboard = [
-            [InlineKeyboardButton("✅ Да", callback_data=f"ping_{user_id}_{message_id}_yes")],
-            [InlineKeyboardButton("❌ Нет", callback_data=f"ping_{user_id}_{message_id}_no")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await query.message.reply_text("Пинговать администраторов?", reply_markup=reply_markup)
-
         confirmed_reports.add(report_key)
-        await query.message.edit_text("✅ Репорт успешно отправлен!")
+        await query.message.edit_text("✅Репорт успешно отправлен!")
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
 
@@ -155,18 +146,18 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     action = data[0]  # Действие: ping
 
-    if len(data) == 4:
-        ping_answer = data[3]
+    if len(data) == 3:
+        ping_answer = data[2]
         
         if ping_answer == "yes":
-            await query.message.edit_text("⏳ Отправка пинга администраторам...")
+            await query.message.edit_text("⏳ Отправка репорта...")
 
             # Получаем администраторов
             admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-            # Отправляем пинг
-            await bot.send_message(ADMIN_CHAT_ID, "Пинг от пользователя", parse_mode=ParseMode.HTML)
+            # Отправляем репорт и пинг
+            await bot.send_message(ADMIN_CHAT_ID, "Репорт от пользователя", parse_mode=ParseMode.HTML)
 
             if admin_mentions:
                 half = len(admin_mentions) // 2
@@ -175,9 +166,9 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await asyncio.sleep(4)
                 await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
-            await query.message.edit_text("✅ Пинг отправлен!")
+            await query.message.edit_text("✅ Репорт и пинг отправлены!")
         elif ping_answer == "no":
-            await query.message.edit_text("❌ Пинг не был отправлен.")
+            await query.message.edit_text("❌ Репорт отправлен без пинга.")
         else:
             await query.message.edit_text("❌ Ошибка: неверный ответ на вопрос о пинге.")
     else:
