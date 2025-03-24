@@ -24,11 +24,11 @@ confirmed_reports = set()
 
 # Возможные ответы на "РаФа"
 rafa_responses = [
-            "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный", "IDC... я не придумал что он делает",
-            "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни", "Humanoid постоянно ноет что у него нету твинка",
-            "Blue_Nexus держат в рабсте", "Кирич любит аниме-тянок... но в жизни девушек он не любит", "еще жду",
-            "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel", "Blue_Nexus абажает чат гпт",
-            "Изначально Кирич создавал канал про свою жизнь", "еще жду", "Freeze - антипацифист☮️"
+    "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный", "IDC... я не придумал что он делает",
+    "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни", "Humanoid постоянно ноет что у него нету твинка",
+    "Blue_Nexus держат в рабсте", "Кирич любит аниме-тянок... но в жизни девушек он не любит", "еще жду",
+    "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel", "Blue_Nexus абажает чат гпт",
+    "Изначально Кирич создавал канал про свою жизнь", "еще жду", "Freeze - антипацифист☮️"
 ]
 
 # Функция отправки сообщения "Доброе утро, мой господин!"
@@ -114,12 +114,14 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-        await bot.send_message(
-            ADMIN_CHAT_ID, report_text,
-            parse_mode=ParseMode.HTML,
-            protect_content=True,
-            disable_web_page_preview=True
-        )
+        # Запрос о пинге администраторов
+        keyboard_ping = [
+            [InlineKeyboardButton("✅ Да", callback_data=f"ping_yes_{user_id}_{message_id}"),
+             InlineKeyboardButton("❌ Нет", callback_data=f"ping_no_{user_id}_{message_id}")]
+        ]
+        reply_markup_ping = InlineKeyboardMarkup(keyboard_ping)
+
+        await query.message.edit_text("Пинговать администраторов?", reply_markup=reply_markup_ping)
 
         if admin_mentions:
             half = len(admin_mentions) // 2
@@ -133,10 +135,39 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
 
+# Функция обработки пинга администраторов
+async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    data = query.data.split("_")
+    if len(data) < 4:
+        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
+        return
+
+    action = data[0]
+    user_id = int(data[1])
+    message_id = int(data[2])
+
+    if action == "ping_yes":
+        # Пинг администраторов
+        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+        admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
+
+        # Отправка администраторов в два сообщения
+        half = len(admin_mentions) // 2
+        await asyncio.sleep(5)
+        await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
+        await asyncio.sleep(5)
+        await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
+
+    elif action == "ping_no":
+        await query.message.edit_text("❌ Пинг администраторов отменён.")
+
 # Функция обработки сообщений
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
-    
+
     if "неко" in message:
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
@@ -147,10 +178,10 @@ async def handle_message(update: Update, context):
             await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
-    
+
     elif "пинг" in message:
         await update.message.reply_text("А нахуя он тебе?")
-    
+
     elif "рафа" in message:
         response = random.choice(rafa_responses)
         await update.message.reply_text(response)
@@ -162,6 +193,7 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
+    app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping_yes|ping_no)_\d+_\d+$"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Бот запущен!")
