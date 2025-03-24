@@ -19,22 +19,28 @@ logger = logging.getLogger(__name__)
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
 
-# Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
     await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
 
-# Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-# Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
     
-    message_id = update.message.message_id
     user_id = update.message.from_user.id
+    message_id = update.message.message_id
+    report_key = f"report_{user_id}_{message_id}"
+
+    # Проверяем, не отправлен ли уже репорт
+    if context.bot_data.get(report_key, False):
+        await update.message.reply_text("⚠️ Вы уже отправили репорт на это сообщение!")
+        return
+
+    # Сохраняем, что репорт еще не был подтвержден
+    context.bot_data[report_key] = False
 
     keyboard = [[
         InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
@@ -44,45 +50,44 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
-# Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     data = query.data.split("_")
-    logger.info(f"Callback data: {data}")
-
     if len(data) < 3:
         await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
-    action = data[0]
-    try:
-        user_id = int(data[1])
-        message_id = int(data[2])
-    except ValueError:
-        logger.error(f"Ошибка преобразования данных: {data}")
-        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
+    action, user_id, message_id = data[0], int(data[1]), int(data[2])
+    report_key = f"report_{user_id}_{message_id}"
+
+    # Проверяем, не отправлен ли уже репорт
+    if context.bot_data.get(report_key, False):
+        await query.answer(text="❌ Репорт уже отправлен!", show_alert=True)
         return
 
-    logger.info(f"action: {action}, user_id: {user_id}, message_id: {message_id}")
+    # Если репорт еще не подтвержден, помечаем его в процессе обработки
+    context.bot_data[report_key] = True
 
-    # Проверка, что запрос пришел от пользователя, который отправил репорт
+    # Блокируем повторные нажатия, изменяя текст кнопок
+    keyboard_disabled = [[InlineKeyboardButton("⏳ Обработка...", callback_data="ignore")]]
+    await query.message.edit_text("⏳ Обработка репорта...", reply_markup=InlineKeyboardMarkup(keyboard_disabled))
+
     if query.from_user.id != user_id:
-        logger.info("Попытка взаимодействия с чужим репортом!")
         await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
         return
 
     try:
         if action == "confirm":
-            reported_message = update.callback_query.message.reply_to_message
+            reported_message = query.message.reply_to_message
             reported_user = reported_message.from_user
 
-            if update.callback_query.message.chat.username:
-                message_link = f"https://t.me/{update.callback_query.message.chat.username}/{reported_message.message_id}"
+            if query.message.chat.username:
+                message_link = f"https://t.me/{query.message.chat.username}/{reported_message.message_id}"
                 link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
             else:
-                link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
+                link_text = "Сообщение в приватном чате, ссылка недоступна."
 
             message_text = reported_message.text if reported_message.text else "(медиа-файл)"
             reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
@@ -111,7 +116,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await asyncio.sleep(5)
                 await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
-            # Убираем кнопки после нажатия
             await query.message.edit_text("✅ Репорт успешно отправлен!", reply_markup=None)
 
         elif action == "cancel":
@@ -119,7 +123,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logger.error(f"Ошибка при обработке репорта: {e}")
-        await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
+        await query.message.edit_text(f"❌ Ошибка: {e}. Попробуйте позже.")
 
 async def handle_message(update: Update, context):
     message = update.message.text
