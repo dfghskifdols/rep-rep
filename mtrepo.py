@@ -19,28 +19,25 @@ logger = logging.getLogger(__name__)
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
 
+# Список уже подтвержденных репортов
+confirmed_reports = set()
+
+# Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
     await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
 
+# Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
+# Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
     
+    message_id = update.message.reply_to_message.message_id
     user_id = update.message.from_user.id
-    message_id = update.message.message_id
-    report_key = f"report_{user_id}_{message_id}"
-
-    # Проверяем, не отправлен ли уже репорт
-    if context.bot_data.get(report_key, False):
-        await update.message.reply_text("⚠️ Вы уже отправили репорт на это сообщение!")
-        return
-
-    # Сохраняем, что репорт еще не был подтвержден
-    context.bot_data[report_key] = False
 
     keyboard = [[
         InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
@@ -50,6 +47,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
+# Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -59,75 +57,86 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
-    action, user_id, message_id = data[0], int(data[1]), int(data[2])
-    report_key = f"report_{user_id}_{message_id}"
-
-    # Проверяем, не отправлен ли уже репорт
-    if context.bot_data.get(report_key, False):
-        await query.answer(text="❌ Репорт уже отправлен!", show_alert=True)
+    action = data[0]
+    try:
+        user_id = int(data[1])
+        message_id = int(data[2])
+    except ValueError:
+        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
         return
-
-    # Если репорт еще не подтвержден, помечаем его в процессе обработки
-    context.bot_data[report_key] = True
-
-    # Блокируем повторные нажатия, изменяя текст кнопок
-    keyboard_disabled = [[InlineKeyboardButton("⏳ Обработка...", callback_data="ignore")]]
-    await query.message.edit_text("⏳ Обработка репорта...", reply_markup=InlineKeyboardMarkup(keyboard_disabled))
 
     if query.from_user.id != user_id:
         await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
         return
 
-    try:
-        if action == "confirm":
-            reported_message = query.message.reply_to_message
-            reported_user = reported_message.from_user
+    report_key = (user_id, message_id)
+    
+    if action == "confirm":
+        if report_key in confirmed_reports:
+            await query.answer("❌ Этот репорт уже был отправлен!", show_alert=True)
+            return
+        
+        confirmed_reports.add(report_key)  # Запоминаем, что репорт уже отправлен
 
-            if query.message.chat.username:
-                message_link = f"https://t.me/{query.message.chat.username}/{reported_message.message_id}"
-                link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
-            else:
-                link_text = "Сообщение в приватном чате, ссылка недоступна."
+        reported_message = update.callback_query.message.reply_to_message
+        reported_user = reported_message.from_user
 
-            message_text = reported_message.text if reported_message.text else "(медиа-файл)"
-            reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
+        message_text = reported_message.text if reported_message.text else "(медиа-файл)"
+        reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
 
-            report_text = (
-                f"⚠️ <b>Новый репорт!</b>\n\n"
-                f"👤 Пользователь: {reported_user_mention}\n"
-                f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
-                f"{link_text}"
-            )
+        if update.callback_query.message.chat.username:
+            message_link = f"https://t.me/{update.callback_query.message.chat.username}/{reported_message.message_id}"
+            link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
+        else:
+            link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
 
-            admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
-            admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
+        report_text = (
+            f"⚠️ <b>Новый репорт!</b>\n\n"
+            f"👤 Пользователь: {reported_user_mention}\n"
+            f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
+            f"{link_text}"
+        )
 
-            await bot.send_message(
-                ADMIN_CHAT_ID, report_text,
-                parse_mode=ParseMode.HTML,
-                protect_content=True,
-                disable_web_page_preview=True
-            )
+        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+        admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-            if admin_mentions:
-                half = len(admin_mentions) // 2
-                await asyncio.sleep(5)
-                await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
-                await asyncio.sleep(5)
-                await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
+        await bot.send_message(
+            ADMIN_CHAT_ID, report_text,
+            parse_mode=ParseMode.HTML,
+            protect_content=True,
+            disable_web_page_preview=True
+        )
 
-            await query.message.edit_text("✅ Репорт успешно отправлен!", reply_markup=None)
+        if admin_mentions:
+            half = len(admin_mentions) // 2
+            await asyncio.sleep(5)
+            await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
+            await asyncio.sleep(5)
+            await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
-        elif action == "cancel":
-            await query.message.edit_text("❌ Репорт отменен.", reply_markup=None)
+        await query.message.edit_text("✅ Репорт успешно отправлен!")
+    
+    elif action == "cancel":
+        await query.message.edit_text("❌ Репорт отменен.")
 
-    except Exception as e:
-        logger.error(f"Ошибка при обработке репорта: {e}")
-        await query.message.edit_text(f"❌ Ошибка: {e}. Попробуйте позже.")
-
+# Функция обработки текстовых сообщений
 async def handle_message(update: Update, context):
-    message = update.message.text
-    if "Неко" in message:
+    message = update.message.text.lower()  # Приводим текст к нижнему регистру
+
+    if "рафа" in message:
+        responses = [
+            "@MorallyDiedInside ненаведит меня, за то что я его не всегда пингую", "@Bl_Nexus часто не хочет мутить", "@Shadowhou невнимательный", "@CryingApostol... я не придумал что он делает",
+            "РаФа - сокращенно Рандом Факт", "@FreezeeLedik похуист по жизни", "еще жду",
+            "еще жду", "еще жду", "еще жду",
+            "еще жду", "еще жду", "еще жду",
+            "еще жду", "еще жду", "еще жду",
+            "еще жду", "еще жду", "еще жду",
+            "еще жду", "еще жду"
+        ]
+        response = random.choice(responses)
+        await update.message.reply_text(response)
+
+    elif "неко" in message:
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
@@ -137,9 +146,11 @@ async def handle_message(update: Update, context):
             await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
-    elif "Пинг" in message:
+
+    elif "пинг" in message:
         await update.message.reply_text("А нахуя он тебе?")
 
+# Основная функция
 async def main():
     await send_welcome_message()
 
