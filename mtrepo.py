@@ -196,6 +196,31 @@ async def handle_message(update: Update, context):
         response = random.choice(rafa_responses)
         await update.message.reply_text(response)
 
+# Функція для відправки повідомлень через бота
+async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Перевірка на доступ
+    if update.message.from_user.id != USER_CHAT_ID:
+        await update.message.reply_text("❌ У вас немає доступу до цієї команди.")
+        return
+
+    # Перевіряємо наявність параметрів
+    if len(context.args) < 2:
+        await update.message.reply_text("❌ Використання: /send [chat_id] [текст повідомлення]")
+        return
+
+    chat_id = context.args[0]
+    text = ' '.join(context.args[1:])
+
+    try:
+        await bot.send_message(chat_id=chat_id, text=text)
+        await update.message.reply_text(f"✅ Повідомлення надіслано до чату {chat_id}")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Сталася помилка при відправці повідомлення: {e}")
+
+# Додаємо команду /send
+app.add_handler(CommandHandler("send", send_message, pass_args=True))
+
+
 # Основная функция
 async def main():
     await send_welcome_message()
