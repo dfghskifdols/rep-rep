@@ -70,7 +70,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка, что запрос пришел от пользователя, который отправил репорт
     if query.from_user.id != user_id:
         logger.info("Попытка взаимодействия с чужим репортом!")
-        # Отправляем всплывающее сообщение и НЕ изменяем оригинальное сообщение
         await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
         return
 
@@ -97,24 +96,27 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
-            
+
             await bot.send_message(
                 ADMIN_CHAT_ID, report_text,
                 parse_mode=ParseMode.HTML,
                 protect_content=True,
                 disable_web_page_preview=True
             )
-            
+
             if admin_mentions:
                 half = len(admin_mentions) // 2
                 await asyncio.sleep(5)
                 await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
                 await asyncio.sleep(5)
                 await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
-            
-            await query.message.edit_text("✅ Репорт успешно отправлен!")
+
+            # Убираем кнопки после нажатия
+            await query.message.edit_text("✅ Репорт успешно отправлен!", reply_markup=None)
+
         elif action == "cancel":
-            await query.message.edit_text("❌ Репорт отменен.")
+            await query.message.edit_text("❌ Репорт отменен.", reply_markup=None)
+
     except Exception as e:
         logger.error(f"Ошибка при обработке репорта: {e}")
         await query.message.edit_text(f"❌ Ошибка при обработке репорта: {e}. Попробуйте позже.")
