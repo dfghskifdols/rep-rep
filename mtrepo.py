@@ -24,11 +24,11 @@ confirmed_reports = set()
 
 # Возможные ответы на "РаФа"
 rafa_responses = [
-    "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный", "IDC... я не придумал что он делает",
-    "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни", "Humanoid постоянно ноет что у него нету твинка",
-    "Blue_Nexus держат в рабсте", "Кирич любит аниме-тянок... но в жизни девушек он не любит", "еще жду",
-    "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel", "Blue_Nexus абажает чат гпт",
-    "Изначально Кирич создавал канал про свою жизнь", "еще жду", "Freeze - антипацифист☮️"
+    "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный",
+    "IDC... я не придумал что он делает", "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни",
+    "Humanoid постоянно ноет что у него нету твинка", "Blue_Nexus держат в рабсте", "Кирич любит аниме-тянок... но в жизни девушек он не любит",
+    "еще жду", "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel",
+    "Blue_Nexus абажает чат гпт", "Изначально Кирич создавал канал про свою жизнь", "еще жду", "Freeze - антипацифист☮️"
 ]
 
 # Функция отправки сообщения "Доброе утро, мой господин!"
@@ -57,8 +57,8 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
         InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
     ]]
-
     reply_markup = InlineKeyboardMarkup(keyboard)
+    
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
 
 # Функция обработки репорта
@@ -114,7 +114,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-        # Отправляем репорт
         await bot.send_message(
             ADMIN_CHAT_ID, report_text,
             parse_mode=ParseMode.HTML,
@@ -130,8 +129,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
         confirmed_reports.add(report_key)
-        await query.message.edit_text("✅ Репорт успешно отправлен!")
-
+        await query.message.edit_text("✅Репорт успешно отправлен!")
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
 
@@ -141,37 +139,44 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     data = query.data.split("_")
+    
     if len(data) < 3:
         await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
-    user_id = int(data[1])
-    ping_answer = data[2]  # Получаем ответ пользователя на вопрос пинга (yes/no)
+    action = data[0]  # Действие: ping
+    user_id = int(data[1])  # Получаем user_id
 
-    if ping_answer == "yes":
-        # Если пользователь сказал "Да", пингуем администраторов
-        await query.message.edit_text("⏳ Отправка репорта...")
+    if len(data) == 3:
+        # Если 3-й элемент - это "yes" или "no", то это ответ на пинг
+        ping_answer = data[2]
 
-        # Получаем администраторов
-        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
-        admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
+        if ping_answer == "yes":
+            # Если пользователь сказал "Да", пингуем администраторов
+            await query.message.edit_text("⏳ Отправка репорта...")
 
-        # Отправляем репорт и пинг
-        await bot.send_message(ADMIN_CHAT_ID, "Репорт от пользователя", parse_mode=ParseMode.HTML)
+            # Получаем администраторов
+            admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+            admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-        if admin_mentions:
-            half = len(admin_mentions) // 2
-            await asyncio.sleep(4)
-            await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
-            await asyncio.sleep(4)
-            await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
+            # Отправляем репорт и пинг
+            await bot.send_message(ADMIN_CHAT_ID, "Репорт от пользователя", parse_mode=ParseMode.HTML)
 
-        await query.message.edit_text("✅ Репорт и пинг отправлены!")
-    elif ping_answer == "no":
-        # Если пользователь сказал "Нет", просто завершаем
-        await query.message.edit_text("❌ Репорт отправлен без пинга.")
+            if admin_mentions:
+                half = len(admin_mentions) // 2
+                await asyncio.sleep(4)
+                await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
+                await asyncio.sleep(4)
+                await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
+
+            await query.message.edit_text("✅ Репорт и пинг отправлены!")
+        elif ping_answer == "no":
+            # Если пользователь сказал "Нет", просто завершаем
+            await query.message.edit_text("❌ Репорт отправлен без пинга.")
+        else:
+            await query.message.edit_text("❌ Ошибка: неверный ответ на вопрос о пинге.")
     else:
-        await query.message.edit_text("❌ Ошибка: неверный ответ на вопрос о пинге.")
+        await query.message.edit_text("❌ Ошибка: неправильный формат данных для пинга.")
 
 # Функция обработки сообщений
 async def handle_message(update: Update, context):
@@ -202,7 +207,7 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
-    app.add_handler(CallbackQueryHandler(handle_ping, pattern="^ping_\d+_(yes|no)$"))
+    app.add_handler(CallbackQueryHandler(handle_ping, pattern="^ping_\d+_\d+_(yes|no)$"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Бот запущен!")
