@@ -22,16 +22,14 @@ app = Application.builder().token(API_TOKEN).build()
 # Храним уже подтверждённые репорты
 confirmed_reports = set()
 
-  if "рафа" in message:
-        responses = [
+# Возможные ответы на "РаФа"
+rafa_responses = [
             "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный", "IDC... я не придумал что он делает",
             "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни", "Humanoid постоянно ноет что у него нету твинка",
             "Blue_Nexus держат в рабсте", "еще жду", "еще жду",
             "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel", "Blue_Nexus абажает чат гпт",
             "еще жду", "еще жду", "Freeze - антипацифист☮️"
-        ]
-        response = random.choice(responses)
-        await update.message.reply_text(response)
+]
 
 # Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
