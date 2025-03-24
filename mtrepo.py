@@ -8,7 +8,7 @@ import random
 
 nest_asyncio.apply()
 
-API_TOKEN = 'YOUR_API_TOKEN'  # Токен бота
+API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 
@@ -24,11 +24,11 @@ confirmed_reports = set()
 
 # Возможные ответы на "РаФа"
 rafa_responses = [
-    "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный",
-    "IDC... я не придумал что он делает", "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни",
-    "Humanoid постоянно ноет что у него нету твинка", "Blue_Nexus держат в рабсте", "Кирич любит аниме-тянок... но в жизни девушек он не любит",
-    "еще жду", "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel",
-    "Blue_Nexus абажает чат гпт", "Изначально Кирич создавал канал про свою жизнь", "еще жду", "Freeze - антипацифист☮️"
+    "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный", 
+    "IDC... я не придумал что он делает", "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни", "Humanoid постоянно ноет что у него нету твинка",
+    "Blue_Nexus держат в рабсте", "Кирич любит аниме-тянок... но в жизни девушек он не любит", "еще жду",
+    "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel", "Blue_Nexus абажает чат гпт",
+    "Изначально Кирич создавал канал про свою жизнь", "еще жду", "Freeze - антипацифист☮️"
 ]
 
 # Функция отправки сообщения "Доброе утро, мой господин!"
@@ -133,7 +133,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
 
-# Функция обработки пинга
+# Функция обработки пинга администраторов
 async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -145,14 +145,11 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     action = data[0]  # Действие: ping
-    user_id = int(data[1])  # Получаем user_id
 
     if len(data) == 3:
-        # Если 3-й элемент - это "yes" или "no", то это ответ на пинг
         ping_answer = data[2]
-
+        
         if ping_answer == "yes":
-            # Если пользователь сказал "Да", пингуем администраторов
             await query.message.edit_text("⏳ Отправка репорта...")
 
             # Получаем администраторов
@@ -171,7 +168,6 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await query.message.edit_text("✅ Репорт и пинг отправлены!")
         elif ping_answer == "no":
-            # Если пользователь сказал "Нет", просто завершаем
             await query.message.edit_text("❌ Репорт отправлен без пинга.")
         else:
             await query.message.edit_text("❌ Ошибка: неверный ответ на вопрос о пинге.")
