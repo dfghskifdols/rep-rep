@@ -127,7 +127,7 @@ async def handle_message(update: Update, context):
         responses = [
             "@MorallyDiedInside ненавидит меня, за то что я его не всегда пингую", "@Bl_Nexus часто не хочет мутить", "@Shadowhou невнимательный", "@CryingApostol... я не придумал что он делает",
             "РаФа - сокращенно Рандом Факт", "@FreezeeLedik похуист по жизни", "@MorallyDiedInside постоянно ноет что у него нету твинка",
-            "@Bl_Nexus дердат в рабсте", "еще жду", "еще жду",
+            "@Bl_Nexus держат в рабсте", "еще жду", "еще жду",
             "@FreezeeLedik - успех успешный", "@MorallyDiedInside фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel", "@Bl_Nexus абажает чат гпт",
             "еще жду", "еще жду", "@FreezeeLedik - антипацифист☮️"
         ]
