@@ -8,7 +8,7 @@ import random
 
 nest_asyncio.apply()
 
-API_TOKEN = 'YOUR_API_TOKEN'  # Токен бота
+API_TOKEN = '7705193251:AAG0pWFSQfcu-S-huST-PU-OsxezNC2u67g'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
