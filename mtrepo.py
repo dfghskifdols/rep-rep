@@ -258,7 +258,7 @@ app.add_handler(CommandHandler("id", get_chat_id))
 async def main():
     await send_welcome_message()
 
-    app.add_handler(CommandHandler("id", id_command))
+    app.add_handler(CommandHandler("id", get_chat_id))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
