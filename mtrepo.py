@@ -52,7 +52,6 @@ async def log_action(text: str):
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
-    await log_action(f"✅ Команда /start от {update.message.from_user.full_name} ({update.message.from_user.id})")
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -201,11 +200,6 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция обробки повідомлень
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
-
-    # Логируем только определенные команды
-    if message.startswith('/'):
-        if message in ['/id', '/report', '/send']:  # Логуем только эти команды
-            await log_action(f"💬 Команда: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
     
     # Логируем только ключевые слова
     if "неко" in message:
@@ -216,7 +210,6 @@ async def handle_message(update: Update, context):
             sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
             await asyncio.sleep(5)
             await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
-            await log_action(f"😺 Неко-команда от {update.message.from_user.full_name} ({update.message.from_user.id})")
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
@@ -249,6 +242,7 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await bot.send_message(chat_id=chat_id, text=text)
         await update.message.reply_text(f"✅ Сообщение отправлено {chat_id}")
+        await log_action(f"📩 Сообщение отправлено в {chat_id} пользователем {update.message.from_user.full_name} ({update.message.from_user.id})")
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
