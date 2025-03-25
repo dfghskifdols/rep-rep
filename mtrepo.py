@@ -183,6 +183,11 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.message.edit_text("❌ Ошибка: неправильный формат данных для пинга.")
 
+# Функция получения ID чата
+async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.message.chat.id
+    await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN)
+
 # Функция обработки сообщений
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
@@ -209,14 +214,14 @@ async def handle_message(update: Update, context):
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
 
-# Функція для відправки повідомлень через бота
+# Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Перевірка на доступ
     if update.message.from_user.id != USER_CHAT_ID:
         await update.message.reply_text("❌ У вас нету доступа к этой команде.")
         return
 
-    # Перевіряємо наявність параметрів
+    # Проверяемо наличие параметров
     if len(context.args) < 2:
         await update.message.reply_text("❌ Использование: /send [chat_id] [текст сообщения]")
         return
@@ -230,8 +235,11 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
-# Додаємо команду /send
+# Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
+
+# Добавляем команду /id
+app.add_handler(CommandHandler("id", get_chat_id))
 
 # Основная функция
 async def main():
