@@ -11,6 +11,7 @@ nest_asyncio.apply()
 API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
+LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -40,6 +41,12 @@ rafu_responses = [
     "РаФу - сокращенно РАндом Факт про Участников"
 ]
 
+async def log_action(text: str):
+    try:
+        await bot.send_message(LOGS_CHAT_ID, text, parse_mode=ParseMode.HTML)
+    except Exception as e:
+        logger.error(f"Ошибка при отправке лога: {e}")
+
 # Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
     await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
@@ -47,6 +54,7 @@ async def send_welcome_message():
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
+    await log_action(f"✅ Команда /start от {update.message.from_user.full_name} ({update.message.from_user.id})")
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -69,6 +77,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
+    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id})")
 
 # Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -139,8 +148,10 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         confirmed_reports.add(report_key)
         await query.message.edit_text("✅Репорт успешно отправлен!")
+        await log_action(f"✅ Репорт подтверждён пользователем {query.from_user.full_name} ({query.from_user.id})")
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
+        await log_action(f"❌ Репорт отменён пользователем {query.from_user.full_name} ({query.from_user.id})")
 
 # Функция обработки пинга администраторов
 async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -200,6 +211,7 @@ async def handle_message(update: Update, context):
             sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
             await asyncio.sleep(5)
             await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
+            await log_action(f"😺 Неко-команда от {update.message.from_user.full_name} ({update.message.from_user.id})")
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
     
@@ -213,6 +225,7 @@ async def handle_message(update: Update, context):
     elif "рафу" in message:
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
+    await log_action(f"💬 Сообщение: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -245,6 +258,7 @@ app.add_handler(CommandHandler("id", get_chat_id))
 async def main():
     await send_welcome_message()
 
+    app.add_handler(CommandHandler("id", id_command))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
