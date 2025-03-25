@@ -9,9 +9,9 @@ import random
 nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAG0pWFSQfcu-S-huST-PU-OsxezNC2u67g'  # Токен бота
-ADMIN_CHAT_ID = -1002651165474  # ID групи адміністрації
-USER_CHAT_ID = 5283100992  # Ваш ID для відправки повідомлень в ЛС
-LOG_CHAT_ID = -1002411396364  # ID групи для логування всіх дій
+ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
+USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
+LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -20,46 +20,47 @@ logger = logging.getLogger(__name__)
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
 
-# Хранимо вже підтверджені репорти
+# Храним уже подтверждённые репорты
 confirmed_reports = set()
 
-# Можливі відповіді на "РаФа"
+# Возможные ответы на "РаФа"
 rafa_responses = [
-    "Hymanoid ненавидить мене, за те що я його не завжди пінгую", "Blue_Nexus іноді стає ебланом", "Кирич неуважний", 
-    "IDC... я не придумав що він робить", "РаФа - скорочено Рандом Факт", "Freeze похуїст по життю", "Humanoid постійно нить, що у нього немає твинка",
-    "Blue_Nexus тримають у рабстві", "Кирич любить аніме-тянок... але в житті дівчат він не любить", "IDC - дуже зайнята людина... не питайте чим, навіщо і чому",
-    "Freeze - успіх успішний", "Humanoid фанат пнг блю лок чекає 3 сезон зроблений в Microsoft Excel", "Blue_Nexus обожає чат GPT",
-    "Ізначально Кирич створював канал про своє життя", "IDC любить скамити дітей на петов в адопт мі", "Freeze - антипацифіст☮️"
+    "Hymanoid ненавидит меня, за то что я его не всегда пингую", "Blue_Nexus иногда стает ебланом", "Кирич невнимательный", 
+    "IDC... я не придумал что он делает", "РаФа - сокращенно Рандом Факт", "Freeze похуист по жизни", "Humanoid постоянно ноет что у него нету твинка",
+    "Blue_Nexus держат в рабстве", "Кирич любит аниме-тянок... но в жизни девушек он не любит", "IDC - очень занятый человек... не спрашивайте чем, зачем и почему",
+    "Freeze - успех успешный", "Humanoid фанат пнг блю лок ждет 3 сезон сделанный в Microsoft Excel", "Blue_Nexus абажает чат гпт",
+    "Изначально Кирич создавал канал про свою жизнь", "IDC любит скамить детей на петов в адопт ми", "Freeze - антипацифист☮️"
 ]
 
-# Можливі відповіді для "РаФу"
+# Возможные ответы для "РаФу"
 rafu_responses = [
-    "Цікавий факт! SsVladiSlaveSs не знає цей факт", 
-    "чекаю", 
-    "чекаю",  
-    "Може ти хотів написати РаФа?", 
-    "РаФу - скорочено РАндом Факт про Учасників"
+    "Интересный факт! SsVladiSlaveSs не знает этот факт", 
+    "жду", 
+    "жду",  
+    "Может ты хотел написать РаФа?", 
+    "РаФу - сокращенно РАндом Факт про Участников"
 ]
 
+# Функция отправки логов в группу
 async def log_action(text: str):
     try:
         await bot.send_message(LOG_CHAT_ID, text, parse_mode=ParseMode.HTML)
     except Exception as e:
-        logger.error(f"Помилка при відправці лога: {e}")
+        logger.error(f"Ошибка при отправке лога: {e}")
 
-# Функція відправки повідомлення "Добре утро, мій господин!"
+# Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
-    await bot.send_message(chat_id=USER_CHAT_ID, text="Добре утро, мій господин!")
+    await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
 
-# Функція старту
+# Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привіт! Напиши /report в відповідь на повідомлення, щоб відправити репорт.")
-    await log_action(f"✅ Команда /start від {update.message.from_user.full_name} ({update.message.from_user.id})")
+    await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
+    await log_action(f"✅ Команда /start от {update.message.from_user.full_name} ({update.message.from_user.id})")
 
-# Функція репорту
+# Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
-        await update.message.reply_text("⚠️ Репорт можна відправити тільки відповіддю на повідомлення!")
+        await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
         return
     
     message_id = update.message.reply_to_message.message_id
@@ -67,27 +68,27 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     report_key = f"{user_id}_{message_id}"
 
     if report_key in confirmed_reports:
-        await update.message.reply_text("⚠️ Цей репорт вже був підтверджений!")
+        await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
         return
 
     keyboard = [[
-        InlineKeyboardButton("✅ Так", callback_data=f"confirm_{user_id}_{message_id}"),
-        InlineKeyboardButton("❌ Ні", callback_data=f"cancel_{user_id}_{message_id}")
-    ]]  
+        InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
+        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
+    ]] 
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text("Ви впевнені, що хочете відправити репорт?", reply_markup=reply_markup)
-    await log_action(f"📌 Репорт від {update.message.from_user.full_name} ({user_id})")
+    await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
+    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id})")
 
-# Функція обробки репорту
+# Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     data = query.data.split("_")
     if len(data) < 3:
-        await query.message.edit_text("❌ Помилка: неправильний формат даних!")
+        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
     action = data[0]
@@ -95,16 +96,16 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = int(data[1])
         message_id = int(data[2])
     except ValueError:
-        await query.message.edit_text("❌ Помилка: невірні дані для обробки репорту!")
+        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
         return
 
     if query.from_user.id != user_id:
-        await query.answer(text="❌ Нельзя натискати чужі репорти!", show_alert=True)
+        await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
         return
 
     report_key = f"{user_id}_{message_id}"
     if report_key in confirmed_reports:
-        await query.answer(text="⚠️ Цей репорт вже був оброблений!", show_alert=True)
+        await query.answer(text="⚠️ Этот репорт уже был обработан!", show_alert=True)
         return
 
     if action == "confirm":
@@ -113,23 +114,23 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if query.message.chat.username:
             message_link = f"https://t.me/{query.message.chat.username}/{reported_message.message_id}"
-            link_text = f"<a href='{message_link}'>Перейти до повідомлення</a>"
+            link_text = f"<a href='{message_link}'>Перейти к сообщению</a>"
         else:
-            link_text = "Повідомлення надіслано в приватному чаті, посилання недоступне."
+            link_text = "Сообщение отправлено в приватном чате, ссылка недоступна."
 
-        message_text = reported_message.text if reported_message.text else "(медіа-файл)"
+        message_text = reported_message.text if reported_message.text else "(медиа-файл)"
         reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
 
         report_text = (
-            f"⚠️ <b>Новий репорт!</b>\n\n"
-            f"👤 Користувач: {reported_user_mention}\n"
-            f"💬 Повідомлення:\n<blockquote>{message_text}</blockquote>\n"
+            f"⚠️ <b>Новый репорт!</b>\n\n"
+            f"👤 Пользователь: {reported_user_mention}\n"
+            f"💬 Сообщение:\n<blockquote>{message_text}</blockquote>\n"
             f"{link_text}"
         )
 
-        await query.message.edit_text("⏳Відправка...")
+        await query.message.edit_text("⏳Отправка...")
 
-        # Отримуємо адміністраторів
+        # Получаем администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
@@ -143,18 +144,18 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if admin_mentions:
             half = len(admin_mentions) // 2
             await asyncio.sleep(4)
-            await bot.send_message(ADMIN_CHAT_ID, "Перша частина адмінів: " + " ".join(admin_mentions[:half]))
+            await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
             await asyncio.sleep(4)
-            await bot.send_message(ADMIN_CHAT_ID, "Друга частина адмінів: " + " ".join(admin_mentions[half:]))
+            await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
         confirmed_reports.add(report_key)
-        await query.message.edit_text("✅Репорт успішно відправлений!")
-        await log_action(f"✅ Репорт підтверджений користувачем {query.from_user.full_name} ({query.from_user.id})")
+        await query.message.edit_text("✅Репорт успешно отправлен!")
+        await log_action(f"✅ Репорт подтверждён пользователем {query.from_user.full_name} ({query.from_user.id})")
     elif action == "cancel":
-        await query.message.edit_text("❌ Репорт скасовано.")
-        await log_action(f"❌ Репорт скасовано користувачем {query.from_user.full_name} ({query.from_user.id})")
+        await query.message.edit_text("❌ Репорт отменен.")
+        await log_action(f"❌ Репорт отменён пользователем {query.from_user.full_name} ({query.from_user.id})")
 
-# Функція обробки пінгу адміністраторів
+# Функция обработки пинга администраторов
 async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -162,87 +163,86 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data.split("_")
     
     if len(data) < 3:
-        await query.message.edit_text("❌ Помилка: неправильний формат даних!")
+        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
-    action = data[0]  # Дія: ping
+    action = data[0]  # Действие: ping
 
     if len(data) == 3:
         ping_answer = data[2]
         
         if ping_answer == "yes":
-            await query.message.edit_text("⏳ Відправка репорту...")
+            await query.message.edit_text("⏳ Отправка репорта...")
 
-            # Отримуємо адміністраторів
+            # Получаем администраторов
             admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
             admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
-            # Відправляємо репорт і пінг
-            await bot.send_message(ADMIN_CHAT_ID, "Репорт від користувача", parse_mode=ParseMode.HTML)
+            # Отправляем репорт и пинг
+            await bot.send_message(ADMIN_CHAT_ID, "Репорт от пользователя", parse_mode=ParseMode.HTML)
 
             if admin_mentions:
                 half = len(admin_mentions) // 2
                 await asyncio.sleep(4)
-                await bot.send_message(ADMIN_CHAT_ID, "Перша частина адмінів: " + " ".join(admin_mentions[:half]))
+                await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
                 await asyncio.sleep(4)
-                await bot.send_message(ADMIN_CHAT_ID, "Друга частина адмінів: " + " ".join(admin_mentions[half:]))
+                await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
-            await query.message.edit_text("✅ Репорт і пінг відправлені!")
+            await query.message.edit_text("✅ Репорт и пинг отправлены!")
         elif ping_answer == "no":
-            await query.message.edit_text("❌ Репорт відправлений без пінгу.")
+            await query.message.edit_text("❌ Репорт отправлен без пинга.")
         else:
-            await query.message.edit_text("❌ Помилка: невірна відповідь на питання про пінг.")
+            await query.message.edit_text("❌ Ошибка: неверный ответ на вопрос о пинге.")
     else:
-        await query.message.edit_text("❌ Помилка: неправильний формат даних для пінгу.")
+        await query.message.edit_text("❌ Ошибка: неправильный формат данных для пинга.")
 
-# Функція отримання ID чату
+# Функция получения ID чата
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    await update.message.reply_text(f"🆔 ID цього чату: `{chat_id}`", parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN)
 
-# Функція обробки повідомлень
+# Функция обработки сообщений
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
 
-    # Фільтрація простих повідомлень від учасників, не записуючи їх в лог
-    if message.startswith('/'):
-        # Якщо повідомлення — це команда, додаємо його в лог
-        await log_action(f"💬 Команда: {update.message.text} від {update.message.from_user.full_name} ({update.message.from_user.id})")
-    elif "рафа" in message:
-        response = random.choice(rafa_responses)
-        await update.message.reply_text(response)
-        await log_action(f"💬 РаФа коментар від {update.message.from_user.full_name} ({update.message.from_user.id})")
-    elif "рафу" in message:
-        response = random.choice(rafu_responses)
-        await update.message.reply_text(response)
-        await log_action(f"💬 РаФу коментар від {update.message.from_user.full_name} ({update.message.from_user.id})")
-    elif "пинг" in message:
-        await update.message.reply_text("А нахуя він тобі?")
-    elif "неко" in message:
+    if "неко" in message:
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
             random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
-            sent_message = await update.message.reply_text("Визначення кошко-девочки за айпі💻")
+            sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
             await asyncio.sleep(5)
-            await sent_message.edit_text(f"Кошко-девочка визначена! Вона знаходиться у @{random_username}")
-            await log_action(f"😺 Неко-команда від {update.message.from_user.full_name} ({update.message.from_user.id})")
+            await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
+            await log_action(f"😺 Неко-команда от {update.message.from_user.full_name} ({update.message.from_user.id})")
         else:
-            await update.message.reply_text("❌ Не вдалося отримати адміністраторів для обчислень!")
-    else:
-        # Якщо це звичайне повідомлення, не додаємо його в лог
-        return
+            await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
-# Функція для відправки повідомлень через бота
+    elif "пинг" in message:
+        await update.message.reply_text("А нахуя он тебе?")
+
+    elif "рафа" in message:
+        response = random.choice(rafa_responses)
+        await update.message.reply_text(response)
+
+    elif "рафу" in message:
+        response = random.choice(rafu_responses)
+        await update.message.reply_text(response)
+
+    elif "рафа" not in message and "рафу" not in message:
+        return  # Не записываем в лог обычные сообщения
+
+    await log_action(f"💬 Сообщение: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
+
+# Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Перевірка на доступ
     if update.message.from_user.id != USER_CHAT_ID:
-        await update.message.reply_text("❌ У вас немає доступу до цієї команди.")
+        await update.message.reply_text("❌ У вас нету доступа к этой команде.")
         return
 
-    # Перевірка на наявність параметрів
+    # Проверяемо наличие параметров
     if len(context.args) < 2:
-        await update.message.reply_text("❌ Використання: /send [chat_id] [текст повідомлення]")
+        await update.message.reply_text("❌ Использование: /send [chat_id] [текст сообщения]")
         return
 
     chat_id = context.args[0]
@@ -250,26 +250,30 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         await bot.send_message(chat_id=chat_id, text=text)
-        await update.message.reply_text(f"✅ Повідомлення відправлене {chat_id}")
+        await update.message.reply_text(f"✅ Сообщение отправлено {chat_id}")
     except Exception as e:
-        await update.message.reply_text(f"❌ Сталася помилка: {e}")
+        await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
-# Додаємо команду /send
+# Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
 
-# Додаємо команду /id
+# Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
 
-# Основна функція
+# Основная функция
 async def main():
     await send_welcome_message()
 
     app.add_handler(CommandHandler("id", get_chat_id))
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
+    app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
+    app.add_handler(CallbackQueryHandler(handle_ping, pattern="^ping_\d+_\d+_(yes|no)$"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    await app.run_polling()
+
+    print("Бот запущен!")
+    await app.run_polling(drop_pending_updates=True)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
