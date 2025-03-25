@@ -31,6 +31,15 @@ rafa_responses = [
     "Изначально Кирич создавал канал про свою жизнь", "IDC любит скамить детей на петов в адопт ми", "Freeze - антипацифист☮️"
 ]
 
+# Возможные ответы для "РаФу"
+rafu_responses = [
+    "Интересный факт! SsVladiSlaveSs не знает этот факт", 
+    "жду", 
+    "жду",  
+    "Может ты хотел написать РаФа?", 
+    "РаФу - сокращенно РАндом Факт про Участников"
+]
+
 # Функция отправки сообщения "Доброе утро, мой господин!"
 async def send_welcome_message():
     await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
@@ -194,6 +203,10 @@ async def handle_message(update: Update, context):
     
     elif "рафа" in message:
         response = random.choice(rafa_responses)
+        await update.message.reply_text(response)
+
+    elif "рафу" in message:
+        response = random.choice(rafu_responses)
         await update.message.reply_text(response)
 
 # Функція для відправки повідомлень через бота
