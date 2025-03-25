@@ -41,6 +41,7 @@ rafu_responses = [
     "РаФу - сокращенно РАндом Факт про Участников"
 ]
 
+# Функция отправки логов в группу
 async def log_action(text: str):
     try:
         await bot.send_message(LOG_CHAT_ID, text, parse_mode=ParseMode.HTML)
@@ -73,7 +74,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[
         InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
         InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
-    ]]
+    ]] 
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     
