@@ -49,10 +49,6 @@ async def log_action(text: str):
     except Exception as e:
         logger.error(f"Ошибка при отправке лога: {e}")
 
-# Функция отправки сообщения "Доброе утро, мой господин!"
-async def send_welcome_message():
-    await bot.send_message(chat_id=USER_CHAT_ID, text="Доброе утро, мой господин!")
-
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
@@ -206,12 +202,12 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
 
-    # Логування команд
+    # Логируем только определенные команды
     if message.startswith('/'):
-        if message in ['/id', '/report', '/send']:  # Логуємо ці команди
+        if message in ['/id', '/report', '/send']:  # Логуем только эти команды
             await log_action(f"💬 Команда: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
     
-    # Логування ключових слів
+    # Логируем только ключевые слова
     if "неко" in message:
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
@@ -235,16 +231,14 @@ async def handle_message(update: Update, context):
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
 
-    await log_action(f"💬 Сообщение: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
-
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Перевірка на доступ
+    # Проверка доступа
     if update.message.from_user.id != USER_CHAT_ID:
-        await update.message.reply_text("❌ У вас нету доступа к этой команде.")
+        await update.message.reply_text("❌ У вас нет доступа к этой команде.")
         return
 
-    # Проверяемо наличие параметров
+    # Проверка на параметры
     if len(context.args) < 2:
         await update.message.reply_text("❌ Использование: /send [chat_id] [текст сообщения]")
         return
