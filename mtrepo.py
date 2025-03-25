@@ -208,7 +208,8 @@ async def handle_message(update: Update, context):
 
     # Логування команд
     if message.startswith('/'):
-        await log_action(f"💬 Команда: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
+        if message in ['/id', '/report', '/send']:  # Логуємо ці команди
+            await log_action(f"💬 Команда: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
     
     # Логування ключових слів
     if "неко" in message:
@@ -233,9 +234,6 @@ async def handle_message(update: Update, context):
     elif "рафу" in message:
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
-
-    elif "рафа" not in message and "рафу" not in message:
-        return  # Не записываем в лог обычные сообщения
 
     await log_action(f"💬 Сообщение: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
 
