@@ -8,7 +8,7 @@ import random
 
 nest_asyncio.apply()
 
-API_TOKEN = '7705193251:AAEuxkW63TtCcXwizvAYUuoI7jH1570NgNU'  # Токен бота
+API_TOKEN = 'YOUR_API_TOKEN'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
@@ -43,7 +43,7 @@ rafu_responses = [
 
 async def log_action(text: str):
     try:
-        await bot.send_message(LOGS_CHAT_ID, text, parse_mode=ParseMode.HTML)
+        await bot.send_message(LOG_CHAT_ID, text, parse_mode=ParseMode.HTML)
     except Exception as e:
         logger.error(f"Ошибка при отправке лога: {e}")
 
@@ -74,6 +74,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
         InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
     ]]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
