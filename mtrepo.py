@@ -202,10 +202,15 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
     await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN)
 
-# Функция обработки сообщений
+# Функция обробки повідомлень
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
 
+    # Логування команд
+    if message.startswith('/'):
+        await log_action(f"💬 Команда: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
+    
+    # Логування ключових слів
     if "неко" in message:
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
@@ -229,7 +234,7 @@ async def handle_message(update: Update, context):
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
 
-    elif "рафа" not in message and "рафу" not in message:
+    elif "рафа" not в message and "рафу" not in message:
         return  # Не записываем в лог обычные сообщения
 
     await log_action(f"💬 Сообщение: {update.message.text} от {update.message.from_user.full_name} ({update.message.from_user.id})")
@@ -261,20 +266,13 @@ app.add_handler(CommandHandler("send", send_message))
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
 
-# Основная функция
-async def main():
-    await send_welcome_message()
+# Основной цикл программы
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("report", report_command))
+app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
+app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
+app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
-    app.add_handler(CommandHandler("id", get_chat_id))
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
-    app.add_handler(CallbackQueryHandler(handle_ping, pattern="^ping_\d+_\d+_(yes|no)$"))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    print("Бот запущен!")
-    await app.run_polling(drop_pending_updates=True)
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+# Запускаем бота
+if __name__ == "__main__":
+    app.run_polling()
