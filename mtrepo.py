@@ -12,6 +12,7 @@ API_TOKEN = '7705193251:AAG0pWFSQfcu-S-huST-PU-OsxezNC2u67g'  # Токен бо�
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
+ALLOWED_USERS = [5283100992, 123456789, 987654321]  # Список пользователей, которым разрешено отправлять сообщения
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -227,7 +228,7 @@ async def handle_message(update: Update, context):
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
-    if update.message.from_user.id != USER_CHAT_ID:
+    if update.message.from_user.id not in ALLOWED_USERS:
         await update.message.reply_text("❌ У вас нет доступа к этой команде.")
         return
 
