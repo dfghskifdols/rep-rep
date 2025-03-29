@@ -200,9 +200,19 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📋 Copy ID", callback_data=f"copy_{chat_id}")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(f"🆔 ID цього чату: `{chat_id}`", reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
 
-# Функция обробки повідомлень
+# Обработчик "Copy ID"
+async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    data = query.data.split("_")
+    if len(data) < 2:
+        await query.message.edit_text("❌ Помилка: неправильний формат даних!")
+        return
+
+# Функция оброботки 
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
     
@@ -272,6 +282,7 @@ app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
+app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 # Запускаем бота
 if __name__ == "__main__":
