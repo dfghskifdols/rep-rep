@@ -202,8 +202,11 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context):
     message = update.message.text.lower()
     
-    # Логируем только ключевые слова
-    if message_lower == "неко":
+# Функция обработки сообщений
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message.text.strip()
+
+    if message == "Неко":
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
@@ -214,14 +217,14 @@ async def handle_message(update: Update, context):
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
-    elif message_lower == "пинг":
+    elif message == "Пинг":
         await update.message.reply_text("А нахуя он тебе?")
-    
-    elif message_lower == "рафа":
+
+    elif message == "РаФа":
         response = random.choice(rafa_responses)
         await update.message.reply_text(response)
     
-    elif message_lower == "рафу":
+    elif message == "РаФу":
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
 
