@@ -203,7 +203,7 @@ async def handle_message(update: Update, context):
     message = update.message.text.lower()
     
     # Логируем только ключевые слова
-    if "неко" in message:
+    if message_lower == "неко":
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
@@ -214,14 +214,14 @@ async def handle_message(update: Update, context):
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
-    elif "пинг" in message:
+    elif message_lower == "пинг":
         await update.message.reply_text("А нахуя он тебе?")
-
-    elif "рафа" in message:
+    
+    elif message_lower == "рафа":
         response = random.choice(rafa_responses)
         await update.message.reply_text(response)
-
-    elif "рафу" in message:
+    
+    elif message_lower == "рафу":
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
 
