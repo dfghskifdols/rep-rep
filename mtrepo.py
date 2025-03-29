@@ -200,7 +200,13 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     copy_button = CopyTextButton("📋 Copy ID", text=str(chat_id))
     keyboard = [[copy_button]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+    await update.message.reply_text(f"🆔 ID цього чату: `{chat_id}`", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+
+# Обработка кнопки Copy ID
+async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("✅ ID скопировано!")
 
 # Функция оброботки 
 async def handle_message(update: Update, context):
