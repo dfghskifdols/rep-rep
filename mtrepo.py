@@ -194,20 +194,23 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.message.edit_text("❌ Ошибка: неправильный формат данных для пинга.")
 
-# Функция получения ID чата
+# Функция одержания ID чату
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    # ID оброботка
+    # Юзаем InlineKeyboardButton для кнопки копирования ID
     copy_button = InlineKeyboardButton("📋 Copy ID", callback_data=f"copy_{chat_id}")
     keyboard = [[copy_button]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+    await update.message.reply_text(f"🆔 ID цього чату: `{chat_id}`", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
-# Обработка кнопки Copy ID
+# Оброботка кнопки Copy ID
 async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
-    await query.edit_message_text("✅ ID скопировано!")
+    chat_id = query.data.split('_')[1]
+    await query.answer()  # Відповідаємо на запит
+
+# Кидаем сообщение, что ID скопировано
+    await query.edit_message_text(f"✅ ID чату: `{chat_id}` скопійовано до буфера обміну!")
 
 # Функция оброботки 
 async def handle_message(update: Update, context):
