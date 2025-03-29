@@ -244,9 +244,15 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = ' '.join(context.args[1:])
 
     try:
-        await bot.send_message(chat_id=chat_id, text=text)
+        sent_message = await bot.send_message(chat_id=chat_id, text=text)
+        message_link = f"https://t.me/c/{str(chat_id).replace('-100', '')}/{sent_message.message_id}"
+        log_text = (f"📩 Сообщение отправлено через бота\n"
+                    f"👤 Отправитель: {update.message.from_user.full_name} ({update.message.from_user.id})\n"
+                    f"📍 В чат: {chat_id}\n"
+                    f"💬 Текст: {text}\n"
+                    f"🔗 <a href='{message_link}'>Ссылка на сообщение</a>")
+        await log_action(log_text)
         await update.message.reply_text(f"✅ Сообщение отправлено {chat_id}")
-        await log_action(f"📩 Сообщение отправлено в {chat_id} пользователем {update.message.from_user.full_name} ({update.message.from_user.id})")
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
