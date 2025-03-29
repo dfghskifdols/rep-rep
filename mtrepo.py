@@ -3,7 +3,6 @@ import nest_asyncio
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
-from telegram import CopyTextButton
 import logging
 import random
 
@@ -198,8 +197,8 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
     # Юзаем InlineKeyboardButton для кнопки копирования ID
-    copy_button = InlineKeyboardButton("📋 Copy ID", callback_data=f"copy_{chat_id}")
-    keyboard = [[copy_button]]
+    button = InlineKeyboardButton(text="Нажми", copy_text="тест")
+    keyboard = [[button]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
