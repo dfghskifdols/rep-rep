@@ -82,7 +82,6 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer(text="test", show_alert=True)
 
     data = query.data.split("_")
     if len(data) < 3:
