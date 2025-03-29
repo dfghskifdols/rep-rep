@@ -219,7 +219,7 @@ async def handle_message(update: Update, context):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message.text.strip()
 
-    if message == "Неко":
+    if message.lower() == "Неко".lower():
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
@@ -230,14 +230,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
-    elif message == "Пинг":
+    elif message.lower() == "Пинг".lower():
         await update.message.reply_text("А нахуя он тебе?")
 
-    elif message == "РаФа":
+    elif message.lower() == "РаФа".lower():
         response = random.choice(rafa_responses)
         await update.message.reply_text(response)
     
-    elif message == "РаФу":
+    elif message.lower() == "РаФу".lower():
         response = random.choice(rafu_responses)
         await update.message.reply_text(response)
 
