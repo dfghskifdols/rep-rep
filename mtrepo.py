@@ -197,8 +197,8 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция получения ID чата
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    #Id
-    copy_button = CopyTextButton("📋 Copy ID", text=str(chat_id))
+    # ID оброботка
+    copy_button = InlineKeyboardButton("📋 Copy ID", callback_data=f"copy_{chat_id}")
     keyboard = [[copy_button]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(f"🆔 ID цього чату: `{chat_id}`", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
