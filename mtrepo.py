@@ -294,7 +294,7 @@ app.add_handler(CommandHandler("send", send_message))
 app.add_handler(CommandHandler("id", get_chat_id))
 
 # Добавляем обработку /allowed
-application.add_handler(CommandHandler("allowed", allowed))
+app.add_handler(CommandHandler("allowed", allowed))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
