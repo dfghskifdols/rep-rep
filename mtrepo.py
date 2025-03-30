@@ -50,6 +50,11 @@ rafu_responses = [
     "РаФу - сокращенно РАндом Факт про Участников"
 ]
 
+# Функция
+def main():
+    # main()
+    application = Application.builder().token(API_TOKEN).build()
+
 async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабник команди /allowed"""
     if ALLOWED_USERS:
@@ -282,11 +287,6 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"✅ Сообщение отправлено {chat_id}")
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
-
-# Функция
-def main():
-    # main()
-    application = Application.builder().token(API_TOKEN).build()
 
 # Добавляем команду /send
 application.add_handler(CommandHandler("send", send_message))
