@@ -60,7 +60,7 @@ async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("В даный момент нету пользователей с доступом к /send.")
 
 def main():
-    application = Application.builder().token(API_TOKEN).build()
+    app = Application.builder().token(API_TOKEN).build()
 
 # Функция отправки логов в группу
 async def log_action(text: str):
