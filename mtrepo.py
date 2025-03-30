@@ -284,7 +284,9 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
+# Функция
 def main():
+    # main()
     app = Application.builder().token(API_TOKEN).build()
 
 # Добавляем команду /send
