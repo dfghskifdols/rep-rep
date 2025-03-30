@@ -22,20 +22,6 @@ ALLOWED_USERS = {
     1385118926: "@FreezeeLedik" 
 }
 
-async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обрабник команди /allowed"""
-    if ALLOWED_USERS:
-        allowed_list = "\n".join([f"{name} (ID: {user_id})" for user_id, name in ALLOWED_USERS.items()])
-        await update.message.reply_text(f"Пользователь которые мают доступ к /send:\n{allowed_list}")
-    else:
-        await update.message.reply_text("В даный момент нету пользователей с доступом к /send.")
-
-def main():
-    application = Application.builder().token("API_TOKEN").build()
-
-# Добавляем обработку /allowed
-application.add_handler(CommandHandler("allowed", allowed))
-
 # Храним уже подтверждённые репорты
 confirmed_reports = set()
 
@@ -64,6 +50,17 @@ rafu_responses = [
     "Mapc - невероятный Python-айтишник с большим стажом валяния на кровати... накормите его пожалуйста",
     "РаФу - сокращенно РАндом Факт про Участников"
 ]
+
+async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обрабник команди /allowed"""
+    if ALLOWED_USERS:
+        allowed_list = "\n".join([f"{name} (ID: {user_id})" for user_id, name in ALLOWED_USERS.items()])
+        await update.message.reply_text(f"Пользователь которые мают доступ к /send:\n{allowed_list}")
+    else:
+        await update.message.reply_text("В даный момент нету пользователей с доступом к /send.")
+
+def main():
+    application = Application.builder().token(API_TOKEN).build()
 
 # Функция отправки логов в группу
 async def log_action(text: str):
@@ -295,6 +292,9 @@ app.add_handler(CommandHandler("send", send_message))
 
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
+
+# Добавляем обработку /allowed
+application.add_handler(CommandHandler("allowed", allowed))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
