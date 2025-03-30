@@ -33,9 +33,6 @@ async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = Application.builder().token("API_TOKEN").build()
 
-    # Добавляем обработку /allowed
-    application.add_handler(CommandHandler("allowed", allowed))
-
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -302,6 +299,9 @@ app.add_handler(CommandHandler("send", send_message))
 
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
+
+# Добавляем обработку /allowed
+application.add_handler(CommandHandler("allowed", allowed))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
