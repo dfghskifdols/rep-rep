@@ -61,7 +61,7 @@ async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(API_TOKEN).build()
-
+    
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
