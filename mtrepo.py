@@ -58,9 +58,6 @@ async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Пользователь которые мают доступ к /send:\n{allowed_list}")
     else:
         await update.message.reply_text("В даный момент нету пользователей с доступом к /send.")
-
-def main():
-    app = Application.builder().token(API_TOKEN).build()
     
 # Функция отправки логов в группу
 async def log_action(text: str):
@@ -286,6 +283,9 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"✅ Сообщение отправлено {chat_id}")
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
+
+def main():
+    app = Application.builder().token(API_TOKEN).build()
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
