@@ -19,7 +19,7 @@ ALLOWED_USERS = {
     6139706645: "@vipsizzz",
     5222780613: "@Exponnentik",
     1552417677: "@CryingApostol",
-    1385118926: "@FreezeeLedik",   
+    1385118926: "@FreezeeLedik" 
 }
 
 async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
