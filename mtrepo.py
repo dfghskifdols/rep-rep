@@ -3,7 +3,6 @@ import nest_asyncio
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
-from telegram import CopyTextButton
 import logging
 import random
 
@@ -35,7 +34,7 @@ rafa_responses = [
     "Exponnentik - повелитель чая", "Exponnentik держит чери в заложниках", "Exponnentik главный пупс кирича(кирич этого не знает)",
     "РаФа - сокращенно Рандом Факт"
 ]
-  
+
 # Возможные ответы для "РаФу"
 rafu_responses = [
     "Интересный факт! SsVladiSlaveSs не знает этот факт", 
