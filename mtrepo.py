@@ -3,6 +3,7 @@ import nest_asyncio
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
+from telegram import CopyTextButton
 import logging
 import random
 
@@ -12,14 +13,14 @@ API_TOKEN = '7705193251:AAG0pWFSQfcu-S-huST-PU-OsxezNC2u67g'  # Токен бо�
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
-ALLOWED_USERS = {
-    5283100992: "@Bl_Nexus",
-    5344318601: "@Shadowhou",
-    6139706645: "@vipsizzz",
-    5222780613: "@Exponnentik",
-    1552417677: "@CryingApostol",
-    1385118926: "@FreezeeLedik" 
-}
+ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 1552417677, 1385118926, 6139706645]  # Список пользователей, которым разрешено отправлять сообщения
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+bot = Bot(API_TOKEN)
+app = Application.builder().token(API_TOKEN).build()
 
 # Храним уже подтверждённые репорты
 confirmed_reports = set()
@@ -34,7 +35,7 @@ rafa_responses = [
     "Exponnentik - повелитель чая", "Exponnentik держит чери в заложниках", "Exponnentik главный пупс кирича(кирич этого не знает)",
     "РаФа - сокращенно Рандом Факт"
 ]
-
+  
 # Возможные ответы для "РаФу"
 rafu_responses = [
     "Интересный факт! SsVladiSlaveSs не знает этот факт", 
@@ -50,19 +51,6 @@ rafu_responses = [
     "РаФу - сокращенно РАндом Факт про Участников"
 ]
 
-# Функция
-def main():
-    # main()
-    application = Application.builder().token(API_TOKEN).build()
-
-async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обрабник команди /allowed"""
-    if ALLOWED_USERS:
-        allowed_list = "\n".join([f"{name} (ID: {user_id})" for user_id, name in ALLOWED_USERS.items()])
-        await update.message.reply_text(f"Пользователь которые мают доступ к /send:\n{allowed_list}")
-    else:
-        await update.message.reply_text("В даный момент нету пользователей с доступом к /send.")
-    
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
@@ -289,22 +277,19 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
 # Добавляем команду /send
-application.add_handler(CommandHandler("send", send_message))
+app.add_handler(CommandHandler("send", send_message))
 
 # Добавляем команду /id
-application.add_handler(CommandHandler("id", get_chat_id))
-
-# Добавляем обработку /allowed
-application.add_handler(CommandHandler("allowed", allowed))
+app.add_handler(CommandHandler("id", get_chat_id))
 
 # Основной цикл программы
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("report", report_command))
-application.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
-application.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
-application.add_handler(MessageHandler(filters.TEXT, handle_message))
-application.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("report", report_command))
+app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
+app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
+app.add_handler(MessageHandler(filters.TEXT, handle_message))
+app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 # Запускаем бота
 if __name__ == "__main__":
-    application.run_polling()
+    app.run_polling()
