@@ -286,25 +286,25 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция
 def main():
     # main()
-    app = Application.builder().token(API_TOKEN).build()
+    application = Application.builder().token(API_TOKEN).build()
 
 # Добавляем команду /send
-app.add_handler(CommandHandler("send", send_message))
+application.add_handler(CommandHandler("send", send_message))
 
 # Добавляем команду /id
-app.add_handler(CommandHandler("id", get_chat_id))
+application.add_handler(CommandHandler("id", get_chat_id))
 
 # Добавляем обработку /allowed
-app.add_handler(CommandHandler("allowed", allowed))
+application.add_handler(CommandHandler("allowed", allowed))
 
 # Основной цикл программы
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("report", report_command))
-app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
-app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
-app.add_handler(MessageHandler(filters.TEXT, handle_message))
-app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("report", report_command))
+application.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
+application.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
+application.add_handler(MessageHandler(filters.TEXT, handle_message))
+application.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 # Запускаем бота
 if __name__ == "__main__":
-    app.run_polling()
+    application.run_polling()
