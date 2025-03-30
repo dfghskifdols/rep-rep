@@ -22,6 +22,20 @@ ALLOWED_USERS = {
     1385118926: "@FreezeeLedik",   
 }
 
+async def allowed(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обрабник команди /allowed"""
+    if ALLOWED_USERS:
+        allowed_list = "\n".join([f"{name} (ID: {user_id})" for user_id, name in ALLOWED_USERS.items()])
+        await update.message.reply_text(f"Пользователь которые мают доступ к /send:\n{allowed_list}")
+    else:
+        await update.message.reply_text("В даный момент нету пользователей с доступом к /send.")
+
+def main():
+    application = Application.builder().token("API_TOKEN").build()
+
+    # Добавляем обработку /allowed
+    application.add_handler(CommandHandler("allowed", allowed))
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
