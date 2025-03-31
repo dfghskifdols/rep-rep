@@ -80,6 +80,10 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ <b>Репорт можно отправить только <i>ответом на сообщение</i>!</b>", parse_mode=ParseMode.HTML)
         return
 
+message_id = update.message.reply_to_message.message_id
+reported_user_mention = update.message.reply_to_message.from_user.mention_html()
+message_text = update.message.reply_to_message.text or "Без текста"
+
     # Получаем причину, пользователя и сообщение
     reason = " ".join(context.args)
     if not reason:
@@ -95,10 +99,6 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if report_key in confirmed_reports:
         await update.message.reply_text("⚠️ На это сообщение уже был отправлен репорт!", parse_mode=ParseMode.HTML)
         return
-
-message_id = update.message.reply_to_message.message_id
-user_id = update.message.from_user.id
-report_key = f"{user_id}_{message_id}"
 
 async def confirm_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     report_key = "some_report_key"
