@@ -253,9 +253,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message.lower() == "Пинг".lower():
         await update.message.reply_text("А нахуя он тебе?")
 
-elif message.lower() == "РаФа".lower():
-    response = random.choice(rafa_responses)
-    await update.message.reply_text(response, parse_mode=ParseMode.HTML)
+    elif message.lower() == "РаФа".lower():
+        response = random.choice(rafa_responses)
+        await update.message.reply_text(response, parse_mode=ParseMode.HTML)
     
     elif message.lower() == "РаФу".lower():
         response = random.choice(rafu_responses)
