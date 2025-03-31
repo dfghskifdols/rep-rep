@@ -75,7 +75,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
 # Функция репорта
-async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text("⚠️ <b>Репорт можно отправить только <i>ответом на сообщение</i>!</b>", parse_mode=ParseMode.HTML)
         return
@@ -86,9 +86,16 @@ if not reason:
     await update.message.reply_text("⚠️ Укажите причину репорта после команды /report!", parse_mode=ParseMode.HTML)
     return
 
-reported_user_mention = update.message.reply_to_message.from_user.mention_html()
-message_text = update.message.reply_to_message.text or "Без текста"
-message_link = f"https://t.me/c/{str(update.effective_chat.id).replace('-100', '')}/{update.message.reply_to_message.message_id}"
+  reported_user_mention = update.message.reply_to_message.from_user.mention_html()
+  message_text = update.message.reply_to_message.text or "Без текста"
+  message_link = f"https://t.me/c/{str(update.effective_chat.id).replace('-100', '')}/{update.message.reply_to_message.message_id}"
+
+    # Добавляем проверку уникальности репорта
+    report_key = f"{update.effective_chat.id}:{update.message.reply_to_message.message_id}"
+    if report_key in confirmed_reports:
+        await update.message.reply_text("⚠️ На это сообщение уже был отправлен репорт!", parse_mode=ParseMode.HTML)
+        return
+
     
 message_id = update.message.reply_to_message.message_id
 user_id = update.message.from_user.id
