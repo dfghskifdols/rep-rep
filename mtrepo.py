@@ -80,6 +80,8 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ <b>Репорт можно отправить только <i>ответом на сообщение</i>!</b>", parse_mode=ParseMode.HTML)
         return
 
+    print(f"Args received: {context.args}")
+
     # Получаем причину, пользователя и сообщение
     reason = " ".join(context.args)
     if not reason:
