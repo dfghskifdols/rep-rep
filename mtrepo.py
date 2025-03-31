@@ -90,9 +90,9 @@ reported_user_mention = update.message.reply_to_message.from_user.mention_html()
 message_text = update.message.reply_to_message.text or "Без текста"
 message_link = f"https://t.me/c/{str(update.effective_chat.id).replace('-100', '')}/{update.message.reply_to_message.message_id}"
     
-    message_id = update.message.reply_to_message.message_id
-    user_id = update.message.from_user.id
-    report_key = f"{user_id}_{message_id}"
+message_id = update.message.reply_to_message.message_id
+user_id = update.message.from_user.id
+report_key = f"{user_id}_{message_id}"
 
     if report_key in confirmed_reports:
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
