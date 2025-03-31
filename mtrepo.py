@@ -79,6 +79,16 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text("⚠️ <b>Репорт можно отправить только <i>ответом на сообщение</i>!</b>", parse_mode=ParseMode.HTML)
         return
+
+# Получаем причину, пользователя и сообщение
+reason = " ".join(context.args)
+if not reason:
+    await update.message.reply_text("⚠️ Укажите причину репорта после команды /report!", parse_mode=ParseMode.HTML)
+    return
+
+reported_user_mention = update.message.reply_to_message.from_user.mention_html()
+message_text = update.message.reply_to_message.text or "Без текста"
+message_link = f"https://t.me/c/{str(update.effective_chat.id).replace('-100', '')}/{update.message.reply_to_message.message_id}"
     
     message_id = update.message.reply_to_message.message_id
     user_id = update.message.from_user.id
@@ -140,6 +150,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         report_text = (
             f"⚠️ <b>Новый репорт!</b>\n\n"
             f"<blockquote>👤 <b>Пользователь:</b> {reported_user_mention}\n"
+            f"📢 <b>Причина:</b> {reason}\n"
             f"💬 <b>Сообщение:</b>\n{message_text}\n</blockquote>"
             f"🔗 <b>Ссылка:</b> {link_text}"
         )
@@ -165,7 +176,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
 
         confirmed_reports.add(report_key)
-        await query.message.edit_text("✅Репорт успешно отправлен!")
+        await update.message.reply_text("✅ <b>Репорт успешно отправлен!</b>", parse_mode="HTML")
+        await context.bot.send_message(chat_id=YOUR_LOG_CHAT_ID, text=report_text, parse_mode="HTML")
         await log_action(f"✅ Репорт подтверждён пользователем {query.from_user.full_name} ({query.from_user.id})")
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
@@ -179,7 +191,7 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data.split("_")
     
     if len(data) < 3:
-        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
+        await query.message.edit_text("❌ Ошибка: <i>неправильный формат данных</i>!", parse_mode=ParseMode.HTML)
         return
 
     action = data[0]  # Действие: ping
@@ -249,8 +261,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
-    elif message.lower() == "Пинг".lower():
-        await update.message.reply_text("А нахуя он тебе?")
+    elif message.lower() == "пинг":
+        await update.message.reply_text("<b>А нахуя он тебе?</b>", parse_mode=ParseMode.HTML)
 
     elif message.lower() == "РаФа".lower():
         response = random.choice(rafa_responses)
@@ -295,7 +307,7 @@ app.add_handler(CommandHandler("send", send_message))
 app.add_handler(CommandHandler("id", get_chat_id))
 
 # Основной цикл программы
-app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("start", start, pass_args=True))
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
