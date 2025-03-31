@@ -94,19 +94,19 @@ message_id = update.message.reply_to_message.message_id
 user_id = update.message.from_user.id
 report_key = f"{user_id}_{message_id}"
 
-    if report_key in confirmed_reports:
-        await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
-        return
+if report_key in confirmed_reports:
+await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
+return
 
-    keyboard = [[
-        InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
-        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
-    ]] 
+keyboard = [[
+InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
+InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
+]] 
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
-    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id})")
+await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
+await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id})")
 
 # Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
