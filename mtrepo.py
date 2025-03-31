@@ -27,25 +27,25 @@ confirmed_reports = set()
 
 # Возможные ответы на "РаФа"
 rafa_responses = [
-    "<blockquote>Blue_Nexus иногда стает ебланом</blockquote>", 
-    "<blockquote>Blue_Nexus держат в рабстве</blockquote>",  
-    "<blockquote>Blue_Nexus абажает чат гпт</blockquote>",
-    "<blockquote>Кирич любит аниме-тянок... но в жизни девушек он не любит</blockquote>", 
-    "<blockquote>Изначально Кирич создавал канал про свою жизнь</blockquote>", 
-    "<blockquote>Кирич невнимательный</blockquote>",
-    "<blockquote>IDC - очень занятый человек... не спрашивайте чем, зачем и почему</blockquote>", 
-    "<blockquote>IDC любит скамить детей на петов в адопт ми</blockquote>", 
-    "<blockquote>IDC... я не придумал что он делает</blockquote>",
-    "<blockquote>Freezee - успех успешный</blockquote>", 
-    "<blockquote>Freezee - антипацифист☮</blockquote>", 
-    "<blockquote>Freezee похуист по жизни</blockquote>",
-    "<blockquote>Vipsii - долбаеб</blockquote>", 
-    "<blockquote>Vipsii слишком глупый</blockquote>", 
-    "<blockquote>Третий факт про себя Vipsii забыл</blockquote>", 
-    "<blockquote>Exponnentik - повелитель чая</blockquote>", 
-    "<blockquote>Exponnentik держит чери в заложниках</blockquote>", 
-    "<blockquote>Exponnentik главный пупс кирича(кирич этого не знает)</blockquote>",
-    "<blockquote>РаФа - сокращенно Рандом Факт</blockquote>"
+    "<b>Blue_Nexus иногда стает ебланом</b>", 
+    "<b>Blue_Nexus держат в рабстве</b>",  
+    "<b>Blue_Nexus абажает чат гпт</b>",
+    "<b>Кирич любит аниме-тянок... но в жизни девушек он не любит</b>", 
+    "<b>Изначально Кирич создавал канал про свою жизнь</b>", 
+    "<b>Кирич невнимательный</b>",
+    "<b>IDC - очень занятый человек... не спрашивайте чем, зачем и почему</b>", 
+    "<b>IDC любит скамить детей на петов в адопт ми</b>", 
+    "<b>IDC... я не придумал что он делает</b>",
+    "<b>Freezee - успех успешный</b>", 
+    "<b>Freezee - антипацифист☮</b>", 
+    "<b>Freezee похуист по жизни</b>",
+    "<b>Vipsii - долбаеб</b>", 
+    "<b>Vipsii слишком глупый</b>", 
+    "<b>Третий факт про себя Vipsii забыл</b>", 
+    "<b>Exponnentik - повелитель чая</b>", 
+    "<b>Exponnentik держит чери в заложниках</b>", 
+    "<b>Exponnentik главный пупс кирича(кирич этого не знает)</b>",
+    "<b>РаФа - сокращенно Рандом Факт</b>"
 ]
   
 # Возможные ответы для "РаФу"
@@ -255,7 +255,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message.lower() == "РаФа".lower():
         response = random.choice(rafa_responses)
-        await update.message.reply_text(response, parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"<b>{response}</b>", parse_mode=ParseMode.HTML)
     
     elif message.lower() == "РаФу".lower():
         response = random.choice(rafu_responses)
