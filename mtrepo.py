@@ -65,7 +65,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
-        await update.message.reply_text("⚠️ Репорт можно отправить только ответом на сообщение!")
+        await update.message.reply_text("⚠️ <b>Репорт можно отправить только <i>ответом на сообщение</i>!</b>", parse_mode=ParseMode.HTML)
         return
     
     message_id = update.message.reply_to_message.message_id
