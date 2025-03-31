@@ -316,7 +316,7 @@ app.add_handler(CommandHandler("send", send_message))
 app.add_handler(CommandHandler("id", get_chat_id))
 
 # Основной цикл программы
-app.add_handler(CommandHandler("start", start, pass_args=True))
+app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
