@@ -100,9 +100,12 @@ message_id = update.message.reply_to_message.message_id
 user_id = update.message.from_user.id
 report_key = f"{user_id}_{message_id}"
 
-if report_key in confirmed_reports:
-    await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
-    return
+async def confirm_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    report_key = "some_report_key"
+    
+    if report_key in confirmed_reports:
+        await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
+        return
 
     keyboard = [[
     InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
