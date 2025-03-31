@@ -87,7 +87,7 @@ message_text = update.message.reply_to_message.text or "Без текста"
     # Получаем причину, пользователя и сообщение
     reason = " ".join(context.args)
     if not reason:
-        await update.message.reply_text("⚠️ Укажите причину репорта после команды /report!", parse_mode=ParseMode.HTML)
+        await update.message.reply_text("⚠️ Укажите причину репорта после команды /report!", parse_mode="HTML")
         return
 
     reported_user_mention = update.message.reply_to_message.from_user.mention_html()
