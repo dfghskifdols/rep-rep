@@ -83,13 +83,15 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Получаем причину, пользователя и сообщение
     reason = " ".join(context.args)
     if not reason:
-        await update.message.reply_text("⚠️ Укажите причину репорта после команды /report!", parse_mode="HTML")
+        await update.message.reply_text(
+            "⚠️ Укажите причину репорта после команды /report!\n\n"
+            "Пример: <code>/report Спам</code>\n"
+            "Пример: <code>/report П1.1</code>",
+            parse_mode="HTML"
+        )
         return
 
     message_id = update.message.reply_to_message.message_id
-    reported_user_mention = update.message.reply_to_message.from_user.mention_html()
-    message_text = update.message.reply_to_message.text or "Без текста"
-
     reported_user_mention = update.message.reply_to_message.from_user.mention_html()
     message_text = update.message.reply_to_message.text or "Без текста"
     message_link = f"https://t.me/c/{str(update.effective_chat.id).replace('-100', '')}/{update.message.reply_to_message.message_id}"
