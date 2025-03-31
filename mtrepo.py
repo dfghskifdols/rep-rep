@@ -138,9 +138,9 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reported_user_mention = f"<b>{reported_user.full_name}</b> (@{reported_user.username})"
 
         report_text = (
-            f"<blockquote>⚠️ <b>Новый репорт!</b>\n\n"
-            f"👤 <b>Пользователь:</b> {reported_user_mention}\n"
-            f"💬 <b>Сообщение:</b>\n<blockquote>{message_text}</blockquote>\n</blockquote>"
+            f"⚠️ <b>Новый репорт!</b>\n\n"
+            f"<blockquote>👤 <b>Пользователь:</b> {reported_user_mention}\n"
+            f"💬 <b>Сообщение:</b>\n{message_text}\n</blockquote>"
             f"🔗 <b>Ссылка:</b> {link_text}"
         )
 
