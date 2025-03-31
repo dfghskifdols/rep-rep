@@ -93,6 +93,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    reason = " ".join(context.args)
     message_id = update.message.reply_to_message.message_id
     reported_user_mention = update.message.reply_to_message.from_user.mention_html()
     message_text = update.message.reply_to_message.text or "Без текста"
