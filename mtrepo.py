@@ -332,26 +332,6 @@ app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
-# Функция для команды /allowed
-async def allowed_command(update: Update, context):
-    user_id = update.message.from_user.id  # Получаем ID пользователя
-
-    if user_id not in ALLOWED_USERS:
-        await update.message.reply_text("❌ У вас нет доступа к команде /send.")
-        return
-
-    allowed_text = "✅ <b>Пользователи с доступом к /send:</b>\n\n"
-    for allowed_user in ALLOWED_USERS:
-        user = await bot.get_chat(allowed_user)  # Получаем объект пользователя
-        username = user.username if user.username else "Неизвестно"
-        full_name = user.full_name if user.full_name else "Неизвестно"
-        allowed_text += f"👤 {full_name} (@{username}) - ID: {allowed_user}\n"
-      
-    await update.message.reply_text(allowed_text, parse_mode="HTML")
-
-# Добавляем обработчик команды /allowed
-app.add_handler(CommandHandler("allowed", allowed_command))
-
 # Запускаем бота
 if __name__ == "__main__":
     app.run_polling()
