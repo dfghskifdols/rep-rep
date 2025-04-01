@@ -63,6 +63,10 @@ rafu_responses = [
     "<b>Просто чел - гей</b>",
     "<b>РаФу - сокращенно РАндом Факт про Участников</b>"
 ]
+
+# Регулярное выражение для проверки формата причины репорта (например, "П1.3")
+REPORT_REASON_REGEX = re.compile(r"^П\d+\.\d+$")
+
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
@@ -83,7 +87,24 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.HTML
         )
         return
-    
+
+    if not context.args:
+        await update.message.reply_text(
+            "⚠️ <b>Не указана причина репорта!</b>\n\n"
+            "Пример репорта: <code>/report П1.3</code>",
+            parse_mode=ParseMode.HTML
+        )
+        return
+
+    reason = context.args[0]
+    if not REPORT_REASON_REGEX.match(reason):
+        await update.message.reply_text(
+            "⚠️ <b>Неверный формат причины!</b>\n\n"
+            "Пример правильного формата: <code>/report П1.3</code>",
+            parse_mode=ParseMode.HTML
+        )
+        return
+
     message_id = update.message.reply_to_message.message_id
     user_id = update.message.from_user.id
     report_key = f"{user_id}_{message_id}"
@@ -99,8 +120,12 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text("Вы уверены, что хотите отправить репорт?", reply_markup=reply_markup)
-    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id})")
+    await update.message.reply_text(
+        f"Вы уверены, что хотите отправить репорт с причиной <b>{reason}</b>?",
+        reply_markup=reply_markup,
+        parse_mode=ParseMode.HTML
+    )
+    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
 # Функция обработки репорта
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
