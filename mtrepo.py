@@ -341,8 +341,8 @@ async def allowed_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     allowed_list = []
     for user_id in ALLOWED_USERS:
         try:
-            user = await bot.get_chat(user_id)
-            username = f"@{user.username}" if user.username else user.full_name
+            user = await bot.get_chat_member(ADMIN_CHAT_ID, user_id)
+            username = f"@{user.user.username}" if user.user.username else user.user.full_name
             allowed_list.append(f"👤 {username} ({user_id})")
         except Exception:
             allowed_list.append(f"👤 (Неизвестный пользователь) ({user_id})")
