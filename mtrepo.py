@@ -353,4 +353,4 @@ application.add_handler(CommandHandler("allowed", allowed_command))
 
 # Запускаем бота
 if __name__ == "__main__":
-    app.run_polling()
+    application.run_polling()
