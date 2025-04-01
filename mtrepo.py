@@ -332,6 +332,27 @@ app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
+# Функция для отображения списка пользователей с доступом к /send
+async def allowed_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not ALLOWED_USERS:
+        await update.message.reply_text("❌ Нет пользователей с доступом к /send.")
+        return
+
+    allowed_list = []
+    for user_id in ALLOWED_USERS:
+        try:
+            user = await bot.get_chat(user_id)
+            username = f"@{user.username}" if user.username else user.full_name
+            allowed_list.append(f"👤 {username} ({user_id})")
+        except Exception:
+            allowed_list.append(f"👤 (Неизвестный пользователь) ({user_id})")
+
+    allowed_text = "✅ <b>Пользователи с доступом к /send:</b>\n\n" + "\n".join(allowed_list)
+    await update.message.reply_text(allowed_text, parse_mode=ParseMode.HTML)
+
+# Добавляем команду /allowed
+app.add_handler(CommandHandler("allowed", allowed_command))
+
 # Запускаем бота
 if __name__ == "__main__":
     app.run_polling()
