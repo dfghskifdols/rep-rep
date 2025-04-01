@@ -342,8 +342,11 @@ async def allowed_command(update: Update, context):
 
     allowed_text = "✅ <b>Пользователи с доступом к /send:</b>\n\n"
     for allowed_user in ALLOWED_USERS:
-        allowed_text += f"👤 {allowed_user}\n"
-
+        user = await bot.get_chat(allowed_user)  # Получаем объект пользователя
+        username = user.username if user.username else "Неизвестно"
+        full_name = user.full_name if user.full_name else "Неизвестно"
+        allowed_text += f"👤 {full_name} (@{username}) - ID: {allowed_user}\n"
+      
     await update.message.reply_text(allowed_text, parse_mode="HTML")
 
 app = Application.builder().token(API_TOKEN).build()
