@@ -21,7 +21,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 bot = Bot(API_TOKEN)
-app = Application.builder().token(API_TOKEN).build()
 
 # Храним уже подтверждённые репорты
 confirmed_reports = set()
@@ -351,6 +350,8 @@ async def allowed_command(update: Update, context):
 
 # Добавляем обработчик команды /allowed
 app.add_handler(CommandHandler("allowed", allowed_command))
+
+app = Application.builder().token(API_TOKEN).build()
 
 # Запускаем бота
 if __name__ == "__main__":
