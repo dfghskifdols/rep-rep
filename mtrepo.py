@@ -346,6 +346,8 @@ async def allowed_command(update: Update, context):
 
     await update.message.reply_text(allowed_text, parse_mode="HTML")
 
+application = Application.builder().token(API_TOKEN).build()
+
 # Добавляем обработчик команды /allowed
 application.add_handler(CommandHandler("allowed", allowed_command))
 
