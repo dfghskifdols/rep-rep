@@ -303,7 +303,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif 7 <= hour < 13:
             response = "Доброго утра!"
         elif 13 <= hour < 17:
-            response = "Хорошего ужина!"
+            response = "Доброго дня!"
         elif 17 <= hour < 22:
             response = "Доброго вечера!"
         else:
