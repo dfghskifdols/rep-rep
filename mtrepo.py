@@ -9,9 +9,6 @@ import random
 import re
 from datetime import datetime, timezone, timedelta
 
-# Проверка и установка зависимостей при запуске
-install_requirements()
-
 nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAG0pWFSQfcu-S-huST-PU-OsxezNC2u67g'  # Токен бота
