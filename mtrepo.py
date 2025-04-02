@@ -161,6 +161,12 @@ def show_reports(update: Update, context: CallbackContext):
     
     update.message.reply_text(report_text)
 
+# Инициализация бота и обработчик команд
+def main():
+    updater = Updater("API_TOKEN", use_context=True)
+    
+    dispatcher = updater.dispatcher
+
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -422,6 +428,9 @@ app.add_handler(CommandHandler("send", send_message))
 
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
+
+# Добавляем обработчик для команды /show_reports
+dispatcher.add_handler(CommandHandler('show_reports', show_reports))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
