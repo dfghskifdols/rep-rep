@@ -7,6 +7,8 @@ from telegram import CopyTextButton
 import logging
 import random
 import re
+from datetime import datetime
+import pytz
 
 nest_asyncio.apply()
 
@@ -78,6 +80,28 @@ async def log_action(text: str):
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
+
+# Функция для ответа на "Привет"
+async def greet_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text.lower()  # Приводим текст сообщения к нижнему регистру
+    if user_message == "привет":
+        # Получаем текущее время по московскому времени
+        moscow_tz = pytz.timezone("Europe/Moscow")
+        current_time = datetime.now(moscow_tz).hour
+
+        # Определяем ответ в зависимости от времени
+        if 5 <= current_time < 7:
+            response = "А ты спать не хочешь?"
+        elif 7 <= current_time < 13:
+            response = "Доброго утра!"
+        elif 13 <= current_time < 17:
+            response = "Хорошего ужина!"
+        elif 17 <= current_time < 22:
+            response = "Доброго вечера!"
+        else:
+            response = "А ну ка спать!"
+
+        await update.message.reply_text(response)
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -331,6 +355,7 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+app.add_handler(MessageHandler(filters.TEXT & filters.Regex(r"(?i)^привет$"), greet_user))
 
 # Запускаем бота
 if __name__ == "__main__":
