@@ -1,5 +1,6 @@
 import asyncio
 import nest_asyncio
+import sqlite3
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
@@ -82,6 +83,32 @@ async def log_action(text: str):
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
+
+# Инициализация базы данных SQLite
+def init_db():
+    conn = sqlite3.connect('reports.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS reports (
+            user_id INTEGER,
+            message_id INTEGER,
+            reason TEXT,
+            confirmed BOOLEAN
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Функция добавления репорта в базу данных
+def add_report_to_db(user_id, message_id, reason):
+    conn = sqlite3.connect('reports.db')
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO reports (user_id, message_id, reason, confirmed)
+        VALUES (?, ?, ?, ?)
+    ''', (user_id, message_id, reason, False))
+    conn.commit()
+    conn.close()
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
