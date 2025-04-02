@@ -83,6 +83,45 @@ async def log_action(text: str):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
+import asyncpg
+import asyncio
+
+DATABASE_URL = "postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+
+# Функция подключения к базе
+async def connect_db():
+    return await asyncpg.connect(DATABASE_URL)
+
+# Функция создания таблицы разрешенных пользователей
+async def create_table():
+    conn = await connect_db()
+    await conn.execute('''
+        CREATE TABLE IF NOT EXISTS allowed_users (
+            id BIGINT PRIMARY KEY
+        )
+    ''')
+    await conn.close()
+
+# Функция добавления разрешенного пользователя
+async def add_allowed_user(user_id):
+    conn = await connect_db()
+    await conn.execute("INSERT INTO allowed_users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING", user_id)
+    await conn.close()
+
+# Функция получения списка разрешенных пользователей
+async def get_allowed_users():
+    conn = await connect_db()
+    rows = await conn.fetch("SELECT id FROM allowed_users")
+    await conn.close()
+    return [row['id'] for row in rows]
+
+# Тестируем подключение
+async def main():
+    await create_table()
+    await add_allowed_user(123456789)  # Добавляем тестового пользователя
+    users = await get_allowed_users()
+    print("Разрешенные пользователи:", users)
+
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
