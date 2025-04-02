@@ -354,6 +354,8 @@ app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 # Запускаем бота
-if __name__ == "__main__":
+async def main():
+    await init_db()
     app.run_polling()
-  
+
+asyncio.run(main())
