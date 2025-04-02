@@ -118,9 +118,47 @@ async def get_allowed_users():
 # Тестируем подключение
 async def main():
     await create_table()
-    await add_allowed_user(123456789)  # Добавляем тестового пользователя
+    await add_allowed_user(5283100992)  # Добавляем тестового пользователя
     users = await get_allowed_users()
     print("Разрешенные пользователи:", users)
+
+def connect_to_db():
+    try:
+        return psycopg2.connect(
+            dbname="neondb",  # ім'я бази даних
+            user="neondb_owner",  # користувач
+            password="npg_PXgGyF7Z5MUJ",  # пароль
+            host="ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech"  # хост
+        )
+    except psycopg2.Error as e:
+        print(f"Помилка підключення до бази даних: {e}")
+        return None
+
+# Функция для получения всех репортов из базы данных
+def get_reports_from_db():
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM reports;")  # Предполагаем, что есть таблица 'reports'
+    reports = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return reports
+
+# Команда для вывода всех репортов
+def show_reports(update: Update, context: CallbackContext):
+    reports = get_reports_from_db()
+    
+    if reports:
+        report_text = "Список репортов:\n"
+        for report in reports:
+            report_text += f"ID: {report[0]}, Сообщение: {report[1]}\n"
+    else:
+        report_text = "Нет репортов в базе данных."
+    
+    update.message.reply_text(report_text)
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
