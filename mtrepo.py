@@ -429,9 +429,6 @@ app.add_handler(CommandHandler("send", send_message))
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
 
-# Добавляем обработчик для команды /show_reports
-dispatcher.add_handler(CommandHandler('show_reports', show_reports))
-
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
@@ -439,6 +436,9 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+
+# Добавляем обработчик для команды /show_reports
+dispatcher.add_handler(CommandHandler('show_reports', show_reports))
 
 # Запускаем бота
 if __name__ == "__main__":
