@@ -440,8 +440,8 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 # Добавляем обработчик для команды /show_reports
 dispatcher.add_handler(CommandHandler('show_reports', show_reports))
 
-    updater.start_polling()
-    updater.idle()
+updater.start_polling()
+updater.idle()
 
 if __name__ == '__main__':
     main()
