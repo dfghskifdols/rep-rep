@@ -3,3 +3,4 @@ python-telegram-bot
 nest_asyncio
 aiohttp
 psycopg2
+asyncpg
