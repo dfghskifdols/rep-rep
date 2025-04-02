@@ -85,6 +85,25 @@ async def log_action(text: str):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
+# Получаем строку подключения из переменной окружения
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+# Подключаемся к базе данных
+try:
+    connection = psycopg2.connect(DATABASE_URL, sslmode='require')
+    cursor = connection.cursor()
+    
+    # Выполняем SQL запросы
+    cursor.execute("SELECT * FROM your_table_name;")
+    records = cursor.fetchall()
+    print(records)
+    
+    # Закрываем курсор и соединение
+    cursor.close()
+    connection.close()
+except Exception as e:
+    print(f"Ошибка: {e}")
+
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
