@@ -8,6 +8,8 @@ import logging
 import random
 import re
 from datetime import datetime, timezone, timedelta
+import psycopg2
+import os
 
 nest_asyncio.apply()
 
