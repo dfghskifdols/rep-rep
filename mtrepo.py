@@ -8,11 +8,6 @@ import logging
 import random
 import re
 from datetime import datetime, timezone, timedelta
-import psycopg2
-import os
-logging.basicConfig(level=logging.DEBUG)
-logging.debug("Bot is starting...")  # Додаємо логування
-
 
 nest_asyncio.apply()
 
@@ -87,25 +82,6 @@ async def log_action(text: str):
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
-
-# Получаем строку подключения из переменной окружения
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-# Подключаемся к базе данных
-try:
-    connection = psycopg2.connect(DATABASE_URL, sslmode='require')
-    cursor = connection.cursor()
-    
-    # Выполняем SQL запросы
-    cursor.execute("SELECT * FROM your_table_name;")
-    records = cursor.fetchall()
-    print(records)
-    
-    # Закрываем курсор и соединение
-    cursor.close()
-    connection.close()
-except Exception as e:
-    print(f"Ошибка: {e}")
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -378,8 +354,6 @@ app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 # Запускаем бота
-async def main():
-    await init_db()
+if __name__ == "__main__":
     app.run_polling()
-
-asyncio.run(main())
+  
