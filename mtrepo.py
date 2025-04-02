@@ -291,7 +291,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafu_responses)
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
-    elif message == "привет":  # Добавляем проверку на "привет"
+    elif message.lower() == "привет".lower():  # Добавляем проверку на "привет" без учета регистра
         current_time = datetime.now(timezone.utc) + timedelta(hours=3)
         hour = current_time.hour
 
