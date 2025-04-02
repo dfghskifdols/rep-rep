@@ -10,7 +10,6 @@ import re
 from datetime import datetime, timezone, timedelta
 import psycopg2
 import os
-import logging
 logging.basicConfig(level=logging.DEBUG)
 logging.debug("Bot is starting...")  # Додаємо логування
 
