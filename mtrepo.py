@@ -8,6 +8,19 @@ import logging
 import random
 import re
 from datetime import datetime, timezone, timedelta
+import subprocess
+import sys
+
+def install_requirements():
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Не удалось установить зависимости: {e}")
+        sys.exit(1)
+
+# Проверка и установка зависимостей при запуске
+install_requirements()
 
 nest_asyncio.apply()
 
