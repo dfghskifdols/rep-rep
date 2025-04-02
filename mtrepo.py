@@ -8,6 +8,7 @@ import logging
 import random
 import re
 from datetime import datetime, timezone, timedelta
+from telegram.ext import CallbackContext
 
 nest_asyncio.apply()
 
