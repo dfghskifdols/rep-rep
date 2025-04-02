@@ -80,28 +80,6 @@ async def log_action(text: str):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-# Функция для ответа на "Привет"
-async def greet_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_message = update.message.text.lower()
-    if user_message == "привет":
-        # Получаем текущее время по московскому часовому поясу (UTC+3)
-        current_time = datetime.now(timezone.utc) + timedelta(hours=3)
-        hour = current_time.hour
-
-        # Определяем ответ в зависимости от времени
-        if 5 <= hour < 7:
-            response = "А ты спать не хочешь?"
-        elif 7 <= hour < 13:
-            response = "Доброго утра!"
-        elif 13 <= hour < 17:
-            response = "Хорошего ужина!"
-        elif 17 <= hour < 22:
-            response = "Доброго вечера!"
-        else:
-            response = "А ну ка спать!"
-
-        await update.message.reply_text(response)
-
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -313,6 +291,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafu_responses)
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
+    elif message == "привет":  # Добавляем проверку на "привет"
+        current_time = datetime.now(timezone.utc) + timedelta(hours=3)
+        hour = current_time.hour
+
+        if 5 <= hour < 7:
+            response = "А ты спать не хочешь?"
+        elif 7 <= hour < 13:
+            response = "Доброго утра!"
+        elif 13 <= hour < 17:
+            response = "Хорошего ужина!"
+        elif 17 <= hour < 22:
+            response = "Доброго вечера!"
+        else:
+            response = "А ну ка спать!"
+
+        await update.message.reply_text(response)
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
@@ -354,7 +349,6 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
-app.add_handler(MessageHandler(filters.TEXT & filters.Regex(r"(?i)^привет$"), greet_user))
 
 # Запускаем бота
 if __name__ == "__main__":
