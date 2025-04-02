@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 
 nest_asyncio.apply()
 
-API_TOKEN = '7705193251:AAG0pWFSQfcu-S-huST-PU-OsxezNC2u67g'  # Токен бота
+API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'  # Токен бота
 ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
 USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
 LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
