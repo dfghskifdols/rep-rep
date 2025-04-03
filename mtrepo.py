@@ -7,10 +7,9 @@ from datetime import datetime, timezone, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
-import psycopg2
-from psycopg2 import sql
 from urllib.parse import urlparse
 from telegram import CopyTextButton
+import sqlite3
 
 nest_asyncio.apply()
 
@@ -78,31 +77,15 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
-# Парсинг URL підключення до бази даних
-DATABASE_URL = 'postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require'
-url = urlparse(DATABASE_URL)
+DB_PATH = "database.db"  # Файл бази даних SQLite
 
-# Параметри підключення з URL
-DB_NAME = url.path[1:]  # Видаляємо перший символ '/' з шляху
-DB_USER = url.username
-DB_PASSWORD = url.password
-DB_HOST = url.hostname
-DB_PORT = url.port if url.port else 5432  # Встановлюємо порт, якщо він не вказаний в URL
-
-# Підключення до бази даних
+# Функція для створення таблиці
 def create_reports_table():
-    conn = psycopg2.connect(
-        dbname=DB_NAME, 
-        user=DB_USER, 
-        password=DB_PASSWORD, 
-        host=DB_HOST,
-        port=DB_PORT
-    )
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute('DROP TABLE IF EXISTS reports')
     cur.execute('''
-        CREATE TABLE reports (
-            id SERIAL PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             report_text TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -112,38 +95,33 @@ def create_reports_table():
     conn.close()
     print("Таблиця створена успішно!")
 
-# Функція для отримання всіх репортів
 def get_reports():
-    conn = psycopg2.connect(
-        dbname=DB_NAME, 
-        user=DB_USER, 
-        password=DB_PASSWORD, 
-        host=DB_HOST,
-        port=DB_PORT
-    )
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute('SELECT * FROM reports ORDER BY created_at DESC')
     reports = cur.fetchall()
-    print(f"Отримані репорти: {reports}")  # Логування результату запиту
     cur.close()
     conn.close()
     return reports
 
-# Функція для обробки команди /show_reports
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Отримання репортів з бази даних
-    reports = get_reports()  
+    reports = get_reports()  # Отримання репортів з БД
     if reports:
-        # Перевірка, як саме ви обробляєте список
-        report_message = "\n".join([f"Репорт {r[0]}: {r[1]}" for r in reports])  # Перевірка індексів
+        report_message = "\n".join([f"Репорт {r[0]}: {r[1]}" for r in reports])
     else:
-        report_message = "Нету репортов."
-    
+        report_message = "Немає репортів."
+
     await update.message.reply_text(report_message)
 
-def main():
-    # Створюємо Updater для вашого бота
-    updater = Updater("API_TOKEN", use_context=True)
+def get_reports():
+    """Отримує всі репорти з бази даних."""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT id, report_text FROM reports")  # Переконайся, що такі стовпці є
+    reports = cur.fetchall()
+    cur.close()
+    conn.close()
+    return reports
 
 # Функция отправки логов в группу
 async def log_action(text: str):
@@ -155,6 +133,16 @@ async def log_action(text: str):
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
+
+# Функция для сохранения репорта в SQLite
+def save_report(user_id, message_id, reason):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute('INSERT INTO reports (user_id, message_id, report_text) VALUES (?, ?, ?)', 
+                (user_id, message_id, reason))
+    conn.commit()
+    cur.close()
+    conn.close()
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -203,6 +191,10 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup,
         parse_mode=ParseMode.HTML
     )
+    
+    # Сохранение репорта в базу
+    save_report(user_id, message_id, reason)
+
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
 # Функция обработки репорта
