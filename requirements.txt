@@ -3,4 +3,4 @@ python-telegram-bot
 nest_asyncio
 aiohttp
 asyncpg
-aiogram
+aiogram==2.24
