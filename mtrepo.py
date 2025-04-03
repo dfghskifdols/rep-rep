@@ -19,8 +19,8 @@ ADMIN_CHAT_ID = -1002651165474
 USER_CHAT_ID = 5283100992
 LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 1552417677, 1385118926, 6139706645, 5222780613]
-SOURCE_GROUP_ID = -1002268486160
-DELETED_MESSAGE_CHAT_ID = -4665694960
+GROUP_ID = -1002268486160
+LOG_CHAT_ID = -4665694960
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -433,26 +433,47 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
-# Обробка видалених повідомлень
-async def deleted_message_handler(update: Update, context: CallbackContext):
-    # Перевіряємо, чи є повідомлення
-    if update.message and update.message.from_user:
-        deleted_user = update.message.from_user.full_name
-        deleted_text = update.message.text
-        deleted_message_id = update.message.message_id
+# Збереження повідомлень у словнику {chat_id: {message_id: текст}}
+message_storage = {}
 
-        # Формуємо текст для повідомлення
-        message = f"🚫 Сообщение удалено\n\n" \
-                  f"👤 <b>Пользователь:</b> {deleted_user}\n" \
-                  f"💬 <b>Текст сообщения:</b> {deleted_text}\n" \
-                  f"🆔 <b>ID сообщения:</b> {deleted_message_id}"
+async def save_message(update: Update, context: CallbackContext):
+    """Зберігає повідомлення у словнику"""
+    if update.message:
+        chat_id = update.message.chat_id
+        message_id = update.message.message_id
+        text = update.message.text or "[MEDIA]"
+        user = update.message.from_user.full_name
 
-        # Відправка в чат адміністраторів
-        await context.bot.send_message(DELETED_MESSAGE_CHAT_ID, message, parse_mode='HTML')
+        if chat_id not in message_storage:
+            message_storage[chat_id] = {}
 
-# Додаємо обробник для видалених повідомлень
-deleted_message_handler_instance = MessageHandler(filters.Deleted & filters.Chat(chat_id=SOURCE_GROUP_ID), deleted_message_handler)
-app.add_handler(deleted_message_handler_instance)
+        message_storage[chat_id][message_id] = (user, text)
+
+async def check_deleted_messages(context: CallbackContext):
+    """Перевіряє, які повідомлення ще існують"""
+    for chat_id, messages in message_storage.items():
+        to_delete = []
+        for message_id in messages:
+            try:
+                await context.bot.forward_message(chat_id=chat_id, from_chat_id=chat_id, message_id=message_id)
+            except Exception:
+                # Якщо forward_message не вдається – значить, повідомлення видалене
+                user, text = messages[message_id]
+                log_msg = f"🚫 Видалено повідомлення!\n👤 {user}\n💬 {text}"
+                await context.bot.send_message(LOG_CHAT_ID, log_msg)
+                to_delete.append(message_id)
+
+        # Видаляємо записані повідомлення, які більше не існують
+        for msg_id in to_delete:
+            del message_storage[chat_id][msg_id]
+
+async def start_checking(app: Application):
+    """Запускає перевірку видалених повідомлень кожні 10 секунд"""
+    while True:
+        await check_deleted_messages(app.bot)
+        await asyncio.sleep(10)  # Перевірка кожні 10 секунд
+
+app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & ~filters.Command(), save_message))
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
@@ -473,6 +494,7 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 async def main():
     print("Бот запущений!")
     await app.run_polling()
+    app.run_post_init(start_checking)
 
 if __name__ == "__main__":
     asyncio.run(main())
