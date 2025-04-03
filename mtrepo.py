@@ -125,6 +125,23 @@ def get_reports():
     conn.close()
     return reports
 
+# Функція для обробки команди /show_reports
+def show_reports(update, context):
+    # Припустимо, що ваші репорти зберігаються в списку або базі даних
+    reports = ["Репорт 1", "Репорт 2", "Репорт 3"]  # Тут ваші репорти
+    if reports:
+        report_message = "\n".join(reports)
+    else:
+        report_message = "Нету репотров"
+    update.message.reply_text(report_message)
+
+def main():
+    # Створюємо Updater для вашого бота
+    updater = Updater("API_TOKEN", use_context=True)
+    
+    # Отримуємо диспетчер для обробки команд
+    dp = updater.dispatcher
+
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
