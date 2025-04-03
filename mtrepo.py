@@ -1,21 +1,13 @@
-import asyncio
-import nest_asyncio
-from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.constants import ParseMode
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
-from telegram import CopyTextButton
 import logging
 import random
 import re
 from datetime import datetime, timezone, timedelta
-from telegram.ext import CallbackContext
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Bot
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 import psycopg2
 from psycopg2 import sql
-from aiogram import Bot, Dispatcher, types
-from aiogram import types
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram.utils import executor
 from urllib.parse import urlparse
+from telegram import CopyTextButton
 
 nest_asyncio.apply()
 
@@ -129,27 +121,6 @@ def get_reports():
     cur.close()
     conn.close()
     return reports
-
-# Ініціалізація бота
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
-dp.middleware.setup(LoggingMiddleware())
-
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message):
-    await message.reply("Привіт! Я бот для роботи з репортами. Використовуйте команду /show_reports для перегляду всіх репортів.")
-
-async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reports = get_reports()
-
-    if reports:
-        response = "Вот все репорты:\n"
-        for report in reports:
-            response += f"ID: {report[0]}\nТекст: {report[1]}\nДата: {report[2]}\n\n"
-    else:
-        response = "Нету репортов."
-
-    await update.message.reply(response, parse_mode=ParseMode.MARKDOWN)
 
 # Функция отправки логов в группу
 async def log_action(text: str):
