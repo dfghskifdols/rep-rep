@@ -415,6 +415,8 @@ app.add_handler(CommandHandler("send", send_message))
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
 
+dp.add_handler(CommandHandler("show_reports", show_reports))
+
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
