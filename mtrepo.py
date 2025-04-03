@@ -19,8 +19,8 @@ ADMIN_CHAT_ID = -1002651165474
 USER_CHAT_ID = 5283100992
 LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 1552417677, 1385118926, 6139706645, 5222780613]
-SOURCE_GROUP_ID = '-1002268486160'
-TARGET_GROUP_ID = '-4665694960'
+SOURCE_GROUP_ID = -1002268486160
+DELETED_MESSAGE_CHAT_ID = -4665694960
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -436,18 +436,26 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
-# Функція для обробки видалених повідомлень
-async def forward_deleted_message(update: Update, context: CallbackContext):
-    # Перевіряємо, чи це повідомлення видалено з потрібного чату
-    if update.message and update.message.chat.id == SOURCE_CHAT_ID:
-        try:
-            # Пересилаємо повідомлення в інший чат
-            await context.bot.forward_message(chat_id=TARGET_CHAT_ID, from_chat_id=SOURCE_CHAT_ID, message_id=update.message.message_id)
-        except Exception as e:
-            print(f"Error forwarding message: {e}")
+# Обробка видалених повідомлень
+async def deleted_message_handler(update: Update, context: CallbackContext):
+    # Перевіряємо, чи є повідомлення
+    if update.message and update.message.from_user:
+        deleted_user = update.message.from_user.full_name
+        deleted_text = update.message.text
+        deleted_message_id = update.message.message_id
 
-# Створення обробника для видалених повідомлень
-message_handler = MessageHandler(Filters.all, forward_deleted_message)
+        # Формуємо текст для повідомлення
+        message = f"🚫 Сообщение удалено\n\n" \
+                  f"👤 <b>Пользователь:</b> {deleted_user}\n" \
+                  f"💬 <b>Текст сообщения:</b> {deleted_text}\n" \
+                  f"🆔 <b>ID сообщения:</b> {deleted_message_id}"
+
+        # Відправка в чат адміністраторів
+        await context.bot.send_message(DELETED_MESSAGE_CHAT_ID, message, parse_mode='HTML')
+
+# Додаємо обробник для видалених повідомлень
+deleted_message_handler_instance = MessageHandler(filters.Deleted & filters.Chat(chat_id=SOURCE_GROUP_ID), deleted_message_handler)
+app.add_handler(deleted_message_handler_instance)
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
@@ -456,9 +464,6 @@ app.add_handler(CommandHandler("send", send_message))
 app.add_handler(CommandHandler("id", get_chat_id))
 
 app.add_handler(CommandHandler("show_reports", show_reports))
-
-deleted_message_handler_instance = MessageHandler(Filters.TEXT & Filters.Chat(chat_id=SOURCE_GROUP_ID), deleted_message_handler)
-dp.add_handler(deleted_message_handler_instance)
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
