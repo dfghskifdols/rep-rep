@@ -457,15 +457,16 @@ app.add_handler(CommandHandler("id", get_chat_id))
 
 app.add_handler(CommandHandler("show_reports", show_reports))
 
+deleted_message_handler_instance = MessageHandler(Filters.TEXT & Filters.Chat(chat_id=SOURCE_GROUP_ID), deleted_message_handler)
+dp.add_handler(deleted_message_handler_instance)
+
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
-app.add_handler(message_handler)
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
-app.add_handler(deleted_message_handler_instance)
 
 async def main():
     print("Бот запущений!")
