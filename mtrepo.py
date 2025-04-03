@@ -111,6 +111,7 @@ def create_reports_table():
 
 # Функція для отримання всіх репортів
 def get_reports():
+    # Приклад отримання репортів з бази даних
     conn = psycopg2.connect(
         dbname=DB_NAME, 
         user=DB_USER, 
