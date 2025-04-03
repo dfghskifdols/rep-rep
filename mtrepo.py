@@ -129,13 +129,13 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(report_message)
 def get_reports():
-    """Отримує всі репорти з бази даних."""
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute("SELECT id, report_text FROM reports")  # Переконайся, що такі стовпці є
-    reports = cur.fetchall()
-    cur.close()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM reports")  # Извлекаем все столбцы
+    reports = cursor.fetchall()
+    cursor.close()
     conn.close()
+    
     return reports
 
 # Функция отправки логов в группу
@@ -204,7 +204,6 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
     report_time = update.message.date
     reported_text = update.message.reply_to_message.text
-    message_type = update.message.reply_to_message.content_type
     report_date = update.message.date
 
     if report_key in confirmed_reports:
