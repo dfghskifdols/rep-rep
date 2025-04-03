@@ -9,14 +9,16 @@ import random
 import re
 from datetime import datetime, timezone, timedelta
 from telegram.ext import CallbackContext
+import asyncpg
 
 nest_asyncio.apply()
 
-API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'  # Токен бота
-ADMIN_CHAT_ID = -1002651165474  # ID группы администрации
-USER_CHAT_ID = 5283100992  # Ваш ID для отправки сообщений в ЛС
-LOG_CHAT_ID = -1002411396364  # ID группы для логирования всех действий
-ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 1552417677, 1385118926, 6139706645, 5222780613]  # Список пользователей, которым разрешено отправлять сообщения
+API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'
+ADMIN_CHAT_ID = -1002651165474
+USER_CHAT_ID = 5283100992
+LOG_CHAT_ID = -1002411396364
+ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 1552417677, 1385118926, 6139706645, 5222780613]
+DATABASE_URL = "postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -73,6 +75,65 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
+# Функция подключения к БД
+async def connect_db():
+    return await asyncpg.connect(DATABASE_URL)
+
+# Функция создания таблицы репортов
+async def create_reports_table():
+    conn = await connect_db()
+    await conn.execute('''
+        CREATE TABLE IF NOT EXISTS reports (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT,
+            message TEXT,
+            reason TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    await conn.close()
+
+# Функция добавления репорта в БД
+async def add_report(user_id, message, reason):
+    conn = await connect_db()
+    await conn.execute("INSERT INTO reports (user_id, message, reason) VALUES ($1, $2, $3)", user_id, message, reason)
+    await conn.close()
+
+# Функция получения всех репортов из БД
+async def get_reports_from_db():
+    conn = await connect_db()
+    rows = await conn.fetch("SELECT * FROM reports")
+    await conn.close()
+    return rows
+
+# Функция для показа всех репортов
+async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Проверка, является ли пользователь администратором
+    if update.message.from_user.id not in ALLOWED_USERS:
+        await update.message.reply_text("❌ У вас нет доступа к этой команде.")
+        return
+    
+    # Получаем репорты из БД
+    reports = await get_reports_from_db()
+
+    if not reports:
+        await update.message.reply_text("❌ Нет ни одного репорта.")
+        return
+
+    # Формируем текст для отправки
+    report_text = "📝 Список всех репортов:\n\n"
+    for report in reports:
+        report_text += (
+            f"⚠️ Репорт ID: {report['id']}\n"
+            f"👤 Пользователь: {report['user_id']}\n"
+            f"💬 Сообщение: {report['message']}\n"
+            f"📅 Дата: {report['created_at']}\n"
+            f"Причина: {report['reason']}\n\n"
+        )
+
+    # Отправляем список репортов
+    await update.message.reply_text(report_text)
+
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
@@ -83,89 +144,6 @@ async def log_action(text: str):
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
-
-import asyncpg
-import asyncio
-
-DATABASE_URL = "postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
-
-# Функция подключения к базе
-async def connect_db():
-    return await asyncpg.connect(DATABASE_URL)
-
-# Функция создания таблицы разрешенных пользователей
-async def create_table():
-    conn = await connect_db()
-    await conn.execute('''
-        CREATE TABLE IF NOT EXISTS allowed_users (
-            id BIGINT PRIMARY KEY
-        )
-    ''')
-    await conn.close()
-
-# Функция добавления разрешенного пользователя
-async def add_allowed_user(user_id):
-    conn = await connect_db()
-    await conn.execute("INSERT INTO allowed_users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING", user_id)
-    await conn.close()
-
-# Функция получения списка разрешенных пользователей
-async def get_allowed_users():
-    conn = await connect_db()
-    rows = await conn.fetch("SELECT id FROM allowed_users")
-    await conn.close()
-    return [row['id'] for row in rows]
-
-# Тестируем подключение
-async def main():
-    await create_table()
-    await add_allowed_user(5283100992)  # Добавляем тестового пользователя
-    users = await get_allowed_users()
-    print("Разрешенные пользователи:", users)
-
-def connect_to_db():
-    try:
-        return psycopg2.connect(
-            dbname="neondb",  # ім'я бази даних
-            user="neondb_owner",  # користувач
-            password="npg_PXgGyF7Z5MUJ",  # пароль
-            host="ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech"  # хост
-        )
-    except psycopg2.Error as e:
-        print(f"Помилка підключення до бази даних: {e}")
-        return None
-
-# Функция для получения всех репортов из базы данных
-def get_reports_from_db():
-    conn = connect_to_db()
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT * FROM reports;")  # Предполагаем, что есть таблица 'reports'
-    reports = cursor.fetchall()
-    
-    cursor.close()
-    conn.close()
-    
-    return reports
-
-# Команда для вывода всех репортов
-def show_reports(update: Update, context: CallbackContext):
-    reports = get_reports_from_db()
-    
-    if reports:
-        report_text = "Список репортов:\n"
-        for report in reports:
-            report_text += f"ID: {report[0]}, Сообщение: {report[1]}\n"
-    else:
-        report_text = "Нет репортов в базе данных."
-    
-    update.message.reply_text(report_text)
-
-# Инициализация бота и обработчик команд
-def main():
-    updater = Updater("API_TOKEN", use_context=True)
-    
-    dispatcher = updater.dispatcher
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -436,9 +414,13 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+app.add_handler(CommandHandler("show_reports", show_reports))
 
-# Добавляем обработчик для команды /show_reports
-app.add_handler(CommandHandler('show_reports', show_reports))
+async def main():
+    await create_reports_table()  # Создаем таблицу перез созданием бота
 
-if __name__ == '__main__':
-    app.run_polling()
+    print("Бот запущений!")
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
