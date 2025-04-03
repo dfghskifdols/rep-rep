@@ -10,6 +10,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from urllib.parse import urlparse
 from telegram import CopyTextButton
 import sqlite3
+import pytz
 
 nest_asyncio.apply()
 
@@ -113,11 +114,21 @@ def get_reports():
     return reports
 
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reports = get_reports()  # Отримання репортів з БД
+    # Отримання репортів з бази даних
+    reports = get_reports()
     if reports:
-        report_message = "\n".join([f"Репорт {r[0]}: {r[1]}" for r in reports])
+        # Форматування повідомлення з додатковою інформацією
+        report_message = "\n\n".join([
+            f"Репорт {r[0]}:\n"
+            f"Причина: {r[3]}\n"
+            f"Час: {r[4]}\n"
+            f"Репортер: {r[5]}\n"
+            f"На кого: {r[6]}\n"
+            f"Посилання: {r[7]}"
+            for r in reports
+        ])
     else:
-        report_message = "Немає репортів."
+        report_message = "Нету репортов."
 
     await update.message.reply_text(report_message)
 
@@ -143,11 +154,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
 # Функция для сохранения репорта в SQLite
-def save_report(user_id, message_id, reason):
+moscow_tz = pytz.timezone('Europe/Moscow')
+
+def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute('INSERT INTO reports (user_id, message_id, report_text) VALUES (?, ?, ?)', 
-                (user_id, message_id, reason))
+    
+    # Отримуємо поточний час у МСК
+    report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Вставляємо новий репорт з усіма даними
+    cur.execute('''
+        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, message_id, reason, report_time, reporter_name, reported_name, message_link))
+    
     conn.commit()
     cur.close()
     conn.close()
@@ -181,7 +202,9 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message_id = update.message.reply_to_message.message_id
     user_id = update.message.from_user.id
-    report_key = f"{user_id}_{message_id}"
+    reporter_name = update.message.from_user.full_name
+    reported_name = update.message.reply_to_message.from_user.full_name
+    message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
 
     if report_key in confirmed_reports:
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
@@ -201,7 +224,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     # Сохранение репорта в базу
-    save_report(user_id, message_id, reason)
+    save_report(user_id, message_id, reason, reporter_name, reported_name, message_link)
 
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
