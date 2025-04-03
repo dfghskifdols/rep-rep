@@ -111,13 +111,13 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
         report_message = ""
         for r in reports:
             if len(r) >= 8:  # Перевіряємо, що є достатньо елементів
-                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nЧас: {r[4]}\nРепортер: {r[5]}\nКого репортують: {r[6]}\nПосилання: {r[7]}\n\n"
+                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nВремя: {r[4]}\nТот кто кинул репорт: {r[5]}\nНа кого кинули репорь: {r[6]}\nСсылка: {r[7]}\n\n"
             else:
-                report_message += f"Репорт {r[0]} має недостачу даних.\n\n"
+                report_message += f"Репорт {r[0]} имеет недостаток данных.\n\n"
     else:
         report_message = "Нету репортов."
 
-    await update.message.reply_text(report_message)
+    await update.message.reply_text(report_message, disable_web_page_preview=True)
 def get_reports():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
