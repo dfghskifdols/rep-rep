@@ -77,7 +77,7 @@ REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
 # Функция подключения к БД
 async def connect_db():
-   try:
+    try:
         return await asyncpg.connect(DATABASE_URL)
     except Exception as e:
         logger.error(f"Error while connecting to the database: {e}")
