@@ -1,3 +1,4 @@
+import nest_asyncio
 import logging
 import random
 import re
