@@ -423,9 +423,6 @@ app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 app.add_handler(CommandHandler("show_reports", show_reports))
 
-async def main():
-    await create_reports_table()  # Создаем таблицу перез созданием бота
-
     print("Бот запущений!")
     await app.run_polling()
 
