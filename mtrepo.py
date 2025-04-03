@@ -154,6 +154,8 @@ async def deleted_message_handler(update: Update, context):
         # Надсилаємо текст видаленого повідомлення в іншу групу
         await context.bot.send_message(chat_id=TARGET_GROUP_ID, text=deleted_message_text)
 
+# Обробник для видалених повідомлень
+deleted_message_handler_instance = MessageHandler(filters.Filters.all & filters.Filters.update_message, deleted_message_handler)
 
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
