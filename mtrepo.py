@@ -19,6 +19,8 @@ ADMIN_CHAT_ID = -1002651165474
 USER_CHAT_ID = 5283100992
 LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 1552417677, 1385118926, 6139706645, 5222780613]
+SOURCE_GROUP_ID = '-1002268486160'
+TARGET_GROUP_ID = '-4665694960'
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -142,6 +144,16 @@ async def log_action(text: str):
         await bot.send_message(LOG_CHAT_ID, text, parse_mode=ParseMode.HTML)
     except Exception as e:
         logger.error(f"Ошибка при отправке лога: {e}")
+
+async def deleted_message_handler(update: Update, context):
+    # Перевірка, чи було повідомлення видалено та чи було воно з потрібної групи
+    if update.message and update.message.delete and update.message.chat_id == SOURCE_GROUP_ID:
+        # Текст видаленого повідомлення
+        deleted_message_text = f"Повідомлення видалено з групи {SOURCE_GROUP_ID}:\n{update.message.text}"
+        
+        # Надсилаємо текст видаленого повідомлення в іншу групу
+        await context.bot.send_message(chat_id=TARGET_GROUP_ID, text=deleted_message_text)
+
 
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -446,6 +458,7 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+app.add_handler(deleted_message_handler_instance)
 
 async def main():
     print("Бот запущений!")
