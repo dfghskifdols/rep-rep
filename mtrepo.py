@@ -155,7 +155,7 @@ async def deleted_message_handler(update: Update, context):
         await context.bot.send_message(chat_id=TARGET_GROUP_ID, text=deleted_message_text)
 
 # Обробник для видалених повідомлень
-deleted_message_handler_instance = MessageHandler(filters.ALL & filters.UpdateType.MESSAGE, deleted_message_handler)
+deleted_message_handler_instance = MessageHandler(filters.TEXT & filters.Chat(chat_id=SOURCE_GROUP_ID), deleted_message_handler)
 
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
