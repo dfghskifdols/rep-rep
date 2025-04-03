@@ -116,14 +116,18 @@ def get_reports():
 
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reports = get_reports()
-    
+
     if reports:
-        report_message = "\n\n".join([f"Репорт {r[0]}:\nПричина: {r[3]}\nЧас: {r[4]}\nРепортер: {r[5]}\nКого репортують: {r[6]}\nПосилання: {r[7]}" for r in reports])
+        report_message = ""
+        for r in reports:
+            if len(r) >= 8:  # Перевіряємо, що є достатньо елементів
+                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nЧас: {r[4]}\nРепортер: {r[5]}\nКого репортують: {r[6]}\nПосилання: {r[7]}\n\n"
+            else:
+                report_message += f"Репорт {r[0]} має недостачу даних.\n\n"
     else:
         report_message = "Нету репортов."
-    
-    await update.message.reply_text(report_message)
 
+    await update.message.reply_text(report_message)
 def get_reports():
     """Отримує всі репорти з бази даних."""
     conn = sqlite3.connect(DB_PATH)
