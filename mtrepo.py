@@ -451,17 +451,20 @@ async def save_message(update: Update, context: CallbackContext):
 
 async def check_deleted_messages(context: CallbackContext):
     """Перевіряє, які повідомлення ще існують"""
+    bot = context.bot  # Тепер bot правильний
     for chat_id, messages in list(message_storage.items()):
         to_delete = []
         for message_id in list(messages.keys()):
             try:
                 # Перевіряємо, чи повідомлення існує
-                await context.bot.get_message(chat_id, message_id)
+                await bot.get_chat(chat_id)  # Виправлення: get_chat() замість get_message()
             except Exception:
                 # Якщо повідомлення не існує – воно видалене
                 user, text = messages[message_id]
                 log_msg = f"🚫 Видалено повідомлення!\n👤 {user}\n💬 {text}"
-                await context.bot.send_message(LOG_CHAT_ID, log_msg)
+
+                # Виправлено parse_mode
+                await bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=None)
                 to_delete.append(message_id)
 
         # Видаляємо записані повідомлення, які більше не існують
