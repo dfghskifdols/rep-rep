@@ -97,7 +97,7 @@ def create_db():
     cursor.close()
     conn.close()
 
-create_reports_table()
+create_db()
 
 def get_reports():
     conn = sqlite3.connect(DB_PATH)
