@@ -465,6 +465,7 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+app.add_handler(deleted_message_handler_instance)
 
 async def main():
     print("Бот запущений!")
