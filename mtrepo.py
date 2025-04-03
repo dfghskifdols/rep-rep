@@ -83,13 +83,17 @@ def create_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # Створення таблиці з необхідними колонками, якщо її ще немає
-    cursor.execute('''
+    # Створення таблиці з новими колонками
+    cursor.execute(''' 
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             message_id INTEGER,
-            report_text TEXT
+            report_text TEXT,
+            report_time TEXT,
+            reporter_name TEXT,
+            reported_name TEXT,
+            message_link TEXT
         )
     ''')
     
