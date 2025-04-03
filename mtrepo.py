@@ -105,6 +105,12 @@ def create_db():
 create_db()
 
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id  # Отримуємо ID користувача
+
+    if user_id not in ALLOWED_USERS:  # Перевіряємо, чи є користувач у списку дозволених
+        await update.message.reply_text("У вас нету доступа к этой команде.")
+        return
+
     reports = get_reports()
 
     if reports:
@@ -113,11 +119,13 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if len(r) >= 8:  # Перевіряємо, що є достатньо елементів
                 report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nВремя: {r[4]}\nТот кто кинул репорт: {r[5]}\nТот на кого кинули репорт: {r[6]}\nСсылка: {r[7]}\n\n"
             else:
-                report_message += f"Репорт {r[0]} имеет недостаток данных.\n\n"
+                report_message += f"Репорт {r[0]} имеет недостаточно даных.\n\n"
     else:
         report_message = "Нету репортов."
 
+    # Відправка повідомлення без попереднього перегляду веб-сторінок
     await update.message.reply_text(report_message, disable_web_page_preview=True)
+
 def get_reports():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
