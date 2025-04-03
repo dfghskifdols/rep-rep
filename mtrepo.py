@@ -9,7 +9,12 @@ import random
 import re
 from datetime import datetime, timezone, timedelta
 from telegram.ext import CallbackContext
-import asyncpg
+import psycopg2
+from psycopg2 import sql
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import ParseMode
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.utils import executor
 
 nest_asyncio.apply()
 
@@ -18,7 +23,6 @@ ADMIN_CHAT_ID = -1002651165474
 USER_CHAT_ID = 5283100992
 LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 1552417677, 1385118926, 6139706645, 5222780613]
-DATABASE_URL = "postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -75,71 +79,79 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
-# Функция подключения к БД
-async def connect_db():
-    try:
-        return await asyncpg.connect(DATABASE_URL)
-    except Exception as e:
-        logger.error(f"Error while connecting to the database: {e}")
-        raise
+# Парсинг URL підключення до бази даних
+DATABASE_URL = 'postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require'
+url = urlparse(DATABASE_URL)
 
-# Функция создания таблицы репортов
-async def create_reports_table():
-    try:
-        conn = await connect_db()
-        await conn.execute('''
-            CREATE TABLE IF NOT EXISTS reports (
-                id SERIAL PRIMARY KEY,
-                user_id BIGINT,
-                message TEXT,
-                reason TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        await conn.close()
-    except Exception as e:
-        logger.error(f"Error creating reports table: {e}")
+# Параметри підключення з URL
+DB_NAME = url.path[1:]  # Видаляємо перший символ '/' з шляху
+DB_USER = url.username
+DB_PASSWORD = url.password
+DB_HOST = url.hostname
+DB_PORT = url.port if url.port else 5432  # Встановлюємо порт, якщо він не вказаний в URL
 
-# Функция добавления репорта в БД
-async def add_report(user_id, message, reason):
-    conn = await connect_db()
-    await conn.execute("INSERT INTO reports (user_id, message, reason) VALUES ($1, $2, $3)", user_id, message, reason)
-    await conn.close()
-
-# Функция получения всех репортов из БД
-async def get_reports_from_db():
-    conn = await connect_db()
-    rows = await conn.fetch("SELECT * FROM reports")
-    await conn.close()
-    return rows
-
-# Функция для показа всех репортов
-async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Проверка, является ли пользователь администратором
-    if update.message.from_user.id not in ALLOWED_USERS:
-        await update.message.reply_text("❌ У вас нет доступа к этой команде.")
-        return
-    
-    # Получаем репорты из БД
-    reports = await get_reports_from_db()
-
-    if not reports:
-        await update.message.reply_text("❌ Нет ни одного репорта.")
-        return
-
-    # Формируем текст для отправки
-    report_text = "📝 Список всех репортов:\n\n"
-    for report in reports:
-        report_text += (
-            f"⚠️ Репорт ID: {report['id']}\n"
-            f"👤 Пользователь: {report['user_id']}\n"
-            f"💬 Сообщение: {report['message']}\n"
-            f"📅 Дата: {report['created_at']}\n"
-            f"Причина: {report['reason']}\n\n"
+# Підключення до бази даних
+def create_reports_table():
+    conn = psycopg2.connect(
+        dbname=DB_NAME, 
+        user=DB_USER, 
+        password=DB_PASSWORD, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
+    cur = conn.cursor()
+    cur.execute('DROP TABLE IF EXISTS reports')
+    cur.execute('''
+        CREATE TABLE reports (
+            id SERIAL PRIMARY KEY,
+            report_text TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("Таблиця створена успішно!")
 
-    # Отправляем список репортов
-    await update.message.reply_text(report_text)
+# Функція для отримання всіх репортів
+def get_reports():
+    conn = psycopg2.connect(
+        dbname=DB_NAME, 
+        user=DB_USER, 
+        password=DB_PASSWORD, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM reports ORDER BY created_at DESC')
+    reports = cur.fetchall()
+    cur.close()
+    conn.close()
+    return reports
+
+# Ініціалізація бота
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
+
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message):
+    await message.reply("Привіт! Я бот для роботи з репортами. Використовуйте команду /show_reports для перегляду всіх репортів.")
+
+# Обробка команди /show_reports
+@dp.message_handler(commands=['show_reports'])
+async def show_reports(message: types.Message):
+    reports = get_reports()
+
+    if reports:
+        response = "Ось всі репорти:\n"
+        for report in reports:
+            response += f"ID: {report[0]}\nТекст: {report[1]}\nДата: {report[2]}\n\n"
+    else:
+        response = "Немає жодного репорту."
+
+    await message.reply(response, parse_mode=ParseMode.MARKDOWN)
+
 
 # Функция отправки логов в группу
 async def log_action(text: str):
@@ -421,7 +433,6 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
-app.add_handler(CommandHandler("show_reports", show_reports))
 
 async def main():
     print("Бот запущений!")
