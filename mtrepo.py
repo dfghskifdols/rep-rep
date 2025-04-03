@@ -104,16 +104,6 @@ def create_db():
 
 create_db()
 
-def get_reports():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM reports")
-    reports = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
-    return reports
-
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reports = get_reports()
 
