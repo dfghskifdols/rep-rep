@@ -138,9 +138,6 @@ def show_reports(update, context):
 def main():
     # Створюємо Updater для вашого бота
     updater = Updater("API_TOKEN", use_context=True)
-    
-    # Отримуємо диспетчер для обробки команд
-    dispatcher = updater.dispatcher
 
 # Функция отправки логов в группу
 async def log_action(text: str):
@@ -415,7 +412,7 @@ app.add_handler(CommandHandler("send", send_message))
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
 
-dispatcher.add_handler(CommandHandler("show_reports", show_reports))
+app.add_handler(CommandHandler("show_reports", show_reports))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
