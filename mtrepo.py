@@ -14,9 +14,6 @@ import pytz
 
 nest_asyncio.apply()
 
-# Збереження повідомлень у словнику {chat_id: {message_id: (user, текст)}}
-message_storage = {}
-
 API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'
 ADMIN_CHAT_ID = -1002651165474
 USER_CHAT_ID = 5283100992
@@ -436,6 +433,9 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
+# Збереження повідомлень у словнику {chat_id: {message_id: текст}}
+message_storage = {}
+
 async def save_message(update: Update, context: CallbackContext):
     """Зберігає повідомлення у словнику"""
     if update.message:
@@ -451,32 +451,28 @@ async def save_message(update: Update, context: CallbackContext):
 
 async def check_deleted_messages(context: CallbackContext):
     """Перевіряє, які повідомлення ще існують"""
-    bot = context.bot
-    for chat_id, messages in list(message_storage.items()):
+    for chat_id, messages in message_storage.items():
         to_delete = []
-        for message_id in list(messages.keys()):
+        for message_id in messages:
             try:
-                # Спроба переслати повідомлення (якщо помилка – значить воно видалене)
-                await bot.forward_message(chat_id=chat_id, from_chat_id=chat_id, message_id=message_id)
-            except Exception as e:
-                print(f"❌ Повідомлення {message_id} у {chat_id} видалене. Помилка: {e}")
+                await context.bot.forward_message(chat_id=chat_id, from_chat_id=chat_id, message_id=message_id)
+            except Exception:
+                # Якщо forward_message не вдається – значить, повідомлення видалене
                 user, text = messages[message_id]
                 log_msg = f"🚫 Видалено повідомлення!\n👤 {user}\n💬 {text}"
-                try:
-                    await bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=None)
-                except Exception as err:
-                    print(f"❌ Помилка надсилання логів: {err}")
+                print(log_msg)  # Лог для тесту
                 to_delete.append(message_id)
 
-        # Видаляємо збережені повідомлення, які більше не існують
+        # Видаляємо записані повідомлення, які більше не існують
         for msg_id in to_delete:
             del message_storage[chat_id][msg_id]
 
 async def start_checking(app: Application):
     """Запускає перевірку видалених повідомлень кожні 10 секунд"""
     while True:
-        await check_deleted_messages(app.bot)
+        await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
+
 
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & ~filters.Command(), save_message))
 
@@ -499,11 +495,8 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 async def main():
     print("🚀 Бот запущений!")
 
-    # Спочатку запускаємо polling
-    await app.run_polling()
-
-    # Запускаємо перевірку після того, як polling розпочнеться
-    await start_checking(app)  # Запуск перевірки після того, як бот ініціалізовано
+    # Запуск polling і фонової перевірки одночасно
+    await asyncio.gather(app.run_polling(), start_checking(app))
 
 if __name__ == "__main__":
     asyncio.run(main())
