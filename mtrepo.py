@@ -498,9 +498,10 @@ app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 async def main():
-    print("Бот запущений!")
-    asyncio.create_task(start_checking(app))
+    print("🚀 Бот запущений!")
+    # Запуск перевірки після ініціалізації
     await app.run_polling()
+    await start_checking(app)
 
 if __name__ == "__main__":
     asyncio.run(main())
