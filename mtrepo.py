@@ -86,14 +86,14 @@ def create_reports_table():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            report_text TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            report_text TEXT NOT NULL
         )
     ''')
     conn.commit()
     cur.close()
     conn.close()
-    print("Таблиця створена успішно!")
+
+create_reports_table()
 
 def get_reports():
     conn = sqlite3.connect(DB_PATH)
