@@ -145,17 +145,19 @@ async def log_action(text: str):
     except Exception as e:
         logger.error(f"Ошибка при отправке лога: {e}")
 
+# Функція для обробки видалених повідомлень
 async def deleted_message_handler(update: Update, context):
-    # Перевірка, чи було повідомлення видалено та чи було воно з потрібної групи
-    if update.message and update.message.delete and update.message.chat_id == SOURCE_GROUP_ID:
-        # Текст видаленого повідомлення
-        deleted_message_text = f"Повідомлення видалено з групи {SOURCE_GROUP_ID}:\n{update.message.text}"
-        
-        # Надсилаємо текст видаленого повідомлення в іншу групу
-        await context.bot.send_message(chat_id=TARGET_GROUP_ID, text=deleted_message_text)
+    try:
+        # Перевірка, чи було повідомлення видалено та чи було воно з потрібної групи
+        if update.message and update.message.delete and update.message.chat_id == SOURCE_GROUP_ID:
+            # Текст видаленого повідомлення
+            deleted_message_text = f"Повідомлення видалено з групи {SOURCE_GROUP_ID}:\n{update.message.text}"
 
-        except Exception as e:
-            logger.error(f"Ошибка при отправке сообщения в группу: {e}")
+            # Надсилаємо текст видаленого повідомлення в іншу групу
+            await context.bot.send_message(chat_id=TARGET_GROUP_ID, text=deleted_message_text)
+    
+    except Exception as e:
+        logger.error(f"Ошибка при отправке сообщения в группу: {e}")
 
 # Обробник для видалених повідомлень
 deleted_message_handler_instance = MessageHandler(filters.TEXT & filters.Chat(chat_id=SOURCE_GROUP_ID), deleted_message_handler)
