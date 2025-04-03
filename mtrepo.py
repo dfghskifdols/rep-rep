@@ -475,9 +475,8 @@ async def check_deleted_messages(context: CallbackContext):
 async def start_checking(app: Application):
     """Запускає перевірку видалених повідомлень кожні 10 секунд"""
     while True:
-        print("🔄 Перевірка видалених повідомлень...")
         await check_deleted_messages(app.bot)
-        await asyncio.sleep(10)
+        await asyncio.sleep(10)  # Перевірка кожні 10 секунд
 
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & ~filters.Command(), save_message))
 
@@ -499,9 +498,12 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 async def main():
     print("🚀 Бот запущений!")
-    # Запуск перевірки після ініціалізації
+
+    # Спочатку запускаємо polling
     await app.run_polling()
-    await start_checking(app)
+
+    # Запускаємо перевірку після того, як polling розпочнеться
+    await start_checking(app)  # Запуск перевірки після того, як бот ініціалізовано
 
 if __name__ == "__main__":
     asyncio.run(main())
