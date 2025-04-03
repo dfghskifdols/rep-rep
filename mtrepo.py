@@ -126,14 +126,15 @@ def get_reports():
     return reports
 
 # Функція для обробки команди /show_reports
-def show_reports(update, context):
-    # Припустимо, що ваші репорти зберігаються в списку або базі даних
-    reports = ["Репорт 1", "Репорт 2", "Репорт 3"]  # Тут ваші репорти
+async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Отримання репортів з бази даних або списку
+    reports = get_reports()  # Викликаємо вашу функцію для отримання репортів
     if reports:
-        report_message = "\n".join(reports)
+        report_message = "\n".join([f"Репорт {r[0]}: {r[1]}" for r in reports])  # Наприклад, це буде виглядати так
     else:
-        report_message = "Нету репотров"
-    update.message.reply_text(report_message)
+        report_message = "Нету репортов."
+    
+    await update.message.reply_text(report_message)
 
 def main():
     # Створюємо Updater для вашого бота
