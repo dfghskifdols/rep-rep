@@ -84,8 +84,8 @@ def create_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # Створення таблиці з новими колонками
-    cursor.execute(''' 
+    # Створення таблиці з усіма необхідними стовпцями
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
@@ -106,30 +106,22 @@ create_db()
 
 def get_reports():
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM reports ORDER BY created_at DESC')
-    reports = cur.fetchall()
-    cur.close()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM reports")
+    reports = cursor.fetchall()
+    cursor.close()
     conn.close()
+    
     return reports
 
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Отримання репортів з бази даних
     reports = get_reports()
+    
     if reports:
-        # Форматування повідомлення з додатковою інформацією
-        report_message = "\n\n".join([
-            f"Репорт {r[0]}:\n"
-            f"Причина: {r[3]}\n"
-            f"Час: {r[4]}\n"
-            f"Репортер: {r[5]}\n"
-            f"На кого: {r[6]}\n"
-            f"Посилання: {r[7]}"
-            for r in reports
-        ])
+        report_message = "\n\n".join([f"Репорт {r[0]}:\nПричина: {r[3]}\nЧас: {r[4]}\nРепортер: {r[5]}\nКого репортують: {r[6]}\nПосилання: {r[7]}" for r in reports])
     else:
         report_message = "Нету репортов."
-
+    
     await update.message.reply_text(report_message)
 
 def get_reports():
