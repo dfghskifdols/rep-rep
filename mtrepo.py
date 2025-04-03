@@ -424,7 +424,7 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 app.add_handler(CommandHandler("show_reports", show_reports))
 
 print("Бот запущений!")
-await app.run_polling()
+    await app.run_polling()
 
 if __name__ == "__main__":
     asyncio.run(main())
