@@ -139,20 +139,17 @@ dp.middleware.setup(LoggingMiddleware())
 async def send_welcome(message: types.Message):
     await message.reply("Привіт! Я бот для роботи з репортами. Використовуйте команду /show_reports для перегляду всіх репортів.")
 
-# Обробка команди /show_reports
-@dp.message_handler(commands=['show_reports'])
-async def show_reports(message: types.Message):
+async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reports = get_reports()
 
     if reports:
-        response = "Ось всі репорти:\n"
+        response = "Вот все репорты:\n"
         for report in reports:
             response += f"ID: {report[0]}\nТекст: {report[1]}\nДата: {report[2]}\n\n"
     else:
-        response = "Немає жодного репорту."
+        response = "Нету репортов."
 
-    await message.reply(response, parse_mode=ParseMode.MARKDOWN)
-
+    await update.message.reply(response, parse_mode=ParseMode.MARKDOWN)
 
 # Функция отправки логов в группу
 async def log_action(text: str):
