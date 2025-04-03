@@ -77,21 +77,28 @@ REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
 # Функция подключения к БД
 async def connect_db():
-    return await asyncpg.connect(DATABASE_URL)
+   try:
+        return await asyncpg.connect(DATABASE_URL)
+    except Exception as e:
+        logger.error(f"Error while connecting to the database: {e}")
+        raise
 
 # Функция создания таблицы репортов
 async def create_reports_table():
-    conn = await connect_db()
-    await conn.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
-            id SERIAL PRIMARY KEY,
-            user_id BIGINT,
-            message TEXT,
-            reason TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    await conn.close()
+    try:
+        conn = await connect_db()
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS reports (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT,
+                message TEXT,
+                reason TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        await conn.close()
+    except Exception as e:
+        logger.error(f"Error creating reports table: {e}")
 
 # Функция добавления репорта в БД
 async def add_report(user_id, message, reason):
