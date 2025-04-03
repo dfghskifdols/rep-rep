@@ -145,9 +145,6 @@ async def log_action(text: str):
     except Exception as e:
         logger.error(f"Ошибка при отправке лога: {e}")
 
-# Обробник для видалених повідомлень
-deleted_message_handler_instance = MessageHandler(filters.TEXT & filters.Chat(chat_id=SOURCE_GROUP_ID), deleted_message_handler)
-
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
