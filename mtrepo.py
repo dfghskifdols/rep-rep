@@ -451,31 +451,33 @@ async def save_message(update: Update, context: CallbackContext):
 
 async def check_deleted_messages(context: CallbackContext):
     """Перевіряє, які повідомлення ще існують"""
-    bot = context.bot  # Тепер bot правильний
+    bot = context.bot
     for chat_id, messages in list(message_storage.items()):
         to_delete = []
         for message_id in list(messages.keys()):
             try:
-                # Перевіряємо, чи повідомлення існує
-                await bot.get_chat(chat_id)  # Виправлення: get_chat() замість get_message()
-            except Exception:
-                # Якщо повідомлення не існує – воно видалене
+                # Спроба переслати повідомлення (якщо помилка – значить воно видалене)
+                await bot.forward_message(chat_id=chat_id, from_chat_id=chat_id, message_id=message_id)
+            except Exception as e:
+                print(f"❌ Повідомлення {message_id} у {chat_id} видалене. Помилка: {e}")
                 user, text = messages[message_id]
                 log_msg = f"🚫 Видалено повідомлення!\n👤 {user}\n💬 {text}"
-
-                # Виправлено parse_mode
-                await bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=None)
+                try:
+                    await bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=None)
+                except Exception as err:
+                    print(f"❌ Помилка надсилання логів: {err}")
                 to_delete.append(message_id)
 
-        # Видаляємо записані повідомлення, які більше не існують
+        # Видаляємо збережені повідомлення, які більше не існують
         for msg_id in to_delete:
             del message_storage[chat_id][msg_id]
 
 async def start_checking(app: Application):
     """Запускає перевірку видалених повідомлень кожні 10 секунд"""
     while True:
+        print("🔄 Перевірка видалених повідомлень...")
         await check_deleted_messages(app.bot)
-        await asyncio.sleep(10)  # Перевірка кожні 10 секунд
+        await asyncio.sleep(10)
 
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & ~filters.Command(), save_message))
 
