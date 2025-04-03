@@ -111,7 +111,7 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
         report_message = ""
         for r in reports:
             if len(r) >= 8:  # Перевіряємо, що є достатньо елементів
-                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nВремя: {r[4]}\nТот кто кинул репорт: {r[5]}\nНа кого кинули репорь: {r[6]}\nСсылка: {r[7]}\n\n"
+                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nВремя: {r[4]}\nТот кто кинул репорт: {r[5]}\nТот на кого кинули репорт: {r[6]}\nСсылка: {r[7]}\n\n"
             else:
                 report_message += f"Репорт {r[0]} имеет недостаток данных.\n\n"
     else:
