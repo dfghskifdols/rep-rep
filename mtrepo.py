@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 from telegram.ext import CallbackContext
 import psycopg2
 from psycopg2 import sql
-from aiogram import Bot, Dispatcher, types
+from aiogram import Dispatcher, types
 from aiogram import types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils import executor
