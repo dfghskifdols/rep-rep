@@ -436,6 +436,19 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
+# Функція для обробки видалених повідомлень
+async def forward_deleted_message(update: Update, context: CallbackContext):
+    # Перевіряємо, чи це повідомлення видалено з потрібного чату
+    if update.message and update.message.chat.id == SOURCE_CHAT_ID:
+        try:
+            # Пересилаємо повідомлення в інший чат
+            await context.bot.forward_message(chat_id=TARGET_CHAT_ID, from_chat_id=SOURCE_CHAT_ID, message_id=update.message.message_id)
+        except Exception as e:
+            print(f"Error forwarding message: {e}")
+
+# Створення обробника для видалених повідомлень
+message_handler = MessageHandler(Filters.all, forward_deleted_message)
+
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
 
@@ -446,6 +459,7 @@ app.add_handler(CommandHandler("show_reports", show_reports))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
+app.add_handler(message_handler)
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
