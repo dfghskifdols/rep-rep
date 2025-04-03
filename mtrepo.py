@@ -79,18 +79,22 @@ REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
 DB_PATH = "database.db"  # Файл бази даних SQLite
 
-# Функція для створення таблиці
-def create_reports_table():
+def create_db():
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute('''
+    cursor = conn.cursor()
+    
+    # Створення таблиці з необхідними колонками, якщо її ще немає
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            report_text TEXT NOT NULL
+            user_id INTEGER,
+            message_id INTEGER,
+            report_text TEXT
         )
     ''')
+    
     conn.commit()
-    cur.close()
+    cursor.close()
     conn.close()
 
 create_reports_table()
