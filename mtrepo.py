@@ -148,9 +148,6 @@ async def log_action(text: str):
     except Exception as e:
         logger.error(f"Ошибка при отправке лога: {e}")
 
-async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.info("Show reports command triggered.")
-
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
