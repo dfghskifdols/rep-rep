@@ -15,6 +15,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram import types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils import executor
+from urllib.parse import urlparse
 
 nest_asyncio.apply()
 
