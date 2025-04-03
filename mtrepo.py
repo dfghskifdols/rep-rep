@@ -111,7 +111,6 @@ def create_reports_table():
 
 # Функція для отримання всіх репортів
 def get_reports():
-    # Приклад отримання репортів з бази даних
     conn = psycopg2.connect(
         dbname=DB_NAME, 
         user=DB_USER, 
@@ -122,16 +121,18 @@ def get_reports():
     cur = conn.cursor()
     cur.execute('SELECT * FROM reports ORDER BY created_at DESC')
     reports = cur.fetchall()
+    print(f"Отримані репорти: {reports}")  # Логування результату запиту
     cur.close()
     conn.close()
     return reports
 
 # Функція для обробки команди /show_reports
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Отримання репортів з бази даних або списку
-    reports = get_reports()  # Викликаємо вашу функцію для отримання репортів
+    # Отримання репортів з бази даних
+    reports = get_reports()  
     if reports:
-        report_message = "\n".join([f"Репорт {r[0]}: {r[1]}" for r in reports])  # Наприклад, це буде виглядати так
+        # Перевірка, як саме ви обробляєте список
+        report_message = "\n".join([f"Репорт {r[0]}: {r[1]}" for r in reports])  # Перевірка індексів
     else:
         report_message = "Нету репортов."
     
