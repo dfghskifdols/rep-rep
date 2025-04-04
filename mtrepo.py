@@ -473,9 +473,6 @@ async def start_checking(app: Application):
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
 
-
-app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & ~filters.Command(), save_message))
-
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
 
@@ -489,7 +486,7 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
-app.add_handler(MessageHandler(filters.TEXT, handle_message))
+app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
 async def main():
