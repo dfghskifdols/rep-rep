@@ -12,6 +12,9 @@ from telegram import CopyTextButton
 import sqlite3
 import pytz
 
+# Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
+waiting_for_question = set()
+
 nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'
@@ -358,16 +361,31 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Кидаем сообщение, что ID скопировано
     await query.edit_message_text(f"✅ ID чата: `{chat_id}` скопировано!")
 
-# Функция оброботки 
-async def handle_message(update: Update, context):
-    message = update.message.text.lower()
-    
 # Функция обработки сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message.text.strip()
+    user_id = update.effective_user.id
+    username = update.effective_user.username or update.effective_user.full_name
 
-    if message.lower() == "Неко".lower():
-        admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
+    # 🔄 Початок логіки "Репорт-бот-вопрос"
+    if message.lower() == "репорт-бот-вопрос":
+        waiting_for_question.add(user_id)
+        await update.message.reply_text("Слушаю!")
+        return
+
+    if user_id in waiting_for_question:
+        waiting_for_question.remove(user_id)
+
+        admin_id = 5283100992  # Твій ID
+        text = f"📩 Нове питання від @{username} (ID: {user_id}):\n\n{message}"
+        await context.bot.send_message(chat_id=admin_id, text=text)
+
+        await update.message.reply_text("Ваше питання надіслано адміністрації ✅")
+        return
+    # 🔄 Кінець логіки
+
+    if message.lower() == "неко":
+        admins = await context.bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
             random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
