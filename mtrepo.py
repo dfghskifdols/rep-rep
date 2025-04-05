@@ -380,7 +380,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = f"📩 Нове питання від @{username} (ID: {user_id}):\n\n{message}"
         await context.bot.send_message(chat_id=admin_id, text=text)
 
-        await update.message.reply_text("Ваше питання надіслано адміністрації ✅")
+        await update.message.reply_text("Ваш вопрос успешно обработан✅")
         return
     # 🔄 Кінець логіки
 
