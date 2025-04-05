@@ -367,22 +367,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username or update.effective_user.full_name
 
-    # 🔄 Початок логіки "Репорт-бот-вопрос"
+# Функція для очікування відповіді
+async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DEFAULT_TYPE):
+    await asyncio.sleep(120)  # 2 хвилини
+    if user_id in waiting_for_question:
+        waiting_for_question.remove(user_id)
+        try:
+            await context.bot.send_message(chat_id=chat_id, text="⏰ Время вышло! Если хочеш попробывать еще раз - напиши 'Репорт-бот-вопрос'")
+        except Exception as e:
+            print(f"Ошибка при отправке сообщение про то что время вышло: {e}")
+
+# Основна функція обробки повідомлень
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message.text.strip()
+    user_id = update.message.from_user.id
+
     if message.lower() == "репорт-бот-вопрос":
-        waiting_for_question.add(user_id)
-        await update.message.reply_text("Слушаю!")
+        if user_id not in waiting_for_question:
+            waiting_for_question.add(user_id)
+            await update.message.reply_text("Слушаю!")
+            asyncio.create_task(wait_for_response(user_id, update.message.chat_id, context))
+        else:
+            await update.message.reply_text("⏳ Я уже жду на твой вопрос! Напиши свой вопрос или подожди немного!")
         return
 
     if user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
-
-        admin_id = 5283100992  # Твій ID
-        text = f"📩 Нове питання від @{username} (ID: {user_id}):\n\n{message}"
-        await context.bot.send_message(chat_id=admin_id, text=text)
-
-        await update.message.reply_text("Ваш вопрос успешно обработан✅")
+        admin_id = 5283100992  # Твій Telegram ID
+        try:
+            await context.bot.send_message(chat_id=admin_id, text=f"📩 Новый вопрос @{update.message.from_user.username or update.message.from_user.first_name}:\n\n{message}")
+            await update.message.reply_text("✅ Ваш вопрос отправлен!")
+        except Exception as e:
+            await update.message.reply_text("❌ Случилась ошибка при отправке вопроса.")
+            print(f"Ошибка отправки вопроса: {e}")
         return
-    # 🔄 Кінець логіки
 
     if message.lower() == "неко":
         admins = await context.bot.get_chat_administrators(ADMIN_CHAT_ID)
