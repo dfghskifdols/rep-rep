@@ -372,20 +372,18 @@ async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DE
 
 # --- /stop ---
 async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id not in USER_CHAT_ID:
+    global bot_paused
+    if update.effective_user.id != USER_CHAT_ID:
         return
-
-    global bot_active
-    bot_active = False
+    bot_paused = True
     await update.message.reply_text("❗️Остановился❗️")
 
 # --- /continue ---
 async def continue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id not in USER_CHAT_ID:
+    global bot_paused
+    if update.effective_user.id != USER_CHAT_ID:
         return
-
-    global bot_active
-    bot_active = True
+    bot_paused = False
     await update.message.reply_text("✅Работаю!")
 
 # --- Обробка повідомлень ---
