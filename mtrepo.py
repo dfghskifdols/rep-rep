@@ -107,6 +107,12 @@ async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     stop_time = None
     await update.message.reply_text("Бот возобновил свою работу.")
 
+async def command_handler(update: Update, context):
+    global stop_time
+    if stop_time is not None and time.time() < stop_time:
+        await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
+        return 
+
 def create_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
