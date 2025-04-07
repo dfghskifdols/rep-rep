@@ -528,30 +528,21 @@ async def start_checking(app: Application):
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
 
-app.add_handler(CommandHandler("stop", stop_command))
-app.add_handler(CommandHandler("continue", continue_command))
+def main():
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("report", report_command))
+    app.add_handler(CommandHandler("stop", stop_command))
+    app.add_handler(CommandHandler("getid", get_chat_id))
+    app.add_handler(CommandHandler("showreports", show_reports))
+    app.add_handler(CommandHandler("continue", continue_command))
+    app.add_handler(CommandHandler("send", send_message))
 
-# Добавляем команду /send
-app.add_handler(CommandHandler("send", send_message))
+    app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
+    app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
+    app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
+    app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
-# Добавляем команду /id
-app.add_handler(CommandHandler("id", get_chat_id))
-
-app.add_handler(CommandHandler("show_reports", show_reports))
-
-# Основной цикл программы
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("report", report_command))
-app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
-app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
-app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
-app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
-
-async def main():
-    print("🚀 Бот запущений!")
-
-    # Запуск polling і фонової перевірки одночасно
-    await asyncio.gather(app.run_polling(), start_checking(app))
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
