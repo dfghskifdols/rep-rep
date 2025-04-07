@@ -12,6 +12,8 @@ from telegram import CopyTextButton
 import sqlite3
 import pytz
 
+bot_paused = False
+
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
 waiting_for_question = set()
 
@@ -358,12 +360,6 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Кидаем сообщение, что ID скопировано
     await query.edit_message_text(f"✅ ID чата: `{chat_id}` скопировано!")
 
-# Функция обработки сообщений
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message.text.strip()
-    user_id = update.effective_user.id
-    username = update.effective_user.username or update.effective_user.full_name
-
 # Функція для очікування відповіді
 async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DEFAULT_TYPE):
     await asyncio.sleep(120)  # 2 хвилини
@@ -374,10 +370,34 @@ async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DE
         except Exception as e:
             print(f"Ошибка при отправке сообщение про то что время вышло: {e}")
 
-# Основна функція обробки повідомлень
+# --- /stop ---
+async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global bot_paused
+    if update.effective_user.id != OWNER_ID:
+        return
+    bot_paused = True
+    await update.message.reply_text("Зупиняюсь!")
+
+# --- /continue ---
+async def continue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global bot_paused
+    if update.effective_user.id != OWNER_ID:
+        return
+    bot_paused = False
+    await update.message.reply_text("Знову працюю!")
+
+# --- Обробка повідомлень ---
+waiting_users = {}
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global bot_paused
+
+    if bot_paused and update.message.text.strip().lower() != "/continue":
+        return
+
+    user_id = update.effective_user.id
+    username = update.effective_user.username or "Без имени"
     message = update.message.text.strip()
-    user_id = update.message.from_user.id
 
     if message.lower() == "репорт-бот-вопрос":
         if user_id not in waiting_for_question:
@@ -505,6 +525,9 @@ async def start_checking(app: Application):
     while True:
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
+
+app.add_handler(CommandHandler("stop", stop_command))
+app.add_handler(CommandHandler("continue", continue_command))
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
