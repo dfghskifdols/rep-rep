@@ -86,16 +86,16 @@ REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
 DB_PATH = "database.db"  # Файл бази даних SQLite
 
-    # Перевіряємо, чи є користувач в списку дозволених
-    if user_id in ALLOWED_USER_IDS:
-        try:
-            minutes = int(context.args[0])
-            stop_time = time.time() + minutes * 60  # Бот зупиняється на вказаний час
-            await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
-        except (IndexError, ValueError):
-            await update.message.reply_text("Пожалуйста введите время(в минутах) Пример: /bot_stop 5")
-    else:
-        await update.message.reply_text("У вас нету доступа к этой команде.")
+# Перевіряємо, чи є користувач в списку дозволених
+if user_id in ALLOWED_USER_IDS:
+    try:
+        minutes = int(context.args[0])
+        stop_time = time.time() + minutes * 60  # Бот зупиняється на вказаний час
+        await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Пожалуйста введите время(в минутах) Пример: /bot_stop 5")
+else:
+    await update.message.reply_text("У вас нету доступа к этой команде.")
 
 # Команда /bot_resume для відновлення роботи бота
 async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
