@@ -541,8 +541,8 @@ app.add_handler(CommandHandler("id", get_chat_id))
 
 app.add_handler(CommandHandler("show_reports", show_reports))
 
-application.add_handler(CommandHandler("bot_stop", bot_stop))
-application.add_handler(CommandHandler("bot_resume", bot_resume))
+app.add_handler(CommandHandler("bot_stop", bot_stop))
+app.add_handler(CommandHandler("bot_resume", bot_resume))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
