@@ -375,6 +375,7 @@ async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global bot_paused
     if update.effective_user.id != OWNER_IDS:
         return
+
     bot_paused = True
     await update.message.reply_text("❗️Остановился❗️")
 
@@ -383,6 +384,7 @@ async def continue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global bot_paused
     if update.effective_user.id != OWNER_IDS:
         return
+
     bot_paused = False
     await update.message.reply_text("✅Работаю!")
 
