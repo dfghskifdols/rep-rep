@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from telegram import CopyTextButton
 import sqlite3
 import pytz
+import time
 
 bot_paused_until = None
 
@@ -387,19 +388,19 @@ async def bot_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         minutes = int(context.args[0])
         stop_time = time.time() + minutes * 60
-        await update.message.reply_text(f"Бот зупинений на {minutes} хвилин.")
+        await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
     except (IndexError, ValueError):
-        await update.message.reply_text("Будь ласка, введіть кількість хвилин. Наприклад: /bot_stop 5")
+        await update.message.reply_text("Пожалуйста введите время(в минутах) Пример: /bot_stop 5")
 
 # Команда /bot_resume для відновлення роботи бота
 async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global stop_time
     if update.message.from_user.id not in ALLOWED_USER_IDS:
-        await update.message.reply_text("У вас немає доступу до цієї команди.")
+        await update.message.reply_text("У вас нету доступа к этой команде.")
         return
 
     stop_time = None
-    await update.message.reply_text("Бот відновив свою роботу.")
+    await update.message.reply_text("Бот возобновил свою работу.")
 
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
