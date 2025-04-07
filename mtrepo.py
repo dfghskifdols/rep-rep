@@ -86,16 +86,28 @@ REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
 DB_PATH = "database.db"  # Файл бази даних SQLite
 
-# Перевіряємо, чи є користувач в списку дозволених
-if user_id in ALLOWED_USER_IDS:
-    try:
-        minutes = int(context.args[0])
-        stop_time = time.time() + minutes * 60  # Бот зупиняється на вказаний час
-        await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
-    except (IndexError, ValueError):
-        await update.message.reply_text("Пожалуйста введите время(в минутах) Пример: /bot_stop 5")
-else:
-    await update.message.reply_text("У вас нету доступа к этой команде.")
+# Асинхронна функція для команди /bot_stop
+async def bot_stop(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id  # Отримуємо ID користувача
+
+    # Перевіряємо, чи є користувач у списку дозволених
+    if user_id in ALLOWED_USER_IDS:
+        try:
+            minutes = int(context.args[0])  # Отримуємо кількість хвилин з аргументів команди
+            stop_time = time.time() + minutes * 60  # Бот зупиняється на вказаний час
+
+            # Відправляємо повідомлення, що бот зупинений
+            await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
+            
+            # Чекаємо вказану кількість хвилин
+            await asyncio.sleep(minutes * 60)
+
+            # Повертаємо бот в робочий стан після завершення часу
+            await update.message.reply_text("Бот снова запущен.")
+        except (IndexError, ValueError):
+            await update.message.reply_text("Пожалуйста введите время(в минутах). Пример: /bot_stop 5")
+    else:
+        await update.message.reply_text("У вас нету доступа к этой команде.")
 
 # Команда /bot_resume для відновлення роботи бота
 async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
