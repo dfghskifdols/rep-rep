@@ -21,8 +21,7 @@ nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'
 ADMIN_CHAT_ID = -1002651165474
-USER_CHAT_ID = 5283100992
-WARNING_ID = [5344318601, 5283100992]
+USER_CHAT_ID = [5283100992, 5344318601]
 LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 5713511759, 1385118926, 6139706645, 5222780613]
 GROUP_ID = -1002268486160
@@ -373,19 +372,21 @@ async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DE
 
 # --- /stop ---
 async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global bot_paused
-    if update.effective_user.id != WARNING_ID:
+    if update.effective_user.id not in USER_CHAT_ID:
         return
-    bot_paused = True
-    await update.message.reply_text("❗️Остановился❗️")
+
+    global bot_active
+    bot_active = False
+    await update.message.reply_text("Остановился!")
 
 # --- /continue ---
 async def continue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global bot_paused
-    if update.effective_user.id != WARNING_ID:
+    if update.effective_user.id not in USER_CHAT_ID:
         return
-    bot_paused = False
-    await update.message.reply_text("✅Работаю!")
+
+    global bot_active
+    bot_active = True
+    await update.message.reply_text("Работаю!")
 
 # --- Обробка повідомлень ---
 waiting_users = {}
