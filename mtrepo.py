@@ -12,7 +12,7 @@ from telegram import CopyTextButton
 import sqlite3
 import pytz
 
-bot_paused = False
+bot_paused_until = None
 
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
 waiting_for_question = set()
@@ -21,7 +21,8 @@ nest_asyncio.apply()
 
 API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'
 ADMIN_CHAT_ID = -1002651165474
-OWNER_IDS = [5283100992, 5344318601]
+USER_CHAT_ID = 5283100992
+ALLOWED_USER_IDS = [5283100992, 5344318601]
 LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 6340673182, 5344318601, 5713511759, 1385118926, 6139706645, 5222780613]
 GROUP_ID = -1002268486160
@@ -39,7 +40,7 @@ confirmed_reports = set()
 
 # Возможные ответы на "РаФа"
 rafa_responses = [
-    "<b>Blue_Nexus иногда становится ебланом</b>", 
+    "<b>Blue_Nexus иногда стает ебланом</b>", 
     "<b>Blue_Nexus держат в рабстве</b>",  
     "<b>Blue_Nexus абажает чат гпт</b>",
     "<b>Кирич любит аниме-тянок... но в жизни девушек он не любит</b>", 
@@ -349,7 +350,7 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     button = InlineKeyboardButton(text="Скопировать", copy_text=CopyTextButton(text=chat_id))
     keyboard = [[button]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+    await update.message.reply_text(f"🆔 ID этого чата: {chat_id}", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
 # Оброботка кнопки Copy ID
 async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -358,7 +359,13 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()  # Отвечаем на запрос
 
 # Кидаем сообщение, что ID скопировано
-    await query.edit_message_text(f"✅ ID чата: `{chat_id}` скопировано!")
+    await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
+
+# Функция обработки сообщений
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message.text.strip()
+    user_id = update.effective_user.id
+    username = update.effective_user.username or update.effective_user.full_name
 
 # Функція для очікування відповіді
 async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DEFAULT_TYPE):
@@ -370,36 +377,34 @@ async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DE
         except Exception as e:
             print(f"Ошибка при отправке сообщение про то что время вышло: {e}")
 
-# --- /stop ---
-async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global bot_paused
-    if update.effective_user.id != OWNER_IDS:
+# Команда /bot_stop для зупинки бота на вказану кількість хвилин
+async def bot_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global stop_time
+    if update.message.from_user.id not in ALLOWED_USER_IDS:
+        await update.message.reply_text("У вас немає доступу до цієї команди.")
         return
 
-    bot_paused = True
-    await update.message.reply_text("❗️Остановился❗️")
+    try:
+        minutes = int(context.args[0])
+        stop_time = time.time() + minutes * 60
+        await update.message.reply_text(f"Бот зупинений на {minutes} хвилин.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Будь ласка, введіть кількість хвилин. Наприклад: /bot_stop 5")
 
-# --- /continue ---
-async def continue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global bot_paused
-    if update.effective_user.id != OWNER_IDS:
+# Команда /bot_resume для відновлення роботи бота
+async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global stop_time
+    if update.message.from_user.id not in ALLOWED_USER_IDS:
+        await update.message.reply_text("У вас немає доступу до цієї команди.")
         return
 
-    bot_paused = False
-    await update.message.reply_text("✅Работаю!")
+    stop_time = None
+    await update.message.reply_text("Бот відновив свою роботу.")
 
-# --- Обробка повідомлень ---
-waiting_users = {}
-
+# Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global bot_paused
-
-    if bot_paused and update.message.text.strip().lower() != "/continue":
-        return
-
-    user_id = update.effective_user.id
-    username = update.effective_user.username or "Без имени"
     message = update.message.text.strip()
+    user_id = update.message.from_user.id
 
     if message.lower() == "репорт-бот-вопрос":
         if user_id not in waiting_for_question:
@@ -528,21 +533,27 @@ async def start_checking(app: Application):
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
 
-def main():
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("report", report_command))
-    app.add_handler(CommandHandler("stop", stop_command))
-    app.add_handler(CommandHandler("getid", get_chat_id))
-    app.add_handler(CommandHandler("showreports", show_reports))
-    app.add_handler(CommandHandler("continue", continue_command))
-    app.add_handler(CommandHandler("send", send_message))
+# Добавляем команду /send
+app.add_handler(CommandHandler("send", send_message))
 
-    app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
-    app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
-    app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
-    app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+# Добавляем команду /id
+app.add_handler(CommandHandler("id", get_chat_id))
 
-    app.run_polling()
+app.add_handler(CommandHandler("show_reports", show_reports))
+
+application.add_handler(CommandHandler("bot_stop", bot_stop))
+application.add_handler(CommandHandler("bot_resume", bot_resume))
+
+# Основной цикл программы
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("report", report_command))
+app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
+app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
+app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
+app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+
+    # Запуск бота
+    await application.run_polling()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
