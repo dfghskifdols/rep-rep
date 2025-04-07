@@ -377,7 +377,7 @@ async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     global bot_active
     bot_active = False
-    await update.message.reply_text("Остановился!")
+    await update.message.reply_text("❗️Остановился❗️")
 
 # --- /continue ---
 async def continue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -386,7 +386,7 @@ async def continue_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     global bot_active
     bot_active = True
-    await update.message.reply_text("Работаю!")
+    await update.message.reply_text("✅Работаю!")
 
 # --- Обробка повідомлень ---
 waiting_users = {}
