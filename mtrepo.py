@@ -86,6 +86,27 @@ REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
 DB_PATH = "database.db"  # Файл бази даних SQLite
 
+    # Перевіряємо, чи є користувач в списку дозволених
+    if user_id in ALLOWED_USER_IDS:
+        try:
+            minutes = int(context.args[0])
+            stop_time = time.time() + minutes * 60  # Бот зупиняється на вказаний час
+            await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
+        except (IndexError, ValueError):
+            await update.message.reply_text("Пожалуйста введите время(в минутах) Пример: /bot_stop 5")
+    else:
+        await update.message.reply_text("У вас нету доступа к этой команде.")
+
+# Команда /bot_resume для відновлення роботи бота
+async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global stop_time
+    if update.message.from_user.id not in ALLOWED_USER_IDS:
+        await update.message.reply_text("У вас нету доступа к этой команде.")
+        return
+
+    stop_time = None
+    await update.message.reply_text("Бот возобновил свою работу.")
+
 def create_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -172,6 +193,12 @@ def save_report(user_id, message_id, reason, reporter_name, reported_name, messa
     conn.commit()
     cur.close()
     conn.close()
+
+async def command_handler(update: Update, context):
+    global stop_time
+    if stop_time is not None and time.time() < stop_time:
+        await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
+        return 
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -344,6 +371,12 @@ async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await query.message.edit_text("❌ Ошибка: неправильный формат данных для пинга.")
 
+async def command_handler(update: Update, context):
+    global stop_time
+    if stop_time is not None and time.time() < stop_time:
+        await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
+        return 
+
 # Функция одержания ID чату
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
@@ -377,30 +410,6 @@ async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DE
             await context.bot.send_message(chat_id=chat_id, text="⏰ Время вышло! Если хочеш попробывать еще раз - напиши 'Репорт-бот-вопрос'")
         except Exception as e:
             print(f"Ошибка при отправке сообщение про то что время вышло: {e}")
-
-# Команда /bot_stop для зупинки бота на вказану кількість хвилин
-async def bot_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stop_time
-    if update.message.from_user.id not in ALLOWED_USER_IDS:
-        await update.message.reply_text("У вас немає доступу до цієї команди.")
-        return
-
-    try:
-        minutes = int(context.args[0])
-        stop_time = time.time() + minutes * 60
-        await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
-    except (IndexError, ValueError):
-        await update.message.reply_text("Пожалуйста введите время(в минутах) Пример: /bot_stop 5")
-
-# Команда /bot_resume для відновлення роботи бота
-async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global stop_time
-    if update.message.from_user.id not in ALLOWED_USER_IDS:
-        await update.message.reply_text("У вас нету доступа к этой команде.")
-        return
-
-    stop_time = None
-    await update.message.reply_text("Бот возобновил свою работу.")
 
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
