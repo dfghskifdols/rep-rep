@@ -194,12 +194,6 @@ def save_report(user_id, message_id, reason, reporter_name, reported_name, messa
     cur.close()
     conn.close()
 
-async def command_handler(update: Update, context):
-    global stop_time
-    if stop_time is not None and time.time() < stop_time:
-        await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
-        return 
-
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
