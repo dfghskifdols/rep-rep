@@ -110,14 +110,17 @@ async def bot_stop(update: Update, context: CallbackContext):
         await update.message.reply_text("У вас нету доступа к этой команде.")
 
 # Команда /bot_resume для відновлення роботи бота
-async def bot_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def bot_resume(update: Update, context: CallbackContext):
     global stop_time
     if update.message.from_user.id not in ALLOWED_USER_IDS:
         await update.message.reply_text("У вас нету доступа к этой команде.")
         return
 
-    stop_time = None
-    await update.message.reply_text("Бот возобновил свою работу.")
+    if stop_time is None:
+        await update.message.reply_text("Бот уже работает.")
+    else:
+        stop_time = None
+        await update.message.reply_text("Бот возобновил свою работу.")
 
 async def command_handler(update: Update, context):
     global stop_time
