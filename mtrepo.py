@@ -552,8 +552,11 @@ app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
-# Запуск бота
-await application.run_polling()
+async def main():
+    print("🚀 Бот запущений!")
+
+    # Запуск polling і фонової перевірки одночасно
+    await asyncio.gather(app.run_polling(), start_checking(app))
 
 if __name__ == "__main__":
     asyncio.run(main())
