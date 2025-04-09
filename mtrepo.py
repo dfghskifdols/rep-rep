@@ -634,7 +634,6 @@ app.add_handler(CallbackQueryHandler(button, pattern=r"^page_\d+$"))
 
 async def main():
     print("🚀 Бот запущений!")
-    asyncio.run(add_timestamp_column())
 
     # Запуск polling і фонової перевірки одночасно
     await asyncio.gather(app.run_polling(), start_checking(app))
