@@ -264,10 +264,14 @@ async def save_report(user_id, message_id, reason, reporter_name, reported_name,
     report_time = now.strftime('%Y-%m-%d %H:%M:%S')
     timestamp = int(now.timestamp())
 
+async def save_report(conn, user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp):
+    # Виконання запиту на вставку з 8 параметрами
     await conn.execute('''
-        INSERT INTO reports (user_id, message_id, report_text, timestamp, report_time, reporter_name, reported_name, message_link)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    ''', (user_id, message_id, reason, timestamp, report_time, reporter_name, reported_name, message_link))
+        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+    ''', user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
+    print("Репорт успішно збережено!")
+
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
