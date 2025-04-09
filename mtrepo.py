@@ -12,15 +12,6 @@ from telegram import CopyTextButton
 import sqlite3
 import pytz
 import time
-import asyncpg
-import asyncio
-
-# Ваш URL для підключення до бази даних на Neon
-DATABASE_URL = "postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
-
-REPORTS_PER_PAGE = 3
-
-moscow_tz = pytz.timezone('Europe/Moscow')
 
 bot_paused_until = None
 
@@ -93,6 +84,8 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
+DB_PATH = "database.db"  # Файл бази даних SQLite
+
 # Асинхронна функція для команди /bot_stop
 async def bot_stop(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id  # Отримуємо ID користувача
@@ -135,117 +128,61 @@ async def command_handler(update: Update, context):
         await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
         return 
 
-# Підключення до бази даних
-async def connect_db():
-    conn = await asyncpg.connect(DATABASE_URL)  # Вставте ваш DATABASE_URL тут
-    print("Підключено до PostgreSQL!")
-    return conn
-
-# Створення нової таблиці, спочатку видаливши стару
-async def recreate_table(conn):
-    # Видаляємо стару таблицю, якщо вона існує
-    await conn.execute('DROP TABLE IF EXISTS reports;')
-    print("Таблиця 'reports' видалена (якщо існувала).")
+def create_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     
-    # Створюємо нову таблицю
-    await conn.execute('''
-        CREATE TABLE reports (
-            id SERIAL PRIMARY KEY,
-            user_id BIGINT,
-            message_id BIGINT,
+    # Створення таблиці з усіма необхідними стовпцями
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            message_id INTEGER,
             report_text TEXT,
             report_time TEXT,
             reporter_name TEXT,
             reported_name TEXT,
-            message_link TEXT,
-            timestamp BIGINT
-        );
+            message_link TEXT
+        )
     ''')
-    print("Таблиця 'reports' створена!")
-
-# Закриття підключення
-async def close_db(conn):
-    await conn.close()
-    print("Підключення до PostgreSQL закрите.")
-
-# Основна функція для налаштування
-async def setup_db():
-    conn = await connect_db()
-    await recreate_table(conn)
-    await close_db(conn)
-
-async def save_report(conn, user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp):
-    # Перетворення datetime на рядок
-    report_time_str = report_time.strftime('%Y-%m-%d %H:%M:%S')
-
-    # Виконання запиту на вставку з 8 параметрами
-    await conn.execute('''
-        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
-    ''', user_id, message_id, report_text, report_time_str, reporter_name, reported_name, message_link, timestamp)
-
-    print("Репорт успішно збережено!")
-
-# Отримання репортів для певної сторінки
-async def get_reports(conn, page=1, reports_per_page=3):
-    offset = (page - 1) * reports_per_page
-    rows = await conn.fetch('''
-        SELECT * FROM reports ORDER BY timestamp DESC LIMIT $1 OFFSET $2
-    ''', reports_per_page, offset)
     
-    # Повертаємо список репортів
-    return rows
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-# Функція для відображення репортів
-async def show_reports(update: Update, context: CallbackContext, page=1):
-    user_id = update.message.from_user.id
+create_db()
 
-    # Перевірка, чи є користувач у списку дозволених адміністраторів
-    if user_id not in ALLOWED_USERS:
-        await update.message.reply_text("У вас немає доступу до цієї команди.")
+async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id  # Отримуємо ID користувача
+
+    if user_id not in ALLOWED_USERS:  # Перевіряємо, чи є користувач у списку дозволених
+        await update.message.reply_text("У вас нету доступа к этой команде.")
         return
 
-    conn = await connect_db()
+    reports = get_reports()
 
-    reports = await get_reports(conn, page)
-    if not reports:
-        await update.message.reply_text("Немає репортів.")
-        return
+    if reports:
+        report_message = ""
+        for r in reports:
+            if len(r) >= 8:  # Перевіряємо, що є достатньо елементів
+                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nВремя: {r[4]}\nТот кто кинул репорт: {r[5]}\nТот на кого кинули репорт: {r[6]}\nСсылка: {r[7]}\n\n"
+            else:
+                report_message += f"Репорт {r[0]} имеет недостаточно даных.\n\n"
+    else:
+        report_message = "Нету репортов."
 
-    # Формуємо текст репортів з додатковою інформацією
-    report_texts = [
-        f"Репорт {report['id']}:\n"
-        f"🔹 <b>Пользователь который кинул репорт:</b> {report['reporter_name']}\n"
-        f"🔹 <b>Пользователь на которого кинули репорт:</b> {report['reported_name']}\n"
-        f"🔹 <b>репорт айди:</b> {report['message_id']}\n"
-        f"🔹 <b>Ссылка на сообщение:</b> <a href='{report['message_link']}'>Перейти</a>\n"
-        f"🕒 <b>Время репорта:</b> {report['report_time']}"
-        for report in reports
-    ]
+    # Відправка повідомлення без попереднього перегляду веб-сторінок
+    await update.message.reply_text(report_message, disable_web_page_preview=True)
 
-    message = "\n\n".join(report_texts)
-
-    # Кнопки для перемикання між сторінками
-    keyboard = [
-        [
-            InlineKeyboardButton("⬅️", callback_data=f"page_{page-1}" if page > 1 else "disabled"),
-            InlineKeyboardButton("➡️", callback_data=f"page_{page+1}")
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(message, reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-
-    # Закриваємо підключення до БД
-    await close_db(conn)
-
-# Обробка кнопок для перемикання між сторінками
-async def button(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-
-    # Отримуємо номер сторінки з callback_data
-    page = int(query.data.split('_')[1])
+def get_reports():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM reports")  # Извлекаем все столбцы
+    reports = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    return reports
 
 # Функция отправки логов в группу
 async def log_action(text: str):
@@ -258,20 +195,25 @@ async def log_action(text: str):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-moscow_tz = pytz.timezone("Europe/Moscow")
+# Функция для сохранения репорта в SQLite
+moscow_tz = pytz.timezone('Europe/Moscow')
 
-async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, conn):
-    now = datetime.now(moscow_tz)
-    report_time = now.strftime('%Y-%m-%d %H:%M:%S')
-    timestamp = int(now.timestamp())
-
-async def save_report(conn, user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp):
-    # Виконання запиту на вставку з 8 параметрами
-    await conn.execute('''
-        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
-    ''', user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
-    print("Репорт успішно збережено!")
+def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    
+    # Отримуємо поточний час у МСК
+    report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Вставляємо новий репорт з усіма даними
+    cur.execute('''
+        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, message_id, reason, report_time, reporter_name, reported_name, message_link))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -300,6 +242,16 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    message_id = update.message.reply_to_message.message_id
+    user_id = update.message.from_user.id
+    report_key = f"{user_id}_{message_id}"
+    reporter_name = update.message.from_user.full_name
+    reported_name = update.message.reply_to_message.from_user.full_name
+    message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
+    report_time = update.message.date
+    reported_text = update.message.reply_to_message.text
+    report_date = update.message.date
+
     if report_key in confirmed_reports:
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
         return
@@ -317,38 +269,9 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML
     )
     
-async def report_command(update, context):
-    # Підключення до бази даних
-    conn = await connect_db()
-
-    # Логіка створення репорту
-    user_id = update.message.from_user.id
-    message_id = update.message.reply_to_message.message_id
-    reporter_name = update.message.from_user.full_name
-    reported_name = update.message.reply_to_message.from_user.full_name
-    message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
-    report_time = update.message.date
-    reported_text = update.message.reply_to_message.text
-    timestamp = int(report_time.timestamp())
-
-    # Збереження репорту в базу даних
-    await save_report(
-        conn,
-        user_id,
-        message_id,
-        reported_text,  # Використовуємо reported_text замість report_text
-        report_time,
-        reporter_name,
-        reported_name,
-        message_link,
-        timestamp
-    )
-
-    # Закриваємо підключення до БД після вставки
-    await close_db(conn)
-
-    # Логування дії
+    # Сохранение репорта в базу
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
+    save_report(user_id, message_id, reason, update.message.from_user.full_name, update.message.reply_to_message.from_user.full_name, f"https://t.me/{update.message.chat.username}/{message_id}")# Функция обработки репорта
 
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -653,11 +576,8 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
-app.add_handler(CallbackQueryHandler(button, pattern=r"^page_\d+$"))
 
 async def main():
-    # Викликаємо функцію для створення таблиці
-    asyncio.run(setup_db())
     print("🚀 Бот запущений!")
 
     # Запуск polling і фонової перевірки одночасно
