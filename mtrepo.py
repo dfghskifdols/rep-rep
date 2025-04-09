@@ -174,16 +174,17 @@ async def setup_db():
     await recreate_table(conn)
     await close_db(conn)
 
-# Додавання репорту в базу даних
-async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, conn):
-    now = datetime.now(moscow_tz)
-    report_time = now.strftime('%Y-%m-%d %H:%M:%S')
-    timestamp = int(now.timestamp())
+async def save_report(conn, user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp):
+    # Перетворення datetime на рядок
+    report_time_str = report_time.strftime('%Y-%m-%d %H:%M:%S')
 
+    # Виконання запиту на вставку з 8 параметрами
     await conn.execute('''
-        INSERT INTO reports (user_id, message_id, report_text, timestamp, report_time, reporter_name, reported_name, message_link)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    ''', user_id, message_id, reason, timestamp, report_time, reporter_name, reported_name, message_link)
+        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+    ''', user_id, message_id, report_text, report_time_str, reporter_name, reported_name, message_link, timestamp)
+
+    print("Репорт успішно збережено!")
 
 # Отримання репортів для певної сторінки
 async def get_reports(conn, page=1, reports_per_page=3):
