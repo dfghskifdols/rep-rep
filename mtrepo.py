@@ -135,6 +135,16 @@ async def command_handler(update: Update, context):
         await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
         return 
 
+async def add_timestamp_column():
+    # Підключення до бази даних PostgreSQL
+    conn = await asyncpg.connect('postgresql://your_user:your_password@your_host:your_port/your_db_name')
+
+    # Виконання запиту для додавання стовпця timestamp
+    await conn.execute('ALTER TABLE reports ADD COLUMN timestamp INTEGER')
+
+    # Закриття підключення
+    await conn.close()
+
 # Підключення до бази даних
 async def connect_db():
     conn = await asyncpg.connect(DATABASE_URL)
@@ -625,6 +635,7 @@ app.add_handler(CallbackQueryHandler(button, pattern=r"^page_\d+$"))
 
 async def main():
     print("🚀 Бот запущений!")
+    asyncio.run(add_timestamp_column())
 
     # Запуск polling і фонової перевірки одночасно
     await asyncio.gather(app.run_polling(), start_checking(app))
