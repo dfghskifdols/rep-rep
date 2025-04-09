@@ -197,6 +197,17 @@ async def button(update: Update, context: CallbackContext):
     page = int(query.data.split('_')[1])
     await show_reports(update, context, page)
 
+# Обробка переходів між сторінками
+async def handle_pagination(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+    
+    # Отримуємо номер сторінки з callback_data
+    page = int(query.data.split('_')[1])
+    
+    # Відображаємо відповідні репорти для цієї сторінки
+    await show_reports(update, context, page)
+
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
