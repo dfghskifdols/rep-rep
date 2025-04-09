@@ -134,11 +134,18 @@ async def command_handler(update: Update, context):
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # Створення таблиці з усіма потрібними стовпцями
     cursor.execute('''CREATE TABLE IF NOT EXISTS reports (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER,
+                        message_id INTEGER,
                         report_text TEXT,
-                        timestamp INTEGER)''')
+                        report_time TEXT,
+                        reporter_name TEXT,
+                        reported_name TEXT,
+                        message_link TEXT)''')
+
     conn.commit()
     conn.close()
 
@@ -177,7 +184,17 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Немає репортів.")
         return
 
-    report_texts = [f"Репорт {report[0]}: {report[2]}" for report in reports]
+    # Формуємо текст репортів з додатковою інформацією
+    report_texts = [
+        f"Репорт {report[0]}:\n"
+        f"🔹 <b>Пользователь который кинул репорт:</b> {report[5]}\n"
+        f"🔹 <b>Пользователь на которого кинули репорт:</b> {report[6]}\n"
+        f"🔹 <b>Причина репорта:</b> {report[2]}\n"
+        f"🔹 <b>Ссылка на сообщение:</b> <a href='{report[7]}'>Перейти</a>\n"
+        f"🕒 <b>Время репорта:</b> {report[4]}"
+        for report in reports
+    ]
+
     message = "\n\n".join(report_texts)
 
     keyboard = [
@@ -188,7 +205,7 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(message, reply_markup=reply_markup)
+    await update.message.reply_text(message, reply_markup=reply_markup, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 # Обробка переходів між сторінками
 async def button(update: Update, context: CallbackContext):
@@ -218,9 +235,6 @@ async def log_action(text: str):
 # Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
-
-# Функция для сохранения репорта в SQLite
-moscow_tz = pytz.timezone('Europe/Moscow')
 
 def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
     conn = sqlite3.connect(DB_PATH)
