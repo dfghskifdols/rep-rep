@@ -151,17 +151,35 @@ async def create_table(conn):
     await conn.execute('''
         CREATE TABLE IF NOT EXISTS reports (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER,
-            message_id INTEGER,
+            user_id BIGINT,
+            message_id BIGINT,
             report_text TEXT,
-            report_time TIMESTAMP,
+            report_time TEXT,
             reporter_name TEXT,
             reported_name TEXT,
             message_link TEXT,
-            timestamp INTEGER
+            timestamp BIGINT
         );
     ''')
-    print("Таблиця reports створена!")
+    print("Таблиця reports створена або вже існує!")
+
+# Підключення до бази даних
+async def connect_db():
+    conn = await asyncpg.connect(DATABASE_URL)
+    print("Підключено до PostgreSQL!")
+    return conn
+
+# Закриття підключення
+async def close_db(conn):
+    await conn.close()
+    print("Підключення до PostgreSQL закрите.")
+
+# Створення таблиці
+async def setup_db():
+    conn = await connect_db()
+    await create_table(conn)
+    await close_db(conn)
+
   
 async def add_time_columns():
     conn = await asyncpg.connect(DATABASE_URL)
@@ -658,6 +676,8 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 app.add_handler(CallbackQueryHandler(button, pattern=r"^page_\d+$"))
 
 async def main():
+    # Викликаємо функцію для створення таблиці
+    asyncio.run(setup_db())
     print("🚀 Бот запущений!")
 
     # Запуск polling і фонової перевірки одночасно
