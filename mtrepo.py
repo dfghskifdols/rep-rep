@@ -141,11 +141,6 @@ async def connect_db():
     print("Підключено до PostgreSQL!")
     return conn
 
-# Закриття підключення
-async def close_db(conn):
-    await conn.close()
-    print("Підключення до PostgreSQL закрите.")
-
 # Створення таблиці
 async def create_table(conn):
     await conn.execute('''
@@ -163,23 +158,10 @@ async def create_table(conn):
     ''')
     print("Таблиця reports створена або вже існує!")
 
-# Підключення до бази даних
-async def connect_db():
-    conn = await asyncpg.connect(DATABASE_URL)
-    print("Підключено до PostgreSQL!")
-    return conn
-
 # Закриття підключення
 async def close_db(conn):
     await conn.close()
     print("Підключення до PostgreSQL закрите.")
-
-# Створення таблиці
-async def setup_db():
-    conn = await connect_db()
-    await create_table(conn)
-    await close_db(conn)
-
   
 async def add_time_columns():
     conn = await asyncpg.connect(DATABASE_URL)
