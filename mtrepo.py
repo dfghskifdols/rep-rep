@@ -178,12 +178,15 @@ async def add_time_columns():
 asyncio.run(add_time_columns())
 
 # Додавання репорту в базу даних
-async def insert_report(conn, user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp):
+async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, conn):
+    now = datetime.now(moscow_tz)
+    report_time = now.strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = int(now.timestamp())
+
     await conn.execute('''
-        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
+        INSERT INTO reports (user_id, message_id, report_text, timestamp, report_time, reporter_name, reported_name, message_link)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    ''', user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
-    print("Репорт додано до бази даних!")
+    ''', user_id, message_id, reason, timestamp, report_time, reporter_name, reported_name, message_link)
 
 # Отримання репортів для певної сторінки
 async def get_reports(conn, page=1, reports_per_page=3):
@@ -325,7 +328,17 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Сохранение репорта в базу
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
-    save_report(user_id, message_id, reason, update.message.from_user.full_name, update.message.reply_to_message.from_user.full_name, f"https://t.me/{update.message.chat.username}/{message_id}")# Функция обработки репорта
+conn = await connect_db()
+await save_report(
+    user_id,
+    message_id,
+    reason,
+    update.message.from_user.full_name,
+    update.message.reply_to_message.from_user.full_name,
+    f"https://t.me/{update.message.chat.username}/{message_id}",
+    conn
+)
+await close_db(conn)
 
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
