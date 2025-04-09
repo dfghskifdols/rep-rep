@@ -272,7 +272,6 @@ async def save_report(conn, user_id, message_id, report_text, report_time, repor
     ''', user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp)
     print("Репорт успішно збережено!")
 
-
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
@@ -328,15 +327,17 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     # Сохранение репорта в базу
-    conn = await connect_db()  # Підключення до БД
+    conn = await connect_db()  # Перед тим, як викликати save_report, отримуємо з'єднання
     await save_report(
+        conn,
         user_id,
         message_id,
-        reason,
-        update.message.from_user.full_name,
-        update.message.reply_to_message.from_user.full_name,
-        f"https://t.me/{update.message.chat.username}/{message_id}",
-        conn
+        report_text,
+        report_time,
+        reporter_name,
+        reported_name,
+        message_link,
+        timestamp
     )
     await close_db(conn)  # Закриваємо підключення до БД після вставки
     # Логування дії
