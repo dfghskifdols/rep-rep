@@ -163,6 +163,20 @@ async def create_table(conn):
     ''')
     print("Таблиця reports створена!")
 
+import asyncpg
+import asyncio
+
+async def add_time_columns():
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        await conn.execute('ALTER TABLE reports ADD COLUMN IF NOT EXISTS timestamp BIGINT')
+        await conn.execute('ALTER TABLE reports ADD COLUMN IF NOT EXISTS report_time TEXT')
+        print("✅ Колонки успішно додано.")
+    finally:
+        await conn.close()
+
+asyncio.run(add_time_columns())
+
 # Додавання репорту в базу даних
 async def insert_report(conn, user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link, timestamp):
     await conn.execute('''
@@ -243,24 +257,17 @@ async def log_action(text: str):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-import asyncpg
-from datetime import datetime
+moscow_tz = pytz.timezone("Europe/Moscow")
 
-async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
-    # Підключення до бази даних Neon Console
-    conn = await asyncpg.connect("postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require")
-    
-    # Отримуємо поточний час у МСК
-    report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
-    
-    # Вставляємо новий репорт з усіма даними
+async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, conn):
+    now = datetime.now(moscow_tz)
+    report_time = now.strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = int(now.timestamp())
+
     await conn.execute('''
-        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-    ''', user_id, message_id, reason, report_time, reporter_name, reported_name, message_link)
-    
-    # Закриваємо підключення
-    await conn.close()
+        INSERT INTO reports (user_id, message_id, report_text, timestamp, report_time, reporter_name, reported_name, message_link)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    ''', (user_id, message_id, reason, timestamp, report_time, reporter_name, reported_name, message_link))
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
