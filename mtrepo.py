@@ -327,18 +327,19 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     # Сохранение репорта в базу
+    conn = await connect_db()  # Підключення до БД
+    await save_report(
+        user_id,
+        message_id,
+        reason,
+        update.message.from_user.full_name,
+        update.message.reply_to_message.from_user.full_name,
+        f"https://t.me/{update.message.chat.username}/{message_id}",
+        conn
+    )
+    await close_db(conn)  # Закриваємо підключення до БД після вставки
+    # Логування дії
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
-conn = await connect_db()
-await save_report(
-    user_id,
-    message_id,
-    reason,
-    update.message.from_user.full_name,
-    update.message.reply_to_message.from_user.full_name,
-    f"https://t.me/{update.message.chat.username}/{message_id}",
-    conn
-)
-await close_db(conn)
 
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
