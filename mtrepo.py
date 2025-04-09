@@ -184,7 +184,7 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reports = get_reports(page)
     if not reports:
-        await update.message.reply_text("Немає репортів.")
+        await update.message.reply_text("Нету репортов.")
         return
 
     # Формуємо текст репортів з додатковою інформацією
@@ -620,7 +620,6 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 app.add_handler(CallbackQueryHandler(handle_pagination, pattern=r"^page_\d+$"))
 
 async def main():
-    init_db()
     print("🚀 Бот запущений!")
 
     # Запуск polling і фонової перевірки одночасно
