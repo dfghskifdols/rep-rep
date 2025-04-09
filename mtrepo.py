@@ -144,7 +144,8 @@ def init_db():
                         report_time TEXT,
                         reporter_name TEXT,
                         reported_name TEXT,
-                        message_link TEXT)''')
+                        message_link TEXT,
+                        timestamp INTEGER)''')
 
     conn.commit()
     conn.close()
