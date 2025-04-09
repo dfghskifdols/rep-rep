@@ -15,6 +15,8 @@ import time
 
 REPORTS_PER_PAGE = 3
 
+moscow_tz = pytz.timezone('Europe/Moscow')
+
 bot_paused_until = None
 
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
