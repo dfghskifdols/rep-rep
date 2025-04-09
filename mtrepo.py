@@ -327,18 +327,20 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     # Сохранение репорта в базу
-    conn = await connect_db()  # Перед тим, як викликати save_report, отримуємо з'єднання
-    await save_report(
-        conn,
-        user_id,
-        message_id,
-        report_text,
-        report_time,
-        reporter_name,
-        reported_name,
-        message_link,
-        timestamp
-    )
+report_text = reported_text  # або просто замініть на reported_text, якщо вам не потрібно окремо визначати report_text
+
+await save_report(
+    conn,
+    user_id,
+    message_id,
+    reported_text,  # Використовуємо reported_text замість report_text
+    report_time,
+    reporter_name,
+    reported_name,
+    message_link,
+    timestamp
+)
+
     await close_db(conn)  # Закриваємо підключення до БД після вставки
     # Логування дії
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
