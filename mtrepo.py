@@ -603,6 +603,7 @@ app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 app.add_handler(CallbackQueryHandler(handle_pagination, pattern=r"^page_\d+$"))
 
 async def main():
+    init_db()
     print("🚀 Бот запущений!")
 
     # Запуск polling і фонової перевірки одночасно
