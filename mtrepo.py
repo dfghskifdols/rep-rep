@@ -341,9 +341,9 @@ await save_report(
     timestamp
 )
 
-    await close_db(conn)  # Закриваємо підключення до БД після вставки
-    # Логування дії
-    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
+await close_db(conn)  # Закриваємо підключення до БД після вставки
+# Логування дії
+await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
