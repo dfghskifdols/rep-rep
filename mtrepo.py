@@ -1,4 +1,4 @@
-import nest_asyncio
+ import nest_asyncio
 import asyncio
 import logging
 import random
@@ -192,7 +192,7 @@ async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Репорт {report[0]}:\n"
         f"🔹 <b>Пользователь который кинул репорт:</b> {report[5]}\n"
         f"🔹 <b>Пользователь на которого кинули репорт:</b> {report[6]}\n"
-        f"🔹 <b>Причина репорта:</b> {report[2]}\n"
+        f"🔹 <b>репорт айди:</b> {report[2]}\n"
         f"🔹 <b>Ссылка на сообщение:</b> <a href='{report[7]}'>Перейти</a>\n"
         f"🕒 <b>Время репорта:</b> {report[4]}"
         for report in reports
