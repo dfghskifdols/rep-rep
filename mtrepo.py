@@ -299,16 +299,6 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    message_id = update.message.reply_to_message.message_id
-    user_id = update.message.from_user.id
-    report_key = f"{user_id}_{message_id}"
-    reporter_name = update.message.from_user.full_name
-    reported_name = update.message.reply_to_message.from_user.full_name
-    message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
-    report_time = update.message.date
-    reported_text = update.message.reply_to_message.text
-    report_date = update.message.date
-
     if report_key in confirmed_reports:
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
         return
@@ -326,24 +316,38 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML
     )
     
-    # Сохранение репорта в базу
-report_text = reported_text  # або просто замініть на reported_text, якщо вам не потрібно окремо визначати report_text
+async def report_command(update, context):
+    # Підключення до бази даних
+    conn = await connect_db()
 
-await save_report(
-    conn,
-    user_id,
-    message_id,
-    reported_text,  # Використовуємо reported_text замість report_text
-    report_time,
-    reporter_name,
-    reported_name,
-    message_link,
-    timestamp
-)
+    # Логіка створення репорту
+    user_id = update.message.from_user.id
+    message_id = update.message.reply_to_message.message_id
+    reporter_name = update.message.from_user.full_name
+    reported_name = update.message.reply_to_message.from_user.full_name
+    message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
+    report_time = update.message.date
+    reported_text = update.message.reply_to_message.text
+    timestamp = int(report_time.timestamp())
 
-await close_db(conn)  # Закриваємо підключення до БД після вставки
-# Логування дії
-await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
+    # Збереження репорту в базу даних
+    await save_report(
+        conn,
+        user_id,
+        message_id,
+        reported_text,  # Використовуємо reported_text замість report_text
+        report_time,
+        reporter_name,
+        reported_name,
+        message_link,
+        timestamp
+    )
+
+    # Закриваємо підключення до БД після вставки
+    await close_db(conn)
+
+    # Логування дії
+    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
