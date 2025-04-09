@@ -135,16 +135,6 @@ async def command_handler(update: Update, context):
         await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
         return 
 
-async def add_timestamp_column():
-    # Підключення до бази даних PostgreSQL
-    conn = await asyncpg.connect('postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require')
-
-    # Виконання запиту для додавання стовпця timestamp
-    await conn.execute('ALTER TABLE reports ADD COLUMN timestamp INTEGER')
-
-    # Закриття підключення
-    await conn.close()
-
 # Підключення до бази даних
 async def connect_db():
     conn = await asyncpg.connect(DATABASE_URL)
