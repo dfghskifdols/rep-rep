@@ -253,22 +253,24 @@ async def log_action(text: str):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
+import asyncpg
+from datetime import datetime
+
+async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
+    # Підключення до бази даних Neon Console
+    conn = await asyncpg.connect("postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require")
     
     # Отримуємо поточний час у МСК
     report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
     
     # Вставляємо новий репорт з усіма даними
-    cur.execute('''
+    await conn.execute('''
         INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (user_id, message_id, reason, report_time, reporter_name, reported_name, message_link))
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ''', user_id, message_id, reason, report_time, reporter_name, reported_name, message_link)
     
-    conn.commit()
-    cur.close()
-    conn.close()
+    # Закриваємо підключення
+    await conn.close()
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
