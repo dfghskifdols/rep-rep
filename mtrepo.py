@@ -621,7 +621,7 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
-app.add_handler(CallbackQueryHandler(handle_pagination, pattern=r"^page_\d+$"))
+app.add_handler(CallbackQueryHandler(button, pattern=r"^page_\d+$"))
 
 async def main():
     print("🚀 Бот запущений!")
