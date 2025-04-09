@@ -13,6 +13,8 @@ import sqlite3
 import pytz
 import time
 
+REPORTS_PER_PAGE = 3
+
 bot_paused_until = None
 
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
@@ -84,7 +86,7 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
-DB_PATH = "database.db"  # Файл бази даних SQLite
+DB_PATH = 'data/mtdata.db'
 
 # Асинхронна функція для команди /bot_stop
 async def bot_stop(update: Update, context: CallbackContext):
@@ -128,61 +130,72 @@ async def command_handler(update: Update, context):
         await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
         return 
 
-def create_db():
+# Ініціалізація бази даних
+def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    # Створення таблиці з усіма необхідними стовпцями
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            message_id INTEGER,
-            report_text TEXT,
-            report_time TEXT,
-            reporter_name TEXT,
-            reported_name TEXT,
-            message_link TEXT
-        )
-    ''')
-    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS reports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER,
+                        report_text TEXT,
+                        timestamp INTEGER)''')
     conn.commit()
-    cursor.close()
     conn.close()
 
-create_db()
+# Додавання репорту в базу даних
+def add_report(user_id: int, report_text: str):
+    timestamp = int(time.time())
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO reports (user_id, report_text, timestamp) VALUES (?, ?, ?)",
+                   (user_id, report_text, timestamp))
+    conn.commit()
+    conn.close()
 
+# Отримання репортів для певної сторінки
+def get_reports(page: int = 1, reports_per_page: int = 3):
+    offset = (page - 1) * reports_per_page
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM reports ORDER BY timestamp DESC LIMIT ? OFFSET ?", (reports_per_page, offset))
+    reports = cursor.fetchall()
+    conn.close()
+    return reports
+
+# Функція для показу репортів
 async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.from_user.id  # Отримуємо ID користувача
+    page = 1
+    if context.args:
+        try:
+            page = int(context.args[0])
+        except ValueError:
+            await update.message.reply_text("Невірний формат сторінки.")
+            return
 
-    if user_id not in ALLOWED_USERS:  # Перевіряємо, чи є користувач у списку дозволених
-        await update.message.reply_text("У вас нету доступа к этой команде.")
+    reports = get_reports(page)
+    if not reports:
+        await update.message.reply_text("Немає репортів.")
         return
 
-    reports = get_reports()
+    report_texts = [f"Репорт {report[0]}: {report[2]}" for report in reports]
+    message = "\n\n".join(report_texts)
 
-    if reports:
-        report_message = ""
-        for r in reports:
-            if len(r) >= 8:  # Перевіряємо, що є достатньо елементів
-                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nВремя: {r[4]}\nТот кто кинул репорт: {r[5]}\nТот на кого кинули репорт: {r[6]}\nСсылка: {r[7]}\n\n"
-            else:
-                report_message += f"Репорт {r[0]} имеет недостаточно даных.\n\n"
-    else:
-        report_message = "Нету репортов."
+    keyboard = [
+        [
+            InlineKeyboardButton("⬅️", callback_data=f"page_{page-1}" if page > 1 else "disabled"),
+            InlineKeyboardButton("➡️", callback_data=f"page_{page+1}")
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Відправка повідомлення без попереднього перегляду веб-сторінок
-    await update.message.reply_text(report_message, disable_web_page_preview=True)
+    await update.message.reply_text(message, reply_markup=reply_markup)
 
-def get_reports():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM reports")  # Извлекаем все столбцы
-    reports = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
-    return reports
+# Обробка переходів між сторінками
+async def button(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+    page = int(query.data.split('_')[1])
+    await show_reports(update, context, page)
 
 # Функция отправки логов в группу
 async def log_action(text: str):
@@ -576,6 +589,7 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"
 app.add_handler(CallbackQueryHandler(handle_ping, pattern="^(ping)_"))
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
+app.add_handler(CallbackQueryHandler(handle_pagination, pattern=r"^page_\d+$"))
 
 async def main():
     print("🚀 Бот запущений!")
