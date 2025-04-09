@@ -137,14 +137,19 @@ async def command_handler(update: Update, context):
 
 # Підключення до бази даних
 async def connect_db():
-    conn = await asyncpg.connect(DATABASE_URL)
+    conn = await asyncpg.connect(DATABASE_URL)  # Вставте ваш DATABASE_URL тут
     print("Підключено до PostgreSQL!")
     return conn
 
-# Створення таблиці
-async def create_table(conn):
+# Створення нової таблиці, спочатку видаливши стару
+async def recreate_table(conn):
+    # Видаляємо стару таблицю, якщо вона існує
+    await conn.execute('DROP TABLE IF EXISTS reports;')
+    print("Таблиця 'reports' видалена (якщо існувала).")
+    
+    # Створюємо нову таблицю
     await conn.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
+        CREATE TABLE reports (
             id SERIAL PRIMARY KEY,
             user_id BIGINT,
             message_id BIGINT,
@@ -156,37 +161,18 @@ async def create_table(conn):
             timestamp BIGINT
         );
     ''')
-    print("Таблиця reports створена або вже існує!")
+    print("Таблиця 'reports' створена!")
 
 # Закриття підключення
 async def close_db(conn):
     await conn.close()
     print("Підключення до PostgreSQL закрите.")
-  
-async def add_time_columns():
-    conn = await asyncpg.connect(DATABASE_URL)
-    try:
-        await conn.execute('ALTER TABLE reports ADD COLUMN IF NOT EXISTS timestamp BIGINT')
-        await conn.execute('ALTER TABLE reports ADD COLUMN IF NOT EXISTS report_time TEXT')
-        print("✅ Колонки успішно додано.")
-    finally:
-        await conn.close()
 
-asyncio.run(add_time_columns())
-
-CREATE TABLE IF NOT EXISTS reports (
-    id SERIAL PRIMARY KEY,
-    user_id BIGINT,
-    message_id BIGINT,
-    reason TEXT,
-    reporter_name TEXT,
-    reported_name TEXT,
-    message_link TEXT,
-    report_time TIMESTAMP,
-    reported_text TEXT,
-    report_date TIMESTAMP
-);
-
+# Основна функція для налаштування
+async def setup_db():
+    conn = await connect_db()
+    await recreate_table(conn)
+    await close_db(conn)
 
 # Додавання репорту в базу даних
 async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, conn):
