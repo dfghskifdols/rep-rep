@@ -162,10 +162,7 @@ async def create_table(conn):
         );
     ''')
     print("Таблиця reports створена!")
-
-import asyncpg
-import asyncio
-
+  
 async def add_time_columns():
     conn = await asyncpg.connect(DATABASE_URL)
     try:
@@ -176,6 +173,20 @@ async def add_time_columns():
         await conn.close()
 
 asyncio.run(add_time_columns())
+
+CREATE TABLE IF NOT EXISTS reports (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT,
+    message_id BIGINT,
+    reason TEXT,
+    reporter_name TEXT,
+    reported_name TEXT,
+    message_link TEXT,
+    report_time TIMESTAMP,
+    reported_text TEXT,
+    report_date TIMESTAMP
+);
+
 
 # Додавання репорту в базу даних
 async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, conn):
