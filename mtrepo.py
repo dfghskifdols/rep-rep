@@ -431,7 +431,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message.text.strip()
     user_id = update.message.from_user.id
 
-    if message.lower() == "бвп":
+    if message.lower() == "рбв":
         if user_id not in waiting_for_question:
             waiting_for_question.add(user_id)
             await update.message.reply_text("Слушаю!")
