@@ -21,6 +21,7 @@ waiting_for_question = set()
 
 nest_asyncio.apply()
 
+REPORTS_PER_PAGE = 3
 API_TOKEN = '7705193251:AAFrnXeNBgiFo3ZQsGNvEOa2lNzQPKo3XHM'
 ADMIN_CHAT_ID = -1002651165474
 USER_CHAT_ID = 5283100992
@@ -127,7 +128,7 @@ async def command_handler(update: Update, context):
         await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
         return 
 
-# Підключення до MySQL
+# Підключення до бази даних MySQL
 async def connect_db():
     return await aiomysql.connect(
         host='sql113.infinityfree.com',  # Хост
@@ -137,6 +138,95 @@ async def connect_db():
         db='if0_38733231_mtrepo',        # Ім'я бази даних
         autocommit=True
     )
+
+# Функція для збереження репорту в базу
+async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
+    conn = await connect_db()
+    async with conn.cursor() as cur:
+        # Отримуємо поточний час
+        report_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Вставляємо новий репорт в базу
+        await cur.execute('''
+            INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''', (user_id, message_id, reason, report_time, reporter_name, reported_name, message_link))
+    await conn.ensure_closed()
+
+# Функція для відправки повідомлень в лог-групу
+async def log_action(text: str):
+    try:
+        await bot.send_message(LOG_CHAT_ID, text, parse_mode=ParseMode.HTML)
+    except Exception as e:
+        print(f"Ошибка при отправке лога: {e}")
+
+# Обробник команди /show_reports
+async def show_reports_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    page = 1
+    offset = (page - 1) * REPORTS_PER_PAGE
+    conn = await connect_db()
+    async with conn.cursor() as cur:
+        await cur.execute('''
+            SELECT reporter_name, reported_name, report_text, report_time, message_link
+            FROM reports
+            ORDER BY report_time DESC
+            LIMIT %s OFFSET %s
+        ''', (REPORTS_PER_PAGE, offset))
+        results = await cur.fetchall()
+
+    await conn.ensure_closed()
+
+    if not results:
+        await update.message.reply_text("📭 Репортів поки немає.")
+        return
+
+    text = "\n\n".join(
+        f"👤 *Хто скаржився:* {row[0]}\n🎯 *На кого:* {row[1]}\n📄 *Причина:* {row[2]}\n🕒 *Час:* {row[3]}\n🔗 [Перейти до повідомлення]({row[4]})"
+        for row in results
+    )
+
+    keyboard = generate_pagination_keyboard(page, page + 1)
+    await update.message.reply_markdown(text, reply_markup=keyboard)
+
+# Генерація клавіатури для пагінації
+def generate_pagination_keyboard(current_page, total_pages):
+    buttons = []
+    if current_page > 1:
+        buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{current_page - 1}"))
+    if current_page < total_pages:
+        buttons.append(InlineKeyboardButton("Вперед ➡️", callback_data=f"page_{current_page + 1}"))
+    return InlineKeyboardMarkup([buttons]) if buttons else None
+
+# Функція для обробки натискання кнопок пагінації
+async def pagination_callback(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    page = int(query.data.split("_")[1])
+    offset = (page - 1) * REPORTS_PER_PAGE
+    conn = await connect_db()
+    async with conn.cursor() as cur:
+        await cur.execute('''
+            SELECT reporter_name, reported_name, report_text, report_time, message_link
+            FROM reports
+            ORDER BY report_time DESC
+            LIMIT %s OFFSET %s
+        ''', (REPORTS_PER_PAGE, offset))
+        results = await cur.fetchall()
+
+    await conn.ensure_closed()
+
+    if not results:
+        await query.edit_message_text("📭 Репортів більше немає.")
+        return
+
+    text = "\n\n".join(
+        f"👤 *Хто скаржився:* {row[0]}\n🎯 *На кого:* {row[1]}\n📄 *Причина:* {row[2]}\n🕒 *Час:* {row[3]}\n🔗 [Перейти до повідомлення]({row[4]})"
+        for row in results
+    )
+
+    keyboard = generate_pagination_keyboard(page, page + 1)
+    await query.edit_message_text(text, reply_markup=keyboard)
 
 # Функция отправки логов в группу
 async def log_action(text: str):
