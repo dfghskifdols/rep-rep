@@ -12,8 +12,8 @@ from telegram import CopyTextButton
 import sqlite3
 import pytz
 import time
-import aiomysql
-import aiomysql.connect
+import aiopg
+import asyncio
 
 bot_paused_until = None
 
