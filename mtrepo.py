@@ -12,6 +12,7 @@ from telegram import CopyTextButton
 import sqlite3
 import pytz
 import time
+import aiomysql
 
 bot_paused_until = None
 
@@ -84,8 +85,6 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
-DB_PATH = "database.db"  # Файл бази даних SQLite
-
 # Асинхронна функція для команди /bot_stop
 async def bot_stop(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id  # Отримуємо ID користувача
@@ -128,61 +127,92 @@ async def command_handler(update: Update, context):
         await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
         return 
 
-def create_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # Створення таблиці з усіма необхідними стовпцями
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            message_id INTEGER,
-            report_text TEXT,
-            report_time TEXT,
-            reporter_name TEXT,
-            reported_name TEXT,
-            message_link TEXT
-        )
-    ''')
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
+# Конфігурація MySQL
+db_config = {
+    'host': 'sql113.infinityfree.com',
+    'port': 3306,
+    'user': 'if0_38733231',
+    'password': 'JaxuhKkoecgYk',
+    'db': 'if0_38733231_mtrepo',
+}
 
-create_db()
+REPORTS_PER_PAGE = 3  # Кількість репортів на сторінку
 
-async def show_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.from_user.id  # Отримуємо ID користувача
+# Підключення до MySQL
+async def connect_db():
+    return await aiomysql.connect(
+        host=db_config['host'],
+        port=db_config['port'],
+        user=db_config['user'],
+        password=db_config['password'],
+        db=db_config['db'],
+        autocommit=True
+    )
 
-    if user_id not in ALLOWED_USERS:  # Перевіряємо, чи є користувач у списку дозволених
-        await update.message.reply_text("У вас нету доступа к этой команде.")
+# Отримання репортів з бази
+async def get_reports(offset):
+    conn = await connect_db()
+    async with conn.cursor() as cur:
+        await cur.execute('''
+            SELECT reporter_name, reported_name, report_text, report_time, message_link
+            FROM reports
+            ORDER BY timestamp DESC
+            LIMIT %s OFFSET %s
+        ''', (REPORTS_PER_PAGE, offset))
+        results = await cur.fetchall()
+    await conn.ensure_closed()
+    return results
+
+# Генерація клавіатури сторінок
+def generate_pagination_keyboard(current_page, total_pages):
+    buttons = []
+    if current_page > 1:
+        buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{current_page - 1}"))
+    if current_page < total_pages:
+        buttons.append(InlineKeyboardButton("Вперед ➡️", callback_data=f"page_{current_page + 1}"))
+    return InlineKeyboardMarkup([buttons]) if buttons else None
+
+# Обробник /show_reports
+async def show_reports_command(update, context: ContextTypes.DEFAULT_TYPE):
+    page = 1
+    offset = (page - 1) * REPORTS_PER_PAGE
+    reports = await get_reports(offset)
+
+    if not reports:
+        await update.message.reply_text("📭 Репортів поки немає.")
         return
 
-    reports = get_reports()
+    text = "\n\n".join(
+        f"👤 *Хто скаржився:* {row[0]}\n🎯 *На кого:* {row[1]}\n📄 *Причина:* {row[2]}\n🕒 *Час:* {row[3]}\n🔗 [Перейти до повідомлення]({row[4]})"
+        for row in reports
+    )
 
-    if reports:
-        report_message = ""
-        for r in reports:
-            if len(r) >= 8:  # Перевіряємо, що є достатньо елементів
-                report_message += f"Репорт {r[0]}:\nПричина: {r[3]}\nВремя: {r[4]}\nТот кто кинул репорт: {r[5]}\nТот на кого кинули репорт: {r[6]}\nСсылка: {r[7]}\n\n"
-            else:
-                report_message += f"Репорт {r[0]} имеет недостаточно даных.\n\n"
-    else:
-        report_message = "Нету репортов."
+    # Кількість сторінок може бути невідома без підрахунку загальної кількості репортів
+    # Тому поки що передаємо просто наступну сторінку
+    keyboard = generate_pagination_keyboard(page, page + 1)  # Спочатку просто +1
+    await update.message.reply_markdown(text, reply_markup=keyboard)
 
-    # Відправка повідомлення без попереднього перегляду веб-сторінок
-    await update.message.reply_text(report_message, disable_web_page_preview=True)
+# Обробка натискання кнопок пагінації
+async def pagination_callback(update, context):
+    query = update.callback_query
+    await query.answer()
 
-def get_reports():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM reports")  # Извлекаем все столбцы
-    reports = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
-    return reports
+    page = int(query.data.split("_")[1])
+    offset = (page - 1) * REPORTS_PER_PAGE
+    reports = await get_reports(offset)
+
+    if not reports:
+        await query.edit_message_text("📭 Репортів більше немає.")
+        return
+
+    text = "\n\n".join(
+        f"👤 *Хто скаржився:* {row[0]}\n🎯 *На кого:* {row[1]}\n📄 *Причина:* {row[2]}\n🕒 *Час:* {row[3]}\n🔗 [Перейти до повідомлення]({row[4]})"
+        for row in reports
+    )
+
+    # Тут ми також передаємо наступну сторінку для пагінації
+    keyboard = generate_pagination_keyboard(page, page + 1)
+    await query.edit_message_text(text, parse_mode='Markdown', reply_markup=keyboard)
 
 # Функция отправки логов в группу
 async def log_action(text: str):
