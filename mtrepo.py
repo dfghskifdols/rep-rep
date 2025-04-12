@@ -174,11 +174,10 @@ async def show_reports(update, context, page=1):
         message_text += f"Text: {report['reported_text']}\n\n"
 
     # Створюємо кнопки для навігації між сторінками
-    keyboard = []
-    if page > 1:
-        keyboard.append([InlineKeyboardButton("← Прежняя", callback_data=f"page_{page-1}")])
-    if page < total_pages:
-        keyboard.append([InlineKeyboardButton("Следующая →", callback_data=f"page_{page+1}")])
+    if page > 1:  # Якщо це не перша сторінка
+        keyboard.append([InlineKeyboardButton("← Назад", callback_data=f"page_{page-1}")])
+    keyboard.append([InlineKeyboardButton(f"Сторінка {page}", callback_data="current_page")])
+    keyboard.append([InlineKeyboardButton("→ Вперед", callback_data=f"page_{page+1}")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -254,7 +253,7 @@ async def report_command(update: Update, context: CallbackContext):
     keyboard = [[
         InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
         InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
-    ]] 
+    ]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     
