@@ -149,6 +149,16 @@ async def connect_db():
         autocommit=True
     )
 
+CREATE TABLE reports (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reporter_name VARCHAR(255) NOT NULL,
+    reported_name VARCHAR(255) NOT NULL,
+    report_text TEXT NOT NULL,
+    report_time DATETIME NOT NULL,
+    message_link TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 # Отримання репортів з бази
 async def get_reports(offset):
     conn = await connect_db()
