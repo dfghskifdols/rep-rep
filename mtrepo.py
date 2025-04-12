@@ -13,7 +13,7 @@ import sqlite3
 import pytz
 import time
 import aiopg
-import asyncio
+import asyncpg
 import math
 
 bot_paused_until = None
