@@ -498,7 +498,7 @@ async def main():
     print("🚀 Бот запущений!")
 
     # Запуск polling і фонової перевірки одночасно
-    await asyncio.gather(app.run_polling()
+    await asyncio.gather(app.run_polling())
 
 if __name__ == "__main__":
     asyncio.run(main())
