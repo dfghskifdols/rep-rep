@@ -154,13 +154,14 @@ async def show_reports(update, context, page=1):
 
     await update.message.reply_text(message_text, reply_markup=reply_markup)
 
-# Обробник для натискання на кнопки для перемикання сторінок
 async def button(update, context):
     query = update.callback_query
-    page = int(query.data.split("_")[1])  # Отримуємо сторінку з callback_data
+    data = query.data
 
-    await show_reports(update, context, page=page)
-    await query.answer()  # Підтверджуємо натискання кнопки
+    if data.startswith("page_"):
+        page = int(data.split("_")[1])
+        await show_reports(update, context, page=page)
+        await query.answer()
 
 # Асинхронна функція для команди /bot_stop
 async def bot_stop(update: Update, context: CallbackContext):
