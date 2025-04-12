@@ -13,6 +13,7 @@ import sqlite3
 import pytz
 import time
 import aiomysql
+import aiomysql.connect
 
 bot_paused_until = None
 
