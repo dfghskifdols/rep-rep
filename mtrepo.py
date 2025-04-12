@@ -260,6 +260,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    message = update.message  # отримуємо об'єкт повідомлення з update
     message_id = update.message.reply_to_message.message_id
     user_id = update.message.from_user.id
     report_key = f"{user_id}_{message_id}"
