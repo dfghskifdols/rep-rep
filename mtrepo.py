@@ -16,9 +16,6 @@ import aiopg
 import asyncpg
 import math
 
-# Визначення часового поясу Москви
-moscow_tz = pytz.timezone('Europe/Moscow')
-
 bot_paused_until = None
 
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
@@ -91,6 +88,9 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
+# Вказуємо Московський час
+moscow_tz = timezone('Europe/Moscow')
+
 # Підключення до бази даних PostgreSQL
 async def connect_db():
     return await asyncpg.connect(
@@ -101,7 +101,7 @@ async def connect_db():
 async def get_reports(page=1, reports_per_page=3):
     conn = await connect_db()
     offset = (page - 1) * reports_per_page
-    rows = await conn.fetch('''
+    rows = await conn.fetch(''' 
         SELECT * FROM user_reports
         ORDER BY report_date DESC
         LIMIT $1 OFFSET $2
@@ -163,60 +163,7 @@ async def button(update, context):
         await show_reports(update, context, page=page)
         await query.answer()
 
-# Асинхронна функція для команди /bot_stop
-async def bot_stop(update: Update, context: CallbackContext):
-    user_id = update.message.from_user.id  # Отримуємо ID користувача
-
-    # Перевіряємо, чи є користувач у списку дозволених
-    if user_id in ALLOWED_USER_IDS:
-        try:
-            minutes = int(context.args[0])  # Отримуємо кількість хвилин з аргументів команди
-            stop_time = time.time() + minutes * 60  # Бот зупиняється на вказаний час
-
-            # Відправляємо повідомлення, що бот зупинений
-            await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
-            
-            # Чекаємо вказану кількість хвилин
-            await asyncio.sleep(minutes * 60)
-
-            # Повертаємо бот в робочий стан після завершення часу
-            await update.message.reply_text("Бот снова запущен.")
-        except (IndexError, ValueError):
-            await update.message.reply_text("Пожалуйста введите время(в минутах). Пример: /bot_stop 5")
-    else:
-        await update.message.reply_text("У вас нету доступа к этой команде.")
-
-# Команда /bot_resume для відновлення роботи бота
-async def bot_resume(update: Update, context: CallbackContext):
-    global stop_time
-    if update.message.from_user.id not in ALLOWED_USER_IDS:
-        await update.message.reply_text("У вас нету доступа к этой команде.")
-        return
-
-    if stop_time is None:
-        await update.message.reply_text("Бот уже работает.")
-    else:
-        stop_time = None
-        await update.message.reply_text("Бот возобновил свою работу.")
-
-async def command_handler(update: Update, context):
-    global stop_time
-    if stop_time is not None and time.time() < stop_time:
-        await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
-        return 
-
-# Функция отправки логов в группу
-async def log_action(text: str):
-    try:
-        await bot.send_message(LOG_CHAT_ID, text, parse_mode=ParseMode.HTML)
-    except Exception as e:
-        logger.error(f"Ошибка при отправке лога: {e}")
-
-# Функция старта
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
-
-# Збереження репорту в таблиці user_reports
+# Функція збереження репорту в базі даних
 async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date):
     conn = await connect_db()
     # Отримуємо поточний час у МСК
@@ -233,8 +180,8 @@ async def save_report(user_id, message_id, reason, reporter_name, reported_name,
 
     await conn.close()
 
-# Функція репорту
-async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Функція обробки репорту
+async def report_command(update: Update, context: CallbackContext):
     if not update.message.reply_to_message:
         await update.message.reply_text(
             "⚠️ <b>Репорт можно отправить только <i>ответом на сообщение</i>!</b>\n\n"
@@ -252,14 +199,6 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     reason = context.args[0]
-    if not REPORT_REASON_REGEX.match(reason):
-        await update.message.reply_text(
-            "⚠️ <b>Неверный формат причины!</b>\n\n"
-            "Пример правильного формата: <code>/report П1.3</code>",
-            parse_mode=ParseMode.HTML
-        )
-        return
-
     message = update.message  # отримуємо об'єкт повідомлення з update
     message_id = update.message.reply_to_message.message_id
     user_id = update.message.from_user.id
@@ -269,7 +208,9 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
     report_time = update.message.date
     reported_text = update.message.reply_to_message.text
-    report_date = message.forward_date or message.date
+
+    # Перевіряємо, чи є forward_date у повідомленні, якщо немає - використовуємо date
+    report_date = message.forward_date if hasattr(message, 'forward_date') else message.date
     report_date = report_date.replace(tzinfo=None)
 
     if report_key in confirmed_reports:
