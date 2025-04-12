@@ -4,3 +4,4 @@ nest_asyncio
 aiohttp
 asyncpg
 aiogram==2.24
+aiomysql
