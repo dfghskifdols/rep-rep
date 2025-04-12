@@ -508,6 +508,7 @@ async def start_checking(app: Application):
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
 
+
 # Отримання репортів з бази даних для сторінки
 async def get_reports(page=1, reports_per_page=3):
     conn = await connect_db()
@@ -521,11 +522,7 @@ async def get_reports(page=1, reports_per_page=3):
     return rows
 
 # Показати репорти
-async def show_reports(update, context):
-    page = 1  # За замовчуванням починаємо з 1 сторінки
-    if context.args:
-        page = int(context.args[0])
-
+async def show_reports(update, context, page=1):
     reports = await get_reports(page)
     total_reports = await get_total_reports()
 
@@ -572,7 +569,6 @@ async def button(update, context):
     page = int(query.data.split("_")[1])  # Отримуємо сторінку з callback_data
     await show_reports(update, context, page=page)
     await query.answer()
-
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
