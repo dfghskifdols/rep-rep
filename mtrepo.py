@@ -106,6 +106,13 @@ async def get_reports(page=1, reports_per_page=3):
     await conn.close()
     return rows
 
+# Отримуємо загальну кількість репортів
+async def get_total_reports():
+    conn = await connect_db()
+    total_reports = await conn.fetchval('SELECT COUNT(*) FROM user_reports')
+    await conn.close()
+    return total_reports
+
 # Показати репорти
 async def show_reports(update, context, page=1):
     reports = await get_reports(page)
