@@ -156,13 +156,13 @@ async def show_reports(update, context, page=1):
 
     if not reports:
         if update.message:
-            await update.message.reply_text("Немає доступних репортів.")
+            await update.message.reply_text("Нету репортов.")
         else:
-            await update.callback_query.message.reply_text("Немає доступних репортів.")
+            await update.callback_query.message.reply_text("Нету репортов")
         return
 
     # Формуємо текст для показу
-    message_text = "Список репортів:\n\n"
+    message_text = "Список репортов:\n\n"
     for report in reports:
         message_text += f"Report Key: {report['report_key']}\n"
         message_text += f"User ID: {report['user_id']}\n"
@@ -176,9 +176,9 @@ async def show_reports(update, context, page=1):
     # Створюємо кнопки для навігації між сторінками
     keyboard = []
     if page > 1:
-        keyboard.append([InlineKeyboardButton("← Попередня", callback_data=f"page_{page-1}")])
+        keyboard.append([InlineKeyboardButton("← Прежняя, callback_data=f"page_{page-1}")])
     if page < total_pages:
-        keyboard.append([InlineKeyboardButton("Наступна →", callback_data=f"page_{page+1}")])
+        keyboard.append([InlineKeyboardButton("Следующая →", callback_data=f"page_{page+1}")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -489,7 +489,7 @@ app.add_handler(CommandHandler("bot_stop", bot_stop))
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
-app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
+app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
