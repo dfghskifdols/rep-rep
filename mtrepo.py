@@ -176,7 +176,7 @@ async def show_reports(update, context, page=1):
     # Створюємо кнопки для навігації між сторінками
     keyboard = []
     if page > 1:
-        keyboard.append([InlineKeyboardButton("← Прежняя, callback_data=f"page_{page-1}")])
+        keyboard.append([InlineKeyboardButton("← Прежняя", callback_data=f"page_{page-1}")])
     if page < total_pages:
         keyboard.append([InlineKeyboardButton("Следующая →", callback_data=f"page_{page+1}")])
 
