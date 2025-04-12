@@ -89,6 +89,29 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
+# Функция для остановки бота
+async def bot_stop(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id  # Получаем ID пользователя
+
+    # Проверяем, есть ли пользователь в списке разрешённых
+    if user_id in ALLOWED_USER_IDS:
+        try:
+            minutes = int(context.args[0])  # Получаем количество минут из аргументов команды
+            stop_time = time.time() + minutes * 60  # Бот останавливается на указанное время
+
+            # Отправляем сообщение, что бот остановлен
+            await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
+            
+            # Ждём указанное количество минут
+            await asyncio.sleep(minutes * 60)
+
+            # Возвращаем бота в рабочее состояние после завершения времени
+            await update.message.reply_text("Бот снова запущен.")
+        except (IndexError, ValueError):
+            await update.message.reply_text("Пожалуйста, введите время (в минутах). Пример: /bot_stop 5")
+    else:
+        await update.message.reply_text("У вас нет доступа к этой команде.")
+
 # Вказуємо Московський час
 moscow_tz = timezone('Europe/Moscow')
 
