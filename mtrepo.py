@@ -41,9 +41,6 @@ logger = logging.getLogger(__name__)
 bot = Bot(API_TOKEN)
 app = Application.builder().token(API_TOKEN).build()
 
-# Храним уже подтверждённые репорты
-confirmed_reports = set()
-
 # Возможные ответы на "РаФа"
 rafa_responses = [
     "<b>Blue_Nexus иногда стает ебланом</b>", 
@@ -212,6 +209,8 @@ async def save_report(user_id, message_id, reason, reporter_name, reported_name,
     ''', report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
 
     await conn.close()
+
+confirmed_reports = set()
 
 # Функція обробки репорту
 async def report_command(update: Update, context: CallbackContext):
