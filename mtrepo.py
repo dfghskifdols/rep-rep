@@ -14,6 +14,7 @@ import pytz
 import time
 import aiopg
 import asyncio
+import math
 
 bot_paused_until = None
 
@@ -86,6 +87,12 @@ rafu_responses = [
 
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
+
+# Підключення до бази даних PostgreSQL
+async def connect_db():
+    return await asyncpg.connect(
+        dsn='postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require'
+    )
 
 # Асинхронна функція для команди /bot_stop
 async def bot_stop(update: Update, context: CallbackContext):
@@ -240,25 +247,23 @@ async def log_action(text: str):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши /report в ответ на сообщение, чтобы отправить репорт.")
 
-# Функция для сохранения репорта в SQLite
-moscow_tz = pytz.timezone('Europe/Moscow')
 
-def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link):
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    
+# Збереження репорту в таблиці user_reports
+async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date):
+    conn = await connect_db()
     # Отримуємо поточний час у МСК
     report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
     
-    # Вставляємо новий репорт з усіма даними
-    cur.execute('''
-        INSERT INTO reports (user_id, message_id, report_text, report_time, reporter_name, reported_name, message_link) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (user_id, message_id, reason, report_time, reporter_name, reported_name, message_link))
-    
-    conn.commit()
-    cur.close()
-    conn.close()
+    # Генерація report_key на основі user_id та message_id
+    report_key = f"{user_id}_{message_id}"
+
+    # Вставляємо новий репорт з усіма даними в таблицю
+    await conn.execute('''
+        INSERT INTO user_reports (report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    ''', report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
+
+    await conn.close()
 
 # Функция репорта
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -316,7 +321,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Сохранение репорта в базу
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
-    save_report(user_id, message_id, reason, update.message.from_user.full_name, update.message.reply_to_message.from_user.full_name, f"https://t.me/{update.message.chat.username}/{message_id}")# Функция обработки репорта
+    await save_report(user_id, message_id, "reason", reporter_name, reported_name, message_link, reported_text, report_date)
 
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -602,6 +607,72 @@ async def start_checking(app: Application):
     while True:
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
+
+# Отримання репортів з бази даних для сторінки
+async def get_reports(page=1, reports_per_page=3):
+    conn = await connect_db()
+    offset = (page - 1) * reports_per_page
+    rows = await conn.fetch('''
+        SELECT * FROM user_reports
+        ORDER BY report_date DESC
+        LIMIT $1 OFFSET $2
+    ''', reports_per_page, offset)
+    await conn.close()
+    return rows
+
+# Показати репорти
+async def show_reports(update, context):
+    page = 1  # За замовчуванням починаємо з 1 сторінки
+    if context.args:
+        page = int(context.args[0])
+
+    reports = await get_reports(page)
+    total_reports = await get_total_reports()
+
+    # Загальна кількість сторінок
+    total_pages = math.ceil(total_reports / 3)
+
+    if not reports:
+        await update.message.reply_text("Немає доступних репортів.")
+        return
+
+    # Формуємо текст для показу
+    message_text = "Список репортів:\n\n"
+    for report in reports:
+        message_text += f"Report Key: {report['report_key']}\n"
+        message_text += f"User ID: {report['user_id']}\n"
+        message_text += f"Message ID: {report['message_id']}\n"
+        message_text += f"Reporter: {report['reporter_name']}\n"
+        message_text += f"Reported: {report['reported_name']}\n"
+        message_text += f"Link: {report['message_link']}\n"
+        message_text += f"Time: {report['report_time']}\n"
+        message_text += f"Text: {report['reported_text']}\n\n"
+
+    # Створюємо кнопки для навігації між сторінками
+    keyboard = []
+    if page > 1:
+        keyboard.append([InlineKeyboardButton("← Попередня", callback_data=f"page_{page-1}")])
+    if page < total_pages:
+        keyboard.append([InlineKeyboardButton("Наступна →", callback_data=f"page_{page+1}")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(message_text, reply_markup=reply_markup)
+
+# Отримуємо загальну кількість репортів
+async def get_total_reports():
+    conn = await connect_db()
+    total_reports = await conn.fetchval('SELECT COUNT(*) FROM user_reports')
+    await conn.close()
+    return total_reports
+
+# Обробник для натискання на кнопки для перемикання сторінок
+async def button(update, context):
+    query = update.callback_query
+    page = int(query.data.split("_")[1])  # Отримуємо сторінку з callback_data
+    await show_reports(update, context, page=page)
+    await query.answer()
+
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
