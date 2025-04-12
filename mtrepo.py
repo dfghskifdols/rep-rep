@@ -224,10 +224,10 @@ report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
 report_key = f"{user_id}_{message_id}"
 
     # Вставляємо новий репорт з усіма даними в таблицю
-    await conn.execute('''
-        INSERT INTO user_reports (report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    ''', report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
+  await conn.execute('''
+      INSERT INTO user_reports (report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  ''', report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
 
     await conn.close()
 
