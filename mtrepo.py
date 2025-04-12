@@ -94,6 +94,68 @@ async def connect_db():
         dsn='postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require'
     )
 
+
+# Отримання репортів з бази даних для сторінки
+async def get_reports(page=1, reports_per_page=3):
+    conn = await connect_db()
+    offset = (page - 1) * reports_per_page
+    rows = await conn.fetch('''
+        SELECT * FROM user_reports
+        ORDER BY report_date DESC
+        LIMIT $1 OFFSET $2
+    ''', reports_per_page, offset)
+    await conn.close()
+    return rows
+
+# Показати репорти
+async def show_reports(update, context, page=1):
+    reports = await get_reports(page)
+    total_reports = await get_total_reports()
+
+    # Загальна кількість сторінок
+    total_pages = math.ceil(total_reports / 3)
+
+    if not reports:
+        await update.message.reply_text("Немає доступних репортів.")
+        return
+
+    # Формуємо текст для показу
+    message_text = "Список репортів:\n\n"
+    for report in reports:
+        message_text += f"Report Key: {report['report_key']}\n"
+        message_text += f"User ID: {report['user_id']}\n"
+        message_text += f"Message ID: {report['message_id']}\n"
+        message_text += f"Reporter: {report['reporter_name']}\n"
+        message_text += f"Reported: {report['reported_name']}\n"
+        message_text += f"Link: {report['message_link']}\n"
+        message_text += f"Time: {report['report_time']}\n"
+        message_text += f"Text: {report['reported_text']}\n\n"
+
+    # Створюємо кнопки для навігації між сторінками
+    keyboard = []
+    if page > 1:
+        keyboard.append([InlineKeyboardButton("← Попередня", callback_data=f"page_{page-1}")])
+    if page < total_pages:
+        keyboard.append([InlineKeyboardButton("Наступна →", callback_data=f"page_{page+1}")])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(message_text, reply_markup=reply_markup)
+
+# Отримуємо загальну кількість репортів
+async def get_total_reports():
+    conn = await connect_db()
+    total_reports = await conn.fetchval('SELECT COUNT(*) FROM user_reports')
+    await conn.close()
+    return total_reports
+
+# Обробник для натискання на кнопки для перемикання сторінок
+async def button(update, context):
+    query = update.callback_query
+    page = int(query.data.split("_")[1])  # Отримуємо сторінку з callback_data
+    await show_reports(update, context, page=page)
+    await query.answer()
+
 # Асинхронна функція для команди /bot_stop
 async def bot_stop(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id  # Отримуємо ID користувача
@@ -507,68 +569,6 @@ async def start_checking(app: Application):
     while True:
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
-
-
-# Отримання репортів з бази даних для сторінки
-async def get_reports(page=1, reports_per_page=3):
-    conn = await connect_db()
-    offset = (page - 1) * reports_per_page
-    rows = await conn.fetch('''
-        SELECT * FROM user_reports
-        ORDER BY report_date DESC
-        LIMIT $1 OFFSET $2
-    ''', reports_per_page, offset)
-    await conn.close()
-    return rows
-
-# Показати репорти
-async def show_reports(update, context, page=1):
-    reports = await get_reports(page)
-    total_reports = await get_total_reports()
-
-    # Загальна кількість сторінок
-    total_pages = math.ceil(total_reports / 3)
-
-    if not reports:
-        await update.message.reply_text("Немає доступних репортів.")
-        return
-
-    # Формуємо текст для показу
-    message_text = "Список репортів:\n\n"
-    for report in reports:
-        message_text += f"Report Key: {report['report_key']}\n"
-        message_text += f"User ID: {report['user_id']}\n"
-        message_text += f"Message ID: {report['message_id']}\n"
-        message_text += f"Reporter: {report['reporter_name']}\n"
-        message_text += f"Reported: {report['reported_name']}\n"
-        message_text += f"Link: {report['message_link']}\n"
-        message_text += f"Time: {report['report_time']}\n"
-        message_text += f"Text: {report['reported_text']}\n\n"
-
-    # Створюємо кнопки для навігації між сторінками
-    keyboard = []
-    if page > 1:
-        keyboard.append([InlineKeyboardButton("← Попередня", callback_data=f"page_{page-1}")])
-    if page < total_pages:
-        keyboard.append([InlineKeyboardButton("Наступна →", callback_data=f"page_{page+1}")])
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(message_text, reply_markup=reply_markup)
-
-# Отримуємо загальну кількість репортів
-async def get_total_reports():
-    conn = await connect_db()
-    total_reports = await conn.fetchval('SELECT COUNT(*) FROM user_reports')
-    await conn.close()
-    return total_reports
-
-# Обробник для натискання на кнопки для перемикання сторінок
-async def button(update, context):
-    query = update.callback_query
-    page = int(query.data.split("_")[1])  # Отримуємо сторінку з callback_data
-    await show_reports(update, context, page=page)
-    await query.answer()
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
