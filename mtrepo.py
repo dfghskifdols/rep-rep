@@ -193,6 +193,8 @@ async def button(update, context):
         await show_reports(update, context, page=page)
         await query.answer()
 
+    print("test")
+
 # Функція збереження репорту в базі даних
 async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date):
     conn = await connect_db()
