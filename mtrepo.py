@@ -265,7 +265,6 @@ async def report_command(update: Update, context: CallbackContext):
     
     # Логування
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
-    await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
 
 # Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -335,6 +334,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         confirmed_reports.add(report_key)
         await query.message.edit_text("✅Репорт успешно отправлен!")
+        await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
         await log_action(f"✅ Репорт подтверждён пользователем {query.from_user.full_name} ({query.from_user.id})")
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
