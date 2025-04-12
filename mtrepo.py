@@ -594,7 +594,7 @@ app.add_handler(CommandHandler("send", send_message))
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
 
-app.add_handler(CommandHandler("show_reports", show_reports))
+app.add_handler(CommandHandler("show_reports", show_reports_command))
 
 app.add_handler(CommandHandler("bot_stop", bot_stop))
 app.add_handler(CommandHandler("bot_resume", bot_resume))
