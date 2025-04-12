@@ -89,6 +89,15 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
+# Функция отправки логов в группу
+async def log_action(text: str):
+    try:
+        # Отправляем текст в лог-группу или канал
+        await bot.send_message(LOG_CHAT_ID, text, parse_mode=ParseMode.HTML)
+    except Exception as e:
+        # Логируем ошибку, если что-то пошло не так
+        logger.error(f"Ошибка при отправке лога: {e}")
+
 # Функция для остановки бота
 async def bot_stop(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id  # Получаем ID пользователя
