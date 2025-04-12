@@ -94,7 +94,6 @@ async def connect_db():
         dsn='postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require'
     )
 
-
 # Отримання репортів з бази даних для сторінки
 async def get_reports(page=1, reports_per_page=3):
     conn = await connect_db()
@@ -142,19 +141,13 @@ async def show_reports(update, context, page=1):
 
     await update.message.reply_text(message_text, reply_markup=reply_markup)
 
-# Отримуємо загальну кількість репортів
-async def get_total_reports():
-    conn = await connect_db()
-    total_reports = await conn.fetchval('SELECT COUNT(*) FROM user_reports')
-    await conn.close()
-    return total_reports
-
 # Обробник для натискання на кнопки для перемикання сторінок
 async def button(update, context):
     query = update.callback_query
     page = int(query.data.split("_")[1])  # Отримуємо сторінку з callback_data
+
     await show_reports(update, context, page=page)
-    await query.answer()
+    await query.answer()  # Підтверджуємо натискання кнопки
 
 # Асинхронна функція для команди /bot_stop
 async def bot_stop(update: Update, context: CallbackContext):
