@@ -125,7 +125,10 @@ async def show_reports(update, context, page=1):
     total_pages = math.ceil(total_reports / 3)
 
     if not reports:
-        await update.message.reply_text("Немає доступних репортів.")
+        if update.message:
+            await update.message.reply_text("Немає доступних репортів.")
+        else:
+            await update.callback_query.message.reply_text("Немає доступних репортів.")
         return
 
     # Формуємо текст для показу
