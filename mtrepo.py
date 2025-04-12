@@ -513,7 +513,6 @@ app.add_handler(CommandHandler("show_reports", show_reports))
 app.add_handler(CallbackQueryHandler(button))
 
 app.add_handler(CommandHandler("bot_stop", bot_stop))
-app.add_handler(CommandHandler("bot_resume", bot_resume))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
