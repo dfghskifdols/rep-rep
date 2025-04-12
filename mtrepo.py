@@ -268,7 +268,8 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
     report_time = update.message.date
     reported_text = update.message.reply_to_message.text
-    report_date = update.message.date
+    report_date = message.forward_date or message.date
+    report_date = report_date.replace(tzinfo=None)
 
     if report_key in confirmed_reports:
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
