@@ -127,92 +127,16 @@ async def command_handler(update: Update, context):
         await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
         return 
 
-# Конфігурація MySQL
-db_config = {
-    'host': 'sql113.infinityfree.com',
-    'port': 3306,
-    'user': 'if0_38733231',
-    'password': 'JaxuhKkoecgYk',
-    'db': 'if0_38733231_mtrepo',
-}
-
-REPORTS_PER_PAGE = 3  # Кількість репортів на сторінку
-
 # Підключення до MySQL
 async def connect_db():
     return await aiomysql.connect(
-        host=db_config['host'],
-        port=db_config['port'],
-        user=db_config['user'],
-        password=db_config['password'],
-        db=db_config['db'],
+        host='sql113.infinityfree.com',  # Хост
+        port=3306,                       # Порт
+        user='if0_38733231',             # Ім'я користувача
+        password='JaxuhKkoecgYk',        # Пароль
+        db='if0_38733231_mtrepo',        # Ім'я бази даних
         autocommit=True
     )
-
-# Отримання репортів з бази
-async def get_reports(offset):
-    conn = await connect_db()
-    async with conn.cursor() as cur:
-        await cur.execute('''
-            SELECT reporter_name, reported_name, report_text, report_time, message_link
-            FROM reports
-            ORDER BY timestamp DESC
-            LIMIT %s OFFSET %s
-        ''', (REPORTS_PER_PAGE, offset))
-        results = await cur.fetchall()
-    await conn.ensure_closed()
-    return results
-
-# Генерація клавіатури сторінок
-def generate_pagination_keyboard(current_page, total_pages):
-    buttons = []
-    if current_page > 1:
-        buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data=f"page_{current_page - 1}"))
-    if current_page < total_pages:
-        buttons.append(InlineKeyboardButton("Вперед ➡️", callback_data=f"page_{current_page + 1}"))
-    return InlineKeyboardMarkup([buttons]) if buttons else None
-
-# Обробник /show_reports
-async def show_reports_command(update, context: ContextTypes.DEFAULT_TYPE):
-    page = 1
-    offset = (page - 1) * REPORTS_PER_PAGE
-    reports = await get_reports(offset)
-
-    if not reports:
-        await update.message.reply_text("📭 Репортів поки немає.")
-        return
-
-    text = "\n\n".join(
-        f"👤 *Хто скаржився:* {row[0]}\n🎯 *На кого:* {row[1]}\n📄 *Причина:* {row[2]}\n🕒 *Час:* {row[3]}\n🔗 [Перейти до повідомлення]({row[4]})"
-        for row in reports
-    )
-
-    # Кількість сторінок може бути невідома без підрахунку загальної кількості репортів
-    # Тому поки що передаємо просто наступну сторінку
-    keyboard = generate_pagination_keyboard(page, page + 1)  # Спочатку просто +1
-    await update.message.reply_markdown(text, reply_markup=keyboard)
-
-# Обробка натискання кнопок пагінації
-async def pagination_callback(update, context):
-    query = update.callback_query
-    await query.answer()
-
-    page = int(query.data.split("_")[1])
-    offset = (page - 1) * REPORTS_PER_PAGE
-    reports = await get_reports(offset)
-
-    if not reports:
-        await query.edit_message_text("📭 Репортів більше немає.")
-        return
-
-    text = "\n\n".join(
-        f"👤 *Хто скаржився:* {row[0]}\n🎯 *На кого:* {row[1]}\n📄 *Причина:* {row[2]}\n🕒 *Час:* {row[3]}\n🔗 [Перейти до повідомлення]({row[4]})"
-        for row in reports
-    )
-
-    # Тут ми також передаємо наступну сторінку для пагінації
-    keyboard = generate_pagination_keyboard(page, page + 1)
-    await query.edit_message_text(text, parse_mode='Markdown', reply_markup=keyboard)
 
 # Функция отправки логов в группу
 async def log_action(text: str):
