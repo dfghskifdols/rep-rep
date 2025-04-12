@@ -229,7 +229,7 @@ async def save_report(user_id, message_id, reason, reporter_name, reported_name,
 
     await conn.close()
 
-# Функция репорта
+# Функція репорту
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message:
         await update.message.reply_text(
@@ -283,10 +283,11 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML
     )
     
-    # Сохранение репорта в базу
+    # Логування
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
-    await save_report(user_id, message_id, "reason", reporter_name, reported_name, message_link, reported_text, report_date)
+    await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
 
+# Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
 
@@ -358,47 +359,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "cancel":
         await query.message.edit_text("❌ Репорт отменен.")
         await log_action(f"❌ Репорт отменён пользователем {query.from_user.full_name} ({query.from_user.id})")
-
-# Функция обработки пинга администраторов
-async def handle_ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    data = query.data.split("_")
-    
-    if len(data) < 3:
-        await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
-        return
-
-    action = data[0]  # Действие: ping
-
-    if len(data) == 3:
-        ping_answer = data[2]
-        
-        if ping_answer == "yes":
-            await query.message.edit_text("⏳ Отправка репорта...")
-
-            # Получаем администраторов
-            admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
-            admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
-
-            # Отправляем репорт и пинг
-            await bot.send_message(ADMIN_CHAT_ID, "Репорт от пользователя", parse_mode=ParseMode.HTML)
-
-            if admin_mentions:
-                half = len(admin_mentions) // 2
-                await asyncio.sleep(4)
-                await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
-                await asyncio.sleep(4)
-                await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
-
-            await query.message.edit_text("✅ Репорт и пинг отправлены!")
-        elif ping_answer == "no":
-            await query.message.edit_text("❌ Репорт отправлен без пинга.")
-        else:
-            await query.message.edit_text("❌ Ошибка: неверный ответ на вопрос о пинге.")
-    else:
-        await query.message.edit_text("❌ Ошибка: неправильный формат данных для пинга.")
 
 async def command_handler(update: Update, context):
     global stop_time
