@@ -213,8 +213,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Збереження репорту в таблиці user_reports
 async def save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date):
     conn = await connect_db()
-    # Отримуємо поточний час у МСК
-    report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
+
+# Визначення часового поясу Москви
+moscow_tz = pytz.timezone('Europe/Moscow')
+
+# Отримання поточного часу в Москві
+report_time = datetime.now(moscow_tz).strftime('%Y-%m-%d %H:%M:%S')
     
     # Генерація report_key на основі user_id та message_id
     report_key = f"{user_id}_{message_id}"
