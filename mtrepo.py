@@ -503,6 +503,10 @@ async def start_checking(app: Application):
         await check_deleted_messages(app)
         await asyncio.sleep(10)  # Перевірка кожні 10 секунд
 
+# Функция старта
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет! Напишите /report в ответ на сообщение, чтобы отправить репорт.")
+
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
 
