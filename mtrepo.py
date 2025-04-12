@@ -489,8 +489,7 @@ app.add_handler(CommandHandler("bot_stop", bot_stop))
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
-app.add_handler(CallbackQueryHandler(handle_report))
-app.add_handler(CallbackQueryHandler(pattern="^(confirm|cancel)_"))
+app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_"))
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
