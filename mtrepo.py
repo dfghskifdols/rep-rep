@@ -16,7 +16,6 @@ import aiopg
 import asyncpg
 import math
 from pytz import timezone
-from database import update_report_status  # Імпортуємо вашу функцію з БД
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
