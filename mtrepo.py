@@ -418,29 +418,13 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Кидаем сообщение, что ID скопировано
     await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
 
-# Функция обработки сообщений
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message.text.strip().lower()  # Перетворюємо в нижній регістр
-    user_id = update.effective_user.id
-    username = update.effective_user.username or update.effective_user.full_name
-
-# Функція для очікування відповіді
-async def wait_for_response(user_id: int, chat_id: int, context: ContextTypes.DEFAULT_TYPE):
-    await asyncio.sleep(120)  # 2 хвилини
-    if user_id in waiting_for_question:
-        waiting_for_question.remove(user_id)
-        try:
-            await context.bot.send_message(chat_id=chat_id, text="⏰ Время вышло! Если хочеш попробывать еще раз - напиши 'Репорт-бот-вопрос'")
-        except Exception as e:
-            print(f"Ошибка при отправке сообщение про то что время вышло: {e}")
-
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message.text.strip()
+    message = update.message.text.strip().lower()  # Перетворюємо на малий регістр
     user_id = update.message.from_user.id
 
     # Обробка обох команд
-    if message.lower() in ["рбв", "репорт-бот-вопрос"]:
+    if message in ["рбв", "репорт-бот-вопрос"]:
         if user_id not in waiting_for_question:
             waiting_for_question.add(user_id)
             await update.message.reply_text("Слушаю! Напишите ваш вопрос.")
@@ -471,10 +455,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
 
-    elif message.lower() == "Пинг".lower():
+    elif message == "пинг":
         await update.message.reply_text("А нахуя он тебе?")
 
-    elif message in ["рафу", "рандом факт админ"]:
+    elif message in ["рафа", "рандом факт админ"]:
         response = random.choice(rafa_responses)
         await update.message.reply_text(f"<b>{response}</b>", parse_mode=ParseMode.HTML)
     
