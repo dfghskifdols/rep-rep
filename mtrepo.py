@@ -137,18 +137,18 @@ async def accept_report(update, context):
     # Отримуємо репорт з бази даних за ключем
     report = await get_report_by_key(report_key)
     if not report:
-        await update.message.reply_text(f"❌ Репорт з ключом {report_key} не найден!")
+        await update.message.reply_text(f"❌ Репорт с ключом {report_key} не найден!")
         return
 
     # Перевірка, чи репорт вже прийнятий
     if report['status'] == 'accepted':
-        await update.message.reply_text(f"❌ Репорт з ключом {report_key} уже принят!")
+        await update.message.reply_text(f"❌ Репорт с ключом {report_key} уже принят!")
         return
 
     # Оновлення статусу репорту в базі даних
     try:
         await update_report_status(report_key, 'accepted', str(user_id))
-        await update.message.reply_text(f"✅ Репорт з ключом {report_key} успешно принят!")
+        await update.message.reply_text(f"✅ Репорт с ключом {report_key} успешно принят!")
 
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка при обробке: {str(e)}")
@@ -169,9 +169,9 @@ async def delete_report(update: Update, context: CallbackContext):
     await conn.close()
 
     if result == "DELETE 1":
-        await update.message.reply_text(f"❇️ Репорт з ключом <code>{report_key}</code> успешно удален.", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"❇️ Репорт с ключом <code>{report_key}</code> успешно удален.", parse_mode=ParseMode.HTML)
     else:
-        await update.message.reply_text(f"⚠️ Репорт з ключом <code>{report_key}</code> не найден.", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"⚠️ Репорт с ключом <code>{report_key}</code> не найден.", parse_mode=ParseMode.HTML)
 
 # Функция для остановки бота
 async def bot_stop(update: Update, context: CallbackContext):
@@ -251,7 +251,7 @@ async def show_reports(update, context, page=1):
         status = report.get('status', 'not accepted')
         accepted_by = report.get('accepted_by')
 
-        message_text += f"🔑Ключ репорта: {report['report_key']}\n"
+        message_text += f"🔑Ключ репорта: <code>{report['report_key']}</code>\n"
         message_text += f"🆔ID юзера: {report['user_id']}\n"
         message_text += f"📩ID сообщения: {report['message_id']}\n"
         message_text += f"🔨Кто отправил: {report['reporter_name']}\n"
@@ -424,7 +424,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"👤 <b>Пользователь:</b> {reported_user_mention}\n"
             f"💬 <b>Сообщение:</b>\n<blockquote>{message_text}</blockquote>\n</blockquote>"
             f"🔗 <b>Ссылка:</b> {link_text}\n"
-            f"🔑 <b>Ключ репорту:</b> {report_key}"
+            f"🔑 <b>Ключ репорту:</b> <code>{report_key}</code>" 
         )
 
         await query.message.edit_text("⏳ Отправка...")
