@@ -297,10 +297,10 @@ async def save_report(user_id, message_id, reason, reporter_name, reported_name,
     # Генерація report_key на основі user_id та message_id
     report_key = f"{user_id}_{message_id}"
 
-    # Вставляємо новий репорт з усіма даними в таблицю
-    await conn.execute('''
-        INSERT INTO user_reports (report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+# Вставляємо новий репорт з усіма даними в таблицю, додаємо статус
+    await conn.execute(''' 
+        INSERT INTO user_reports (report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')  -- статус за замовчуванням
     ''', report_key, user_id, message_id, reporter_name, reported_name, message_link, report_time, reported_text, report_date)
 
     await conn.close()
