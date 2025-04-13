@@ -99,7 +99,7 @@ USER_CHAT_ID = 5283100992  # заміни на свій chat_id
 
 # Команда для видалення репорту за ключем
 async def delete_report(update: Update, context: CallbackContext):
-    if update.message.from_user.id != USER_CHAT_ID:
+    if update.message.from_user.id != ALLOWED_USER_IDS:
         await update.message.reply_text("🚫У вас нету доступа к команде!.")
         return
 
