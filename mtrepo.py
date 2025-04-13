@@ -439,10 +439,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message.text.strip()
     user_id = update.message.from_user.id
 
-    if message.lower() == "рбв":
+    # Обробка обох команд
+    if message.lower() in ["рбв", "репорт-бот-вопрос"]:
         if user_id not in waiting_for_question:
             waiting_for_question.add(user_id)
-            await update.message.reply_text("Слушаю!")
+            await update.message.reply_text("Слушаю! Напишите ваш вопрос.")
             asyncio.create_task(wait_for_response(user_id, update.message.chat_id, context))
         else:
             await update.message.reply_text("⏳ Я уже жду на твой вопрос! Напиши свой вопрос или подожди немного!")
@@ -459,7 +460,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"Ошибка отправки вопроса: {e}")
         return
 
-    if message.lower() == "неко":
+    if message in ["неко", "где неко"]:
         admins = await context.bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
@@ -477,11 +478,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafa_responses)
         await update.message.reply_text(f"<b>{response}</b>", parse_mode=ParseMode.HTML)
     
-    elif message.lower() == "РаФу".lower():
-        response = random.choice(rafu_responses)
+    elif message in ["рафу", "рандом-факт-участники"]:
+        response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
-    elif message.lower() == "привет".lower():  # Добавляем проверку на "привет" без учета регистра
+    elif message in ["привет", "сап", "ку"]:  # Перевірка привітань
         current_time = datetime.now(timezone.utc) + timedelta(hours=3)
         hour = current_time.hour
 
