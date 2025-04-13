@@ -17,9 +17,8 @@ import asyncpg
 import math
 from pytz import timezone
 
-
-current_time = datetime.now(pytz_timezone('UTC')) + timedelta(hours=3)  # Використовуємо pytz
-hour = current_time.hour
+moscow_tz = timezone('Europe/Moscow')
+current_time = datetime.now(moscow_tz)
 
 bot_paused_until = None
 
@@ -143,9 +142,6 @@ async def bot_stop(update: Update, context: CallbackContext):
             await update.message.reply_text("⚠️Пожалуйста, введите время (в минутах). Пример: /bot_stop 5")
     else:
         await update.message.reply_text("⛔️У вас нет доступа к этой команде.")
-
-# Вказуємо Московський час
-moscow_tz = timezone('Europe/Moscow')
 
 # Підключення до бази даних PostgreSQL
 async def connect_db():
