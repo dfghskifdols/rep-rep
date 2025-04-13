@@ -502,7 +502,6 @@ app.add_handler(CommandHandler("id", get_chat_id))
 
 app.add_handler(CommandHandler("show_reports", show_reports))
 app.add_handler(CallbackQueryHandler(button, pattern="^page_\d+$"))
-app.add_handler(CallbackQueryHandler(current_page_info, pattern="^current_page$"))
 
 app.add_handler(CommandHandler("bot_stop", bot_stop))
 
