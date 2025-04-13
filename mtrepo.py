@@ -362,10 +362,13 @@ async def report_command(update: Update, context: CallbackContext):
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
         return
 
-    keyboard = [[
-        InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
-        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
-    ]]
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ Підтвердити", callback_data=f"confirm_{user_id}_{message_id}_{reason}"),
+            InlineKeyboardButton("❌ Відхилити", callback_data=f"cancel_{user_id}_{message_id}")
+        ]
+    ]
+
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -388,12 +391,9 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     action = data[0]
-    try:
-        user_id = int(data[1])
-        message_id = int(data[2])
-    except ValueError:
-        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
-        return
+    user_id = int(data[1])
+    message_id = int(data[2])
+    reason = data[3] if len(data) > 3 else "невідомо"
 
     if query.from_user.id != user_id:
         await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
