@@ -173,24 +173,33 @@ async def show_reports(update, context, page=1):
         message_text += f"Time: {report['report_time']}\n"
         message_text += f"Text: {report['reported_text']}\n\n"
 
-keyboard = []
+    # Створюємо клавіатуру
+    keyboard = []
+    buttons = []
+    if page > 1:
+        buttons.append(InlineKeyboardButton("←", callback_data=f"page_{page - 1}"))
 
-# Кнопка "Назад", якщо не перша сторінка
-buttons = []
-if page > 1:
-    buttons.append(InlineKeyboardButton("←", callback_data=f"page_{page - 1}"))
+    buttons.append(InlineKeyboardButton(f"{page}/{total_pages}", callback_data="current_page"))
 
-# Лічильник сторінок, типу "4/15"
-buttons.append(InlineKeyboardButton(f"{page}/{total_pages}", callback_data="current_page"))
+    if page < total_pages:
+        buttons.append(InlineKeyboardButton("→", callback_data=f"page_{page + 1}"))
 
-# Кнопка "Вперед", якщо не остання сторінка
-if page < total_pages:
-    buttons.append(InlineKeyboardButton("→", callback_data=f"page_{page + 1}"))
+    keyboard.append(buttons)
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-keyboard.append(buttons)
-reply_markup = InlineKeyboardMarkup(keyboard)
-
-await update.message.reply_text(message_text, reply_markup=reply_markup)
+    # Відповідь (оновлення або нове повідомлення)
+    if update.message:
+        await update.message.reply_text(
+            message_text,
+            reply_markup=reply_markup,
+            disable_web_page_preview=True
+        )
+    else:
+        await update.callback_query.message.edit_text(
+            message_text,
+            reply_markup=reply_markup,
+            disable_web_page_preview=True
+        )
 
 async def button(update, context):
     query = update.callback_query
