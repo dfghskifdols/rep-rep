@@ -190,7 +190,7 @@ if page < total_pages:
 keyboard.append(buttons)
 reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(message_text, reply_markup=reply_markup)
+await update.message.reply_text(message_text, reply_markup=reply_markup)
 
 async def button(update, context):
     query = update.callback_query
