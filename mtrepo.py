@@ -15,7 +15,7 @@ import time
 import aiopg
 import asyncpg
 import math
-from pytz import timezone as pytz_timezone
+from pytz import timezone
 
 
 current_time = datetime.now(pytz_timezone('UTC')) + timedelta(hours=3)  # Використовуємо pytz
