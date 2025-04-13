@@ -16,6 +16,7 @@ import aiopg
 import asyncpg
 import math
 from pytz import timezone
+from your_database_module import update_report_status
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
@@ -35,6 +36,7 @@ USER_CHAT_ID = 5283100992
 ALLOWED_USER_IDS = [5283100992, 5344318601]
 LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 5713511759, 5344318601, 6340673182]
+ADMINS_ALLOWED = [5283100992, 5713511759, 5344318601, 6340673182, 1385118926, 5222780613]
 GROUP_ID = -1002268486160
 LOG_CHATDEL_ID = -4665694960
 
@@ -99,7 +101,27 @@ async def log_action(text: str):
         # Логируем ошибку, если что-то пошло не так
         logger.error(f"Ошибка при отправке лога: {e}")
 
-USER_CHAT_ID = 5283100992  # заміни на свій chat_id
+# Команда для прийняття репорту
+async def accept_report(update, context):
+    user_id = update.message.from_user.id
+    report_key = context.args[0]  # Ключ репорту передається як аргумент
+
+    # Перевірка, чи є користувач в списку адміністраторів
+    if user_id not in ADMINS_ALLOWED:
+        await update.message.reply_text("❌ У вас нету доступа.")
+        return
+
+    # Перевірка, чи був вже прийнятий цей репорт
+    report = get_report_by_key(report_key)  # Функція для отримання репорту з БД за ключем
+    if report and report['status'] == 'accepted':
+        await update.message.reply_text(f"⚠️ Репорт {report_key} уже принял другой администратор.")
+        return
+
+    # Оновлення статусу репорту в БД
+    update_report_status(report_key, 'accepted', user_id)  # Функція для оновлення статусу в БД
+
+    # Повідомлення, що репорт прийнятий
+    await update.message.reply_text(f"✅ Вы успешно приняли репорт {report_key} ")
 
 # Команда для видалення репорту за ключем
 async def delete_report(update: Update, context: CallbackContext):
@@ -365,7 +387,8 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"<blockquote>⚠️ <b>Новый репорт!</b>\n\n"
             f"👤 <b>Пользователь:</b> {reported_user_mention}\n"
             f"💬 <b>Сообщение:</b>\n<blockquote>{message_text}</blockquote>\n</blockquote>"
-            f"🔗 <b>Ссылка:</b> {link_text}"
+            f"🔗 <b>Ссылка:</b> {link_text}\n"
+            f"🔑 <b>Ключ репорту:</b> {report_key}"
         )
 
         await query.message.edit_text("⏳ Отправка...")
