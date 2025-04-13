@@ -3,7 +3,7 @@ import asyncio
 import logging
 import random
 import re
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, ContextTypes, MessageHandler, filters
@@ -15,7 +15,7 @@ import time
 import aiopg
 import asyncpg
 import math
-from pytz import timezone
+from pytz import timezone as pytz_timezone
 
 bot_paused_until = None
 
@@ -466,10 +466,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
-    elif message in ["привет", "сап", "ку"]:  # Перевірка привітань
-        current_time = datetime.now(timezone.utc) + timedelta(hours=3)  # Використовуємо timezone.utc
-        hour = current_time.hour
+    current_time = datetime.now(pytz_timezone('UTC')) + timedelta(hours=3)  # Використовуємо pytz
+    hour = current_time.hour
 
+    elif message in ["привет", "сап", "ку"]:  # Перевірка привітань
         if 5 <= hour < 7:
             response = "А ты спать не хочешь?"
         elif 7 <= hour < 13:
