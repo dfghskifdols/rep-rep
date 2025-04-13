@@ -456,12 +456,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("❌ Репорт отменен.")
         await log_action(f"❌ Репорт отменён пользователем {query.from_user.full_name} ({query.from_user.id})")
 
-async def command_handler(update: Update, context):
-    global stop_time
-    if stop_time is not None and time.time() < stop_time:
-        await update.message.reply_text("Бот тимчасово зупинений. Спробуйте пізніше.")
-        return 
-
 # Функция одержания ID чату
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
