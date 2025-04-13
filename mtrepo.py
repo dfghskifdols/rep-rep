@@ -100,27 +100,39 @@ async def log_action(text: str):
         # Логируем ошибку, если что-то пошло не так
         logger.error(f"Ошибка при отправке лога: {e}")
 
-# Команда для прийняття репорту
 async def accept_report(update, context):
     user_id = update.message.from_user.id
-    report_key = context.args[0]  # Ключ репорту передається як аргумент
 
-    # Перевірка, чи є користувач в списку адміністраторів
+    # Перевірка чи користувач є адміністратором
     if user_id not in ADMINS_ALLOWED:
-        await update.message.reply_text("❌ У вас нету доступа.")
+        await update.message.reply_text("❌ У вас немає прав для використання цієї команди.")
         return
 
-    # Перевірка, чи був вже прийнятий цей репорт
-    report = get_report_by_key(report_key)  # Функція для отримання репорту з БД за ключем
-    if report and report['status'] == 'accepted':
-        await update.message.reply_text(f"⚠️ Репорт {report_key} уже принял другой администратор.")
+    # Перевірка, чи надано ключ репорту
+    if len(context.args) == 0:
+        await update.message.reply_text("❌ Будь ласка, надайте ключ репорту після команди. Наприклад: /accept {ключ репорту}")
         return
 
-    # Оновлення статусу репорту в БД
-    update_report_status(report_key, 'accepted', user_id)  # Функція для оновлення статусу в БД
+    report_key = context.args[0]  # Ключ репорту з аргументів команди
 
-    # Повідомлення, що репорт прийнятий
-    await update.message.reply_text(f"✅ Вы успешно приняли репорт {report_key} ")
+    # Отримуємо репорт з бази даних за ключем
+    report = await get_report_by_key(report_key)
+    if not report:
+        await update.message.reply_text(f"❌ Репорт з ключем {report_key} не знайдений!")
+        return
+
+    # Перевірка, чи репорт вже прийнятий
+    if report['status'] == 'accepted':
+        await update.message.reply_text(f"❌ Репорт з ключем {report_key} вже був прийнятий!")
+        return
+
+    # Оновлення статусу репорту в базі даних
+    try:
+        await update_report_status(report_key, "accepted", user_id)  # Оновлюємо статус репорту в базі
+        await update.message.reply_text(f"✅ Репорт з ключем {report_key} був успішно прийнятий!")
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ Сталася помилка при обробці репорту: {str(e)}")
 
 # Команда для видалення репорту за ключем
 async def delete_report(update: Update, context: CallbackContext):
