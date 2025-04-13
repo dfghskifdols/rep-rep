@@ -362,13 +362,10 @@ async def report_command(update: Update, context: CallbackContext):
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
         return
 
-    keyboard = [
-        [
-            InlineKeyboardButton("✅ Підтвердити", callback_data=f"confirm_{user_id}_{message_id}_{reason}"),
-            InlineKeyboardButton("❌ Відхилити", callback_data=f"cancel_{user_id}_{message_id}")
-        ]
-    ]
-
+    keyboard = [[
+             InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
+             InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
+         ]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -380,6 +377,8 @@ async def report_command(update: Update, context: CallbackContext):
     
     # Логування
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
+    if reason != "п1.0":
+         await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
 
 # Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -390,10 +389,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
-    action = data[0]
-    user_id = int(data[1])
-    message_id = int(data[2])
-    reason = data[3] if len(data) > 3 else "невідомо"
+    try:
+             user_id = int(data[1])
+             message_id = int(data[2])
+         except ValueError:
+             await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
+             return
 
     if query.from_user.id != user_id:
         await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
@@ -444,10 +445,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
             await asyncio.sleep(4)
             await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
-
-        if reason != "п1.0":
-            # Тут ви можете використовувати вашу функцію для збереження репорту в базі
-            await save_report(user_id, message_id, reason, reported_user.full_name, reported_user.username, message_link, message_text, datetime.now())
 
         confirmed_reports.add(report_key)
         await query.message.edit_text("✅Репорт успешно отправлен!")
