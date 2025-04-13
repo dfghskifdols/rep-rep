@@ -95,6 +95,28 @@ async def log_action(text: str):
         # Логируем ошибку, если что-то пошло не так
         logger.error(f"Ошибка при отправке лога: {e}")
 
+USER_CHAT_ID = 5283100992  # заміни на свій chat_id
+
+# Команда для видалення репорту за ключем
+async def delete_report(update: Update, context: CallbackContext):
+    if update.message.from_user.id != USER_CHAT_ID:
+        await update.message.reply_text("🚫У вас нету доступа к команде!.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("〽️Укажите ключ репорта. Пример: /delete_report 12345_67890")
+        return
+
+    report_key = context.args[0]
+    conn = await connect_db()
+    result = await conn.execute("DELETE FROM user_reports WHERE report_key = $1", report_key)
+    await conn.close()
+
+    if result == "DELETE 1":
+        await update.message.reply_text(f"❇️Репорт з ключом <code>{report_key}</code> успешно удален.", parse_mode=ParseMode.HTML)
+    else:
+        await update.message.reply_text(f"⚠️Репорт з ключом <code>{report_key}</code> не найден.", parse_mode=ParseMode.HTML)
+
 # Функция для остановки бота
 async def bot_stop(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id  # Получаем ID пользователя
@@ -510,6 +532,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
+
+app.add_handler(CommandHandler("delete_report", delete_report_command))
 
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
