@@ -148,10 +148,19 @@ async def get_total_reports():
 
 # Показати репорти
 async def show_reports(update, context, page=1):
+    user_id = (
+        update.effective_user.id if update.effective_user else None
+    )
+
+    if user_id not in ALLOWED_USERS:
+        if update.message:
+            await update.message.reply_text("⛔ У вас нету доступа к команде.")
+        else:
+            await update.callback_query.answer("⛔ Тебе нельзя", show_alert=True)
+        return
+
     reports = await get_reports(page)
     total_reports = await get_total_reports()
-
-    # Загальна кількість сторінок
     total_pages = math.ceil(total_reports / 3)
 
     if not reports:
@@ -164,14 +173,14 @@ async def show_reports(update, context, page=1):
     # Формуємо текст для показу
     message_text = "Список репортов:\n\n"
     for report in reports:
-        message_text += f"Report Key: {report['report_key']}\n"
-        message_text += f"User ID: {report['user_id']}\n"
-        message_text += f"Message ID: {report['message_id']}\n"
-        message_text += f"Reporter: {report['reporter_name']}\n"
-        message_text += f"Reported: {report['reported_name']}\n"
-        message_text += f"Link: {report['message_link']}\n"
-        message_text += f"Time: {report['report_time']}\n"
-        message_text += f"Text: {report['reported_text']}\n\n"
+        message_text += f"Ключ репорта: {report['report_key']}\n"
+        message_text += f"ID юзера: {report['user_id']}\n"
+        message_text += f"ID сообщения: {report['message_id']}\n"
+        message_text += f"Тот кто кинул репорт: {report['reporter_name']}\n"
+        message_text += f"Тот на кого кинули репорт: {report['reported_name']}\n"
+        message_text += f"Ссылка: {report['message_link']}\n"
+        message_text += f"Время: {report['report_time']}\n"
+        message_text += f"Текст: {report['reported_text']}\n\n"
 
     # Створюємо клавіатуру
     keyboard = []
