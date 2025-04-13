@@ -285,14 +285,16 @@ async def show_reports(update, context, page=1):
         await update.message.reply_text(
             message_text,
             reply_markup=reply_markup,
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
+            parse_mode=ParseMode.HTML  # додаємо параметр для обробки HTML
         )
     else:
         print(f"Editing message: {message_text}")  # Логування
         await update.callback_query.message.edit_text(
             message_text,
             reply_markup=reply_markup,
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
+            parse_mode=ParseMode.HTML  # додаємо параметр для обробки HTML
         )
 
 async def button(update, context):
