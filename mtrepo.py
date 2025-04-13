@@ -427,9 +427,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.edit_text("⏳ Отправка...")
 
-        if reason != "п1.0":
-        await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
-
         # Получаем администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
@@ -447,6 +444,10 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
             await asyncio.sleep(4)
             await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
+
+        if reason != "п1.0":
+            # Тут ви можете використовувати вашу функцію для збереження репорту в базі
+            await save_report(user_id, message_id, reason, reported_user.full_name, reported_user.username, message_link, message_text, datetime.now())
 
         confirmed_reports.add(report_key)
         await query.message.edit_text("✅Репорт успешно отправлен!")
