@@ -147,7 +147,7 @@ async def accept_report(update, context):
 
     # Оновлення статусу репорту в базі даних
     try:
-        await update_report_status(report_key, "accepted", user_id)  # Оновлюємо статус репорту в базі
+        await update_report_status(report_key, 'accepted', str(user_id))
         await update.message.reply_text(f"✅ Репорт з ключем {report_key} був успішно прийнятий!")
 
     except Exception as e:
