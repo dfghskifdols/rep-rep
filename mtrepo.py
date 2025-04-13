@@ -378,10 +378,6 @@ async def report_command(update: Update, context: CallbackContext):
     # Логування
     await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
-    # Не зберігати в БД, якщо причина п1.0 (в будь-якому регістрі)
-    if reason != "п1.0":
-        await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
-
 # Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -430,6 +426,9 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         await query.message.edit_text("⏳ Отправка...")
+
+        if reason != "п1.0":
+        await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
 
         # Получаем администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
