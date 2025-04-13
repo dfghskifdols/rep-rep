@@ -100,6 +100,16 @@ async def get_report_by_key(report_key):
     await conn.close()
     return report
 
+# Оновлення статусу репорту на "accepted"
+async def update_report_status(report_key, admin_id):
+    conn = await connect_db()
+    await conn.execute('''
+        UPDATE user_reports
+        SET status = 'accepted', accepted_by = $1
+        WHERE report_key = $2
+    ''', admin_id, report_key)
+    await conn.close()
+
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
@@ -238,6 +248,13 @@ async def show_reports(update, context, page=1):
     # Формуємо текст для показу
     message_text = "Список репортов:\n\n"
     for report in reports:
+        status = report.get("status", "pending")
+        accepted_by = report.get("accepted_by", None)
+        status_text = "✅ Прийнятий" if status == "accepted" else "⏳ Очікує"
+
+        if status == "accepted" and accepted_by:
+            status_text += f" (ID: {accepted_by})"
+
         message_text += f"🔑Ключ репорта: {report['report_key']}\n"
         message_text += f"🆔ID юзера: {report['user_id']}\n"
         message_text += f"🆔📩ID сообщения: {report['message_id']}\n"
@@ -245,7 +262,8 @@ async def show_reports(update, context, page=1):
         message_text += f"🤕Тот на кого кинули репорт: {report['reported_name']}\n"
         message_text += f"🔗Ссылка: {report['message_link']}\n"
         message_text += f"⌚️Время: {report['report_time']}\n"
-        message_text += f"💭Текст: {report['reported_text']}\n\n"
+        message_text += f"💭Текст: {report['reported_text']}\n"
+        message_text += f"📌Статус: {status_text}\n\n"
 
     # Створюємо клавіатуру
     keyboard = []
