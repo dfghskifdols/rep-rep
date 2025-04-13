@@ -467,7 +467,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
     elif message in ["привет", "сап", "ку"]:  # Перевірка привітань
-        current_time = datetime.now(timezone.utc) + timedelta(hours=3)
+        current_time = datetime.now(timezone.utc) + timedelta(hours=3)  # Використовуємо timezone.utc
         hour = current_time.hour
 
         if 5 <= hour < 7:
