@@ -173,13 +173,22 @@ async def show_reports(update, context, page=1):
         message_text += f"Time: {report['report_time']}\n"
         message_text += f"Text: {report['reported_text']}\n\n"
 
-    # Створюємо кнопки для навігації між сторінками
-    if page > 1:  # Якщо це не перша сторінка
-        keyboard.append([InlineKeyboardButton("← Назад", callback_data=f"page_{page-1}")])
-    keyboard.append([InlineKeyboardButton(f"Сторінка {page}", callback_data="current_page")])
-    keyboard.append([InlineKeyboardButton("→ Вперед", callback_data=f"page_{page+1}")])
+keyboard = []
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+# Кнопка "Назад", якщо не перша сторінка
+buttons = []
+if page > 1:
+    buttons.append(InlineKeyboardButton("←", callback_data=f"page_{page - 1}"))
+
+# Лічильник сторінок, типу "4/15"
+buttons.append(InlineKeyboardButton(f"{page}/{total_pages}", callback_data="current_page"))
+
+# Кнопка "Вперед", якщо не остання сторінка
+if page < total_pages:
+    buttons.append(InlineKeyboardButton("→", callback_data=f"page_{page + 1}"))
+
+keyboard.append(buttons)
+reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(message_text, reply_markup=reply_markup)
 
@@ -483,7 +492,8 @@ app.add_handler(CommandHandler("send", send_message))
 app.add_handler(CommandHandler("id", get_chat_id))
 
 app.add_handler(CommandHandler("show_reports", show_reports))
-app.add_handler(CallbackQueryHandler(button))
+app.add_handler(CallbackQueryHandler(button, pattern="^page_\d+$"))
+app.add_handler(CallbackQueryHandler(current_page_info, pattern="^current_page$"))
 
 app.add_handler(CommandHandler("bot_stop", bot_stop))
 
