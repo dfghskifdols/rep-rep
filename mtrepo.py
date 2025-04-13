@@ -17,6 +17,10 @@ import asyncpg
 import math
 from pytz import timezone as pytz_timezone
 
+
+current_time = datetime.now(pytz_timezone('UTC')) + timedelta(hours=3)  # Використовуємо pytz
+hour = current_time.hour
+
 bot_paused_until = None
 
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
@@ -465,9 +469,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message in ["рафу", "рандом факт участники"]:
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
-
-    current_time = datetime.now(pytz_timezone('UTC')) + timedelta(hours=3)  # Використовуємо pytz
-    hour = current_time.hour
 
     elif message in ["привет", "сап", "ку"]:  # Перевірка привітань
         if 5 <= hour < 7:
