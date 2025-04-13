@@ -248,22 +248,22 @@ async def show_reports(update, context, page=1):
     # Формуємо текст для показу
     message_text = "Список репортов:\n\n"
     for report in reports:
-        status = report.get("status", "pending")
-        accepted_by = report.get("accepted_by", None)
-        status_text = "✅ Прийнятий" if status == "accepted" else "⏳ Очікує"
-
-        if status == "accepted" and accepted_by:
-            status_text += f" (ID: {accepted_by})"
+        status = report.get('status', 'not accepted')
+        accepted_by = report.get('accepted_by')
 
         message_text += f"🔑Ключ репорта: {report['report_key']}\n"
         message_text += f"🆔ID юзера: {report['user_id']}\n"
-        message_text += f"🆔📩ID сообщения: {report['message_id']}\n"
-        message_text += f"🔨Тот кто кинул репорт: {report['reporter_name']}\n"
-        message_text += f"🤕Тот на кого кинули репорт: {report['reported_name']}\n"
+        message_text += f"📩ID сообщения: {report['message_id']}\n"
+        message_text += f"🔨Кто отправил: {report['reporter_name']}\n"
+        message_text += f"🤕На кого: {report['reported_name']}\n"
         message_text += f"🔗Ссылка: {report['message_link']}\n"
         message_text += f"⌚️Время: {report['report_time']}\n"
         message_text += f"💭Текст: {report['reported_text']}\n"
-        message_text += f"📌Статус: {status_text}\n\n"
+
+        if status == "accepted":
+            message_text += f"✅ Статус: принят (админ: {accepted_by})\n\n"
+        else:
+            message_text += f"🕐 Статус: не принят\n\n"
 
     # Створюємо клавіатуру
     keyboard = []
