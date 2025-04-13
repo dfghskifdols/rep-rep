@@ -420,7 +420,7 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Функция обработки сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message.text.strip()
+    message = update.message.text.strip().lower()  # Перетворюємо в нижній регістр
     user_id = update.effective_user.id
     username = update.effective_user.username or update.effective_user.full_name
 
@@ -449,7 +449,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("⏳ Я уже жду на твой вопрос! Напиши свой вопрос или подожди немного!")
         return
 
-    if user_id in waiting_for_question:
+    elif user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
         admin_id = 5283100992  # Твій Telegram ID
         try:
@@ -460,7 +460,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"Ошибка отправки вопроса: {e}")
         return
 
-    if message in ["неко", "где неко"]:
+    elif message in ["неко", "где неко"]:
         admins = await context.bot.get_chat_administrators(ADMIN_CHAT_ID)
         if admins:
             random_admin = random.choice(admins)
@@ -474,7 +474,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message.lower() == "Пинг".lower():
         await update.message.reply_text("А нахуя он тебе?")
 
-    elif message.lower() == "РаФа".lower():
+    elif message in ["рафу", "рандом факт админ"]:
         response = random.choice(rafa_responses)
         await update.message.reply_text(f"<b>{response}</b>", parse_mode=ParseMode.HTML)
     
