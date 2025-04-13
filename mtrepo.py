@@ -540,7 +540,7 @@ app.add_handler(CommandHandler("send", send_message))
 
 app.add_handler(CommandHandler("delete_report", delete_report))
 
-application.add_handler(CommandHandler('accept', accept_report))
+app.add_handler(CommandHandler('accept', accept_report))
 
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
