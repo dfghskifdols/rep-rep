@@ -19,6 +19,7 @@ from pytz import timezone
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
+hour = current_time.hour
 
 bot_paused_until = None
 
