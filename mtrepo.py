@@ -104,11 +104,11 @@ USER_CHAT_ID = 5283100992  # заміни на свій chat_id
 # Команда для видалення репорту за ключем
 async def delete_report(update: Update, context: CallbackContext):
     if update.message.from_user.id != ALLOWED_USER_IDS:
-        await update.message.reply_text("🚫У вас нету доступа к команде!.")
+        await update.message.reply_text("🚫 У вас нету доступа к команде!.")
         return
 
     if not context.args:
-        await update.message.reply_text("〽️Укажите ключ репорта. Пример: /delete_report 12345_67890")
+        await update.message.reply_text("〽️ Укажите ключ репорта. Пример: /delete_report 12345_67890")
         return
 
     report_key = context.args[0]
@@ -117,9 +117,9 @@ async def delete_report(update: Update, context: CallbackContext):
     await conn.close()
 
     if result == "DELETE 1":
-        await update.message.reply_text(f"❇️Репорт з ключом <code>{report_key}</code> успешно удален.", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"❇️ Репорт з ключом <code>{report_key}</code> успешно удален.", parse_mode=ParseMode.HTML)
     else:
-        await update.message.reply_text(f"⚠️Репорт з ключом <code>{report_key}</code> не найден.", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"⚠️ Репорт з ключом <code>{report_key}</code> не найден.", parse_mode=ParseMode.HTML)
 
 # Функция для остановки бота
 async def bot_stop(update: Update, context: CallbackContext):
@@ -132,17 +132,17 @@ async def bot_stop(update: Update, context: CallbackContext):
             stop_time = time.time() + minutes * 60  # Бот останавливается на указанное время
 
             # Отправляем сообщение, что бот остановлен
-            await update.message.reply_text(f"💤Бот остановлен на {minutes} минут.")
+            await update.message.reply_text(f"💤 Бот остановлен на {minutes} минут.")
             
             # Ждём указанное количество минут
             await asyncio.sleep(minutes * 60)
 
             # Возвращаем бота в рабочее состояние после завершения времени
-            await update.message.reply_text("🛜Бот снова запущен.")
+            await update.message.reply_text("🛜 Бот снова запущен.")
         except (IndexError, ValueError):
-            await update.message.reply_text("⚠️Пожалуйста, введите время (в минутах). Пример: /bot_stop 5")
+            await update.message.reply_text("⚠️ Пожалуйста, введите время (в минутах). Пример: /bot_stop 5")
     else:
-        await update.message.reply_text("⛔️У вас нет доступа к этой команде.")
+        await update.message.reply_text("⛔️ У вас нет доступа к этой команде.")
 
 # Підключення до бази даних PostgreSQL
 async def connect_db():
@@ -188,9 +188,9 @@ async def show_reports(update, context, page=1):
 
     if not reports:
         if update.message:
-            await update.message.reply_text("🌐Нету репортов.")
+            await update.message.reply_text("🌐 Нету репортов.")
         else:
-            await update.callback_query.message.reply_text("🌐Нету репортов")
+            await update.callback_query.message.reply_text("🌐 Нету репортов")
         return
 
     # Формуємо текст для показу
@@ -368,7 +368,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🔗 <b>Ссылка:</b> {link_text}"
         )
 
-        await query.message.edit_text("⏳Отправка...")
+        await query.message.edit_text("⏳ Отправка...")
 
         # Получаем администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
@@ -451,7 +451,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             random_admin = random.choice(admins)
             random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
             sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
             await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
         else:
             await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
