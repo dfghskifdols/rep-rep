@@ -533,7 +533,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
 
-app.add_handler(CommandHandler("delete_report", delete_report_command))
+app.add_handler(CommandHandler("delete_report", delete_report))
 
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
