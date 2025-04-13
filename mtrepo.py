@@ -424,7 +424,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
 
     # Обробка обох команд
-    if message in ["рбв", "репорт-бот-вопрос"]:
+    if message in ["рбв", "репорт бот вопрос"]:
         if user_id not in waiting_for_question:
             waiting_for_question.add(user_id)
             await update.message.reply_text("Слушаю! Напишите ваш вопрос.")
@@ -462,7 +462,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafa_responses)
         await update.message.reply_text(f"<b>{response}</b>", parse_mode=ParseMode.HTML)
     
-    elif message in ["рафу", "рандом-факт-участники"]:
+    elif message in ["рафу", "рандом факт участники"]:
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
