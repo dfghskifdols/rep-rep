@@ -389,12 +389,13 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
         return
 
+    action = data[0]
     try:
-             user_id = int(data[1])
-             message_id = int(data[2])
-         except ValueError:
-             await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
-             return
+        user_id = int(data[1])
+        message_id = int(data[2])
+    except ValueError:
+        await query.message.edit_text("❌ Ошибка: неверные данные для обработки репорта!")
+        return
 
     if query.from_user.id != user_id:
         await query.answer(text="❌ Нельзя жмякать чужие репорты!", show_alert=True)
