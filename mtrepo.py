@@ -442,12 +442,19 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             disable_web_page_preview=True
         )
 
-        if admin_mentions:
-            half = len(admin_mentions) // 2
-            await asyncio.sleep(4)
-            await bot.send_message(ADMIN_CHAT_ID, "Первая часть админов: " + " ".join(admin_mentions[:half]))
-            await asyncio.sleep(4)
-            await bot.send_message(ADMIN_CHAT_ID, "Вторая часть админов: " + " ".join(admin_mentions[half:]))
+    if admin_mentions:
+        # Ділимо на 3 частини
+        third = len(admin_mentions) // 3
+        part1 = admin_mentions[:third]
+        part2 = admin_mentions[third:third*2]
+        part3 = admin_mentions[third*2:]
+
+        await asyncio.sleep(4)
+        await bot.send_message(ADMIN_CHAT_ID, "🔔 1: " + " ".join(part1))
+        await asyncio.sleep(4)
+        await bot.send_message(ADMIN_CHAT_ID, "🔔 2: " + " ".join(part2))
+        await asyncio.sleep(4)
+        await bot.send_message(ADMIN_CHAT_ID, "🔔 3: " + " ".join(part3))
 
         confirmed_reports.add(report_key)
         await query.message.edit_text("✅Репорт успешно отправлен!")
