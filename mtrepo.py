@@ -155,7 +155,7 @@ async def accept_report(update, context):
 
 # Команда для видалення репорту за ключем
 async def delete_report(update: Update, context: CallbackContext):
-    if update.message.from_user.id != ALLOWED_USER_IDS:
+    if update.message.from_user.id not in ALLOWED_USER_IDS:
         await update.message.reply_text("🚫 У вас нету доступа к команде!.")
         return
 
