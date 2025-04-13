@@ -16,7 +16,7 @@ import aiopg
 import asyncpg
 import math
 from pytz import timezone
-from your_database_module import update_report_status
+from database import update_report_status  # Імпортуємо вашу функцію з БД
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
@@ -540,6 +540,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app.add_handler(CommandHandler("send", send_message))
 
 app.add_handler(CommandHandler("delete_report", delete_report))
+
+application.add_handler(CommandHandler('accept', accept_report))
 
 # Добавляем команду /id
 app.add_handler(CommandHandler("id", get_chat_id))
