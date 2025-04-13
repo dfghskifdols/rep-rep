@@ -128,17 +128,17 @@ async def bot_stop(update: Update, context: CallbackContext):
             stop_time = time.time() + minutes * 60  # Бот останавливается на указанное время
 
             # Отправляем сообщение, что бот остановлен
-            await update.message.reply_text(f"Бот остановлен на {minutes} минут.")
+            await update.message.reply_text(f"💤Бот остановлен на {minutes} минут.")
             
             # Ждём указанное количество минут
             await asyncio.sleep(minutes * 60)
 
             # Возвращаем бота в рабочее состояние после завершения времени
-            await update.message.reply_text("Бот снова запущен.")
+            await update.message.reply_text("🛜Бот снова запущен.")
         except (IndexError, ValueError):
-            await update.message.reply_text("Пожалуйста, введите время (в минутах). Пример: /bot_stop 5")
+            await update.message.reply_text("⚠️Пожалуйста, введите время (в минутах). Пример: /bot_stop 5")
     else:
-        await update.message.reply_text("У вас нет доступа к этой команде.")
+        await update.message.reply_text("⛔️У вас нет доступа к этой команде.")
 
 # Вказуємо Московський час
 moscow_tz = timezone('Europe/Moscow')
@@ -187,22 +187,22 @@ async def show_reports(update, context, page=1):
 
     if not reports:
         if update.message:
-            await update.message.reply_text("Нету репортов.")
+            await update.message.reply_text("🌐Нету репортов.")
         else:
-            await update.callback_query.message.reply_text("Нету репортов")
+            await update.callback_query.message.reply_text("🌐Нету репортов")
         return
 
     # Формуємо текст для показу
     message_text = "Список репортов:\n\n"
     for report in reports:
-        message_text += f"Ключ репорта: {report['report_key']}\n"
-        message_text += f"ID юзера: {report['user_id']}\n"
-        message_text += f"ID сообщения: {report['message_id']}\n"
-        message_text += f"Тот кто кинул репорт: {report['reporter_name']}\n"
-        message_text += f"Тот на кого кинули репорт: {report['reported_name']}\n"
-        message_text += f"Ссылка: {report['message_link']}\n"
-        message_text += f"Время: {report['report_time']}\n"
-        message_text += f"Текст: {report['reported_text']}\n\n"
+        message_text += f"🔑Ключ репорта: {report['report_key']}\n"
+        message_text += f"🆔ID юзера: {report['user_id']}\n"
+        message_text += f"🆔📩ID сообщения: {report['message_id']}\n"
+        message_text += f"🔨Тот кто кинул репорт: {report['reporter_name']}\n"
+        message_text += f"🤕Тот на кого кинули репорт: {report['reported_name']}\n"
+        message_text += f"🔗Ссылка: {report['message_link']}\n"
+        message_text += f"⌚️Время: {report['report_time']}\n"
+        message_text += f"💭Текст: {report['reported_text']}\n\n"
 
     # Створюємо клавіатуру
     keyboard = []
@@ -309,7 +309,7 @@ async def report_command(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        f"Вы уверены, что хотите отправить репорт с причиной <b>{reason}</b>?",
+        f"🔊Вы уверены, что хотите отправить репорт с причиной <b>{reason}</b>?",
         reply_markup=reply_markup,
         parse_mode=ParseMode.HTML
     )
