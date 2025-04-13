@@ -91,6 +91,15 @@ rafu_responses = [
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
 REPORT_REASON_REGEX = re.compile(r"^п\d+\.\d+$", re.IGNORECASE)
 
+# Отримання репорту за ключем
+async def get_report_by_key(report_key):
+    conn = await connect_db()
+    report = await conn.fetchrow('''
+        SELECT * FROM user_reports WHERE report_key = $1
+    ''', report_key)
+    await conn.close()
+    return report
+
 # Функция отправки логов в группу
 async def log_action(text: str):
     try:
