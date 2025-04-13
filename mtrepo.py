@@ -179,7 +179,7 @@ async def show_reports(update, context, page=1):
     if page > 1:
         buttons.append(InlineKeyboardButton("←", callback_data=f"page_{page - 1}"))
 
-    buttons.append(InlineKeyboardButton(f"{page}/{total_pages}", callback_data="current_page"))
+    buttons.append(InlineKeyboardButton(f"{page}/{total_pages}", callback_data=None))
 
     if page < total_pages:
         buttons.append(InlineKeyboardButton("→", callback_data=f"page_{page + 1}"))
