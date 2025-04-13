@@ -189,12 +189,14 @@ async def show_reports(update, context, page=1):
 
     # Відповідь (оновлення або нове повідомлення)
     if update.message:
+        print(f"Replying with message: {message_text}")  # Логування
         await update.message.reply_text(
             message_text,
             reply_markup=reply_markup,
             disable_web_page_preview=True
         )
     else:
+        print(f"Editing message: {message_text}")  # Логування
         await update.callback_query.message.edit_text(
             message_text,
             reply_markup=reply_markup,
