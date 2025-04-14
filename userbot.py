@@ -31,14 +31,12 @@ def sync_time():
 # Виклик функції
 sync_time()
 
-# Головна функція
 async def main():
-    sync_time()
+    sync_time()  # якщо хочеш синхронізацію
 
     app = Client("userbot", api_id=api_id, api_hash=api_hash)
-
     await app.start()
-    logging.info("✅ Userbot запущено!")
+    print("✅ Userbot запущено!")
 
     # Тримаємо бота живим
     try:
@@ -46,8 +44,8 @@ async def main():
             await asyncio.sleep(60)
     finally:
         await app.stop()
-        logging.info("🛑 Userbot зупинено.")
+        print("🛑 Userbot зупинено.")
 
-# Запуск
 if __name__ == "__main__":
+    import asyncio
     asyncio.run(main())
