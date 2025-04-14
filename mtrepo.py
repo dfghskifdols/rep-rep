@@ -481,7 +481,7 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Кидаем сообщение, что ID скопировано
     await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
 
-@application.message_handler()
+@app.message_handler()
 async def handle_top_prp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
