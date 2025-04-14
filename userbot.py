@@ -20,7 +20,7 @@ async def main():
     # Після авторизації збережеться файл session
     await app.stop()
 
-pyrogram.utils.TIME_DIFFERENCE = int(time.time() - pyrogram.utils._server_time())
+pyrogram.utils.TIME_DIFFERENCE = 0  # або -10
 
 # Запускаємо авторизацію
 app.run(main())
