@@ -1,5 +1,5 @@
 from pyrogram import Client
-import pyrogram.utils  # ← окремо імпортуємо
+import ntplib
 import time
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -19,6 +19,19 @@ async def main():
 
     # Після авторизації збережеться файл session
     await app.stop()
+
+def sync_time():
+    try:
+        c = ntplib.NTPClient()
+        response = c.request('pool.ntp.org', version=3)
+        print(f"Time synchronized: {ctime(response.tx_time)}")
+        # Синхронізація часу на системному рівні (в Linux)
+        # system_time = response.tx_time
+        # os.system(f"sudo date {system_time}")
+    except Exception as e:
+        print(f"Error synchronizing time: {e}")
+
+sync_time()
 
 # Запускаємо авторизацію
 app.run(main())
