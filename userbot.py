@@ -20,8 +20,5 @@ async def main():
     # Після авторизації збережеться файл session
     await app.stop()
 
-sudo apt-get install ntp
-sudo service ntp restart
-
 # Запускаємо авторизацію
 app.run(main())
