@@ -101,13 +101,13 @@ async def get_report_by_key(report_key):
     return report
 
 # Оновлення статусу репорту
-async def update_report_status(report_key, status, accepted_by=None):
+async def update_report_status(report_key, status, accepted_by=None, accepted_by_name=None):
     conn = await connect_db()
     await conn.execute('''
         UPDATE user_reports
-        SET status = $1, accepted_by = $2
-        WHERE report_key = $3
-    ''', status, accepted_by, report_key)
+        SET status = $1, accepted_by = $2, accepted_by_name = $3
+        WHERE report_key = $4
+    ''', status, accepted_by, accepted_by_name, report_key)
     await conn.close()
 
 # Функция отправки логов в группу
@@ -147,7 +147,7 @@ async def accept_report(update, context):
 
     # Оновлення статусу репорту в базі даних
     try:
-        await update_report_status(report_key, 'accepted', str(user_id))
+        await update_report_status(report_key, "accepted", accepted_by=user_id, accepted_by_name=full_name)
         await update.message.reply_text(f"✅ Репорт с ключом {report_key} успешно принят!")
 
     except Exception as e:
@@ -249,7 +249,7 @@ async def show_reports(update, context, page=1):
     message_text = "Список репортов:\n\n"
     for report in reports:
         status = report.get('status', 'not accepted')
-        accepted_by = report.get('accepted_by')
+        accepted_by_name = report.get('accepted_by_name')  # Отримуємо ім'я адміністратора
 
         message_text += f"🔑Ключ репорта: <code>{report['report_key']}</code>\n"
         message_text += f"🆔ID юзера: {report['user_id']}\n"
@@ -261,7 +261,7 @@ async def show_reports(update, context, page=1):
         message_text += f"💭Текст: {report['reported_text']}\n"
 
         if status == "accepted":
-            message_text += f"✅ Статус: принят (админ: {accepted_by})\n\n"
+            message_text += f"✅ Статус: принят (админ: {accepted_by_name})\n\n"  # Тепер відображаємо ім'я
         else:
             message_text += f"🕐 Статус: не принят\n\n"
 
@@ -529,13 +529,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
-    elif message.lower() == "топ прп":  # Приводимо повідомлення до нижнього регістру
+    elif message == "топ прп":  # Приводимо повідомлення до нижнього регістру
         conn = await connect_db()
         rows = await conn.fetch("""
-            SELECT accepted_by, COUNT(*) AS count
+            SELECT accepted_by, accepted_by_name, COUNT(*) AS count
             FROM user_reports
             WHERE status = 'accepted'
-            GROUP BY accepted_by
+            GROUP BY accepted_by, accepted_by_name
             ORDER BY count DESC
             LIMIT 10
         """)
@@ -547,17 +547,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         leaderboard = "<b>📃 Топ принятых репортов:</b>\n\n"
         for idx, row in enumerate(rows, start=1):
-            name = row["accepted_by"]
+            user_id = row["accepted_by"]
+            name = row["accepted_by_name"] or "Без имени"
             count = row["count"]
 
-            # Посилання якщо це username або user_id
-            if name.startswith("@"):
-                link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
-            elif name.isdigit():
-                link = f"<a href='tg://user?id={name}'>{name}</a>"
-            else:
-                link = name  # Просто текст, якщо нічого не підходить
-
+            # Формуємо клікабельне ім’я
+            link = f"<a href='tg://user?id={user_id}'>{name}</a>"
             leaderboard += f"{idx}. {link} — {count} 📍\n"
 
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
