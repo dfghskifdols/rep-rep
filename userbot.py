@@ -25,12 +25,10 @@ def sync_time():
         c = ntplib.NTPClient()
         response = c.request('pool.ntp.org', version=3)
         print(f"Time synchronized: {ctime(response.tx_time)}")
-        # Синхронізація часу на системному рівні (в Linux)
-        # system_time = response.tx_time
-        # os.system(f"sudo date {system_time}")
     except Exception as e:
         print(f"Error synchronizing time: {e}")
 
+# Виклик функції
 sync_time()
 
 # Запускаємо авторизацію
