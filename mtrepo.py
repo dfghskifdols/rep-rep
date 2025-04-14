@@ -252,11 +252,8 @@ async def show_reports(update, context, page=1):
         status = report.get('status', 'not accepted')
         accepted_by = report.get('accepted_by')
 
-        # Отримуємо ім'я адміністратора за ID
-        if accepted_by:
-            admin_name = await get_admin_name(accepted_by)  # Функція для отримання імені адміністратора
-        else:
-            admin_name = "Неизвестно"  # Якщо немає адміністратора
+        # Отримуємо ім'я адміністратора
+        admin_name = await get_admin_name(accepted_by)
 
         message_text += f"🔑Ключ репорта: <code>{report['report_key']}</code>\n"
         message_text += f"🆔ID юзера: {report['user_id']}\n"
@@ -304,12 +301,18 @@ async def show_reports(update, context, page=1):
             parse_mode=ParseMode.HTML  # додаємо параметр для обробки HTML
         )
 
-# Функція для отримання імені адміністратора за ID
+# Функція для отримання імені адміністратора за його ID (з таблиці user_reports)
 async def get_admin_name(user_id):
     conn = await connect_db()
-    row = await conn.fetchrow("SELECT full_name FROM users WHERE user_id = $1", user_id)
-    await conn.close()
+
+    # Запит до таблиці user_reports для отримання імені адміністратора
+    row = await conn.fetchrow("""
+        SELECT full_name FROM user_reports 
+        WHERE user_id = $1 LIMIT 1
+    """, user_id)
     
+    await conn.close()
+
     if row:
         return row['full_name']
     return "Неизвестно"
