@@ -106,8 +106,8 @@ async def update_report_status(report_key, status, accepted_by=None):
     await conn.execute('''
         UPDATE user_reports
         SET status = $1, accepted_by = $2,
-        WHERE report_key = $4
-    ''', status, accepted_by, accepted_by_name, report_key)
+        WHERE report_key = $3
+    ''', status, accepted_by, report_key)
     await conn.close()
 
 # Функция отправки логов в группу
