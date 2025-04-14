@@ -20,8 +20,8 @@ async def main():
     # Після авторизації збережеться файл session
     await app.stop()
 
-server_time = int(time.time())
-pyrogram.utils.TIME_DIFFERENCE = 0
+sudo apt-get install ntp
+sudo service ntp restart
 
 # Запускаємо авторизацію
 app.run(main())
