@@ -102,15 +102,12 @@ async def get_report_by_key(report_key):
 
 # Оновлення статусу репорту
 async def update_report_status(report_key, status, accepted_by=None):
-    # Перетворення accepted_by на рядок (якщо це ціле число)
-    accepted_by_str = str(accepted_by) if accepted_by is not None else None
-    
     conn = await connect_db()
     await conn.execute('''
         UPDATE user_reports
         SET status = $1, accepted_by = $2
         WHERE report_key = $3
-    ''', status, accepted_by_str, report_key)
+    ''', status, accepted_by, report_key)
     await conn.close()
 
 # Функция отправки логов в группу
@@ -150,7 +147,7 @@ async def accept_report(update, context):
 
     # Оновлення статусу репорту в базі даних
     try:
-        await update_report_status(report_key, "accepted", accepted_by=user_id)
+        await update_report_status(report_key, 'accepted', str(user_id))
         await update.message.reply_text(f"✅ Репорт с ключом {report_key} успешно принят!")
 
     except Exception as e:
@@ -226,7 +223,9 @@ async def get_total_reports():
 
 # Показати репорти
 async def show_reports(update, context, page=1):
-    user_id = update.effective_user.id if update.effective_user else None
+    user_id = (
+        update.effective_user.id if update.effective_user else None
+    )
 
     if user_id not in ALLOWED_USERS:
         if update.message:
@@ -252,9 +251,6 @@ async def show_reports(update, context, page=1):
         status = report.get('status', 'not accepted')
         accepted_by = report.get('accepted_by')
 
-        # Отримуємо ім'я адміністратора
-        admin_name = await get_admin_name(accepted_by)
-
         message_text += f"🔑Ключ репорта: <code>{report['report_key']}</code>\n"
         message_text += f"🆔ID юзера: {report['user_id']}\n"
         message_text += f"📩ID сообщения: {report['message_id']}\n"
@@ -265,7 +261,7 @@ async def show_reports(update, context, page=1):
         message_text += f"💭Текст: {report['reported_text']}\n"
 
         if status == "accepted":
-            message_text += f"✅ Статус: принят (админ: {admin_name} - {accepted_by})\n\n"
+            message_text += f"✅ Статус: принят (админ: {accepted_by})\n\n"
         else:
             message_text += f"🕐 Статус: не принят\n\n"
 
@@ -300,22 +296,6 @@ async def show_reports(update, context, page=1):
             disable_web_page_preview=True,
             parse_mode=ParseMode.HTML  # додаємо параметр для обробки HTML
         )
-
-# Функція для отримання імені адміністратора за його ID (з таблиці user_reports)
-async def get_admin_name(user_id):
-    conn = await connect_db()
-
-    # Запит до таблиці user_reports для отримання імені адміністратора
-    row = await conn.fetchrow("""
-        SELECT full_name FROM user_reports 
-        WHERE user_id = $1 LIMIT 1
-    """, user_id)
-    
-    await conn.close()
-
-    if row:
-        return row['full_name']
-    return "Неизвестно"
 
 async def button(update, context):
     query = update.callback_query
@@ -549,7 +529,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
-    elif message.lower() == "топ прп":
+    elif message.lower() == "топ прп":  # Приводимо повідомлення до нижнього регістру
         conn = await connect_db()
         rows = await conn.fetch("""
             SELECT accepted_by, COUNT(*) AS count
@@ -567,14 +547,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         leaderboard = "<b>📃 Топ принятых репортов:</b>\n\n"
         for idx, row in enumerate(rows, start=1):
-            admin_id = row["accepted_by"]  # Айді адміністратора
+            name = row["accepted_by"]
             count = row["count"]
 
-            # Отримуємо ім'я адміністратора за його айді
-            user_info = await context.bot.get_chat(admin_id)
-            admin_name = user_info.first_name if user_info.first_name else user_info.username
+            # Посилання якщо це username або user_id
+            if name.startswith("@"):
+                link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
+            elif name.isdigit():
+                link = f"<a href='tg://user?id={name}'>{name}</a>"
+            else:
+                link = name  # Просто текст, якщо нічого не підходить
 
-            leaderboard += f"{idx}. {admin_name} - {admin_id} — {count} 📍\n"
+            leaderboard += f"{idx}. {link} — {count} 📍\n"
 
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
