@@ -481,42 +481,44 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Кидаем сообщение, что ID скопировано
     await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
 
-@dp.message_handler(lambda message: message.text and message.text.lower().strip() == "топ прп")
-async def top_acceptors_handler(update: Update, context: CallbackContext):
-    conn = await connect_db()
-    rows = await conn.fetch('''
-        SELECT accepted_by, COUNT(*) as total
-        FROM user_reports
-        WHERE status = 'accepted'
-        GROUP BY accepted_by
-        ORDER BY total DESC
-        LIMIT 10
-    ''')
-    await conn.close()
-
-    if not rows:
-        await update.message.reply_text("📉 Репорты ещё никто не принимал.")
+@application.message_handler()
+async def handle_top_prp(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
         return
 
-    message_text = "<b>🏆 Топ приймачів репортів:</b>\n\n"
-    for i, row in enumerate(rows, start=1):
-        user_id = row['accepted_by']
-        total = row['total']
+    text = update.message.text
+    if text and text.lower().strip() == "топ прп":
+        conn = await connect_db()
+        rows = await conn.fetch("""
+            SELECT accepted_by, COUNT(*) AS count
+            FROM user_reports
+            WHERE status = 'accepted'
+            GROUP BY accepted_by
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        await conn.close()
 
-        try:
-            user = await context.bot.get_chat(user_id)
-            name = user.full_name
-            username = user.username
-            if username:
-                link = f"<a href='https://t.me/{username}'>{name}</a>"
+        if not rows:
+            await update.message.reply_text("📉 Нету принятых реопртов.")
+            return
+
+        leaderboard = "<b>🏆 Топ принятых репортов:</b>\n\n"
+        for idx, row in enumerate(rows, start=1):
+            name = row["accepted_by"]
+            count = row["count"]
+
+            # Формуємо посилання
+            if name.startswith("@"):
+                link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
+            elif name.isdigit():
+                link = f"<a href='tg://user?id={name}'>Користувач</a>"
             else:
-                link = f"<a href='tg://user?id={user_id}'>{name}</a>"
-        except:
-            link = f"<code>{user_id}</code>"
+                link = name
 
-        message_text += f"{i}. {link} — {total} репортів\n"
+            leaderboard += f"{idx}. {link} — {count} 📩\n"
 
-    await update.message.reply_text(message_text, parse_mode=ParseMode.HTML)
+        await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
 
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
