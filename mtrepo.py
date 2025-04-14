@@ -442,6 +442,16 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             disable_web_page_preview=True
         )
 
+          # Додаємо квиток користувачу в БД
+        conn = await connect_db()
+        await conn.execute("""
+            INSERT INTO users (user_id, tickets)
+            VALUES ($1, 1)
+            ON CONFLICT (user_id)
+            DO UPDATE SET tickets = users.tickets + 1
+        """, reported_user.id)
+        await conn.close()
+
     if admin_mentions:
         # Ділимо на 3 частини
         third = len(admin_mentions) // 3
@@ -591,9 +601,37 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ Случилась ошибка: {e}")
 
-# Функция старта
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    conn = await connect_db()
+    await conn.execute("""
+        INSERT INTO user_tickets (user_id, username)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id) DO NOTHING
+    """, user.id, user.username)
+    await conn.close()
+
     await update.message.reply_text("Привет! Напишите /report в ответ на сообщение, чтобы отправить репорт.")
+
+async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+    conn = await connect_db()
+    row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
+
+    if not row or row['tickets'] < 10:
+        await update.message.reply_text("❌ У вас недостатньо квитків (необхідно 10).")
+        await conn.close()
+        return
+
+    await conn.execute("UPDATE user_tickets SET tickets = tickets - 10 WHERE user_id = $1", user_id)
+    await conn.close()
+
+    # Видача
+    sent = await update.message.reply_text("🎁 Видаю!")
+    await userbot.send_message(update.message.chat.id, "дать миф 1", reply_to_msg_id=update.message.message_id)
+    await asyncio.sleep(1)
+    await userbot.delete_messages(update.message.chat.id, [update.message.message_id + 1])
+    await sent.edit_text("🎉 Видано!")
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
@@ -609,6 +647,8 @@ app.add_handler(CommandHandler("show_reports", show_reports))
 app.add_handler(CallbackQueryHandler(button, pattern="^page_\d+$"))
 
 app.add_handler(CommandHandler("bot_stop", bot_stop))
+
+app.add_handler(CommandHandler("get_reward", get_reward))
 
 # Основной цикл программы
 app.add_handler(CommandHandler("start", start))
