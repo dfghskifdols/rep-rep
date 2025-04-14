@@ -542,10 +542,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await conn.close()
 
         if not rows:
-            await update.message.reply_text("📉 Немає прийнятих репортів.")
+            await update.message.reply_text("📉 Нету принятых репортов.")
             return
 
-        leaderboard = "<b>🏆 Топ по прийнятим репортам:</b>\n\n"
+        leaderboard = "<b>📃 Топ принятых репортов:</b>\n\n"
         for idx, row in enumerate(rows, start=1):
             name = row["accepted_by"]
             count = row["count"]
@@ -558,7 +558,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 link = name  # Просто текст, якщо нічого не підходить
 
-            leaderboard += f"{idx}. {link} — {count} 📩\n"
+            leaderboard += f"{idx}. {link} — {count} 📍\n"
 
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
