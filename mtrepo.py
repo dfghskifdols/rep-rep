@@ -481,6 +481,43 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Кидаем сообщение, что ID скопировано
     await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
 
+@dp.message_handler(lambda message: message.text and message.text.lower().strip() == "топ прп")
+async def top_acceptors_handler(update: Update, context: CallbackContext):
+    conn = await connect_db()
+    rows = await conn.fetch('''
+        SELECT accepted_by, COUNT(*) as total
+        FROM user_reports
+        WHERE status = 'accepted'
+        GROUP BY accepted_by
+        ORDER BY total DESC
+        LIMIT 10
+    ''')
+    await conn.close()
+
+    if not rows:
+        await update.message.reply_text("📉 Репорты ещё никто не принимал.")
+        return
+
+    message_text = "<b>🏆 Топ приймачів репортів:</b>\n\n"
+    for i, row in enumerate(rows, start=1):
+        user_id = row['accepted_by']
+        total = row['total']
+
+        try:
+            user = await context.bot.get_chat(user_id)
+            name = user.full_name
+            username = user.username
+            if username:
+                link = f"<a href='https://t.me/{username}'>{name}</a>"
+            else:
+                link = f"<a href='tg://user?id={user_id}'>{name}</a>"
+        except:
+            link = f"<code>{user_id}</code>"
+
+        message_text += f"{i}. {link} — {total} репортів\n"
+
+    await update.message.reply_text(message_text, parse_mode=ParseMode.HTML)
+
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message.text.strip().lower()  # Перетворюємо на малий регістр
