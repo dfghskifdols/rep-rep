@@ -1,4 +1,5 @@
 from pyrogram import Client
+import time
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
@@ -17,6 +18,8 @@ async def main():
 
     # Після авторизації збережеться файл session
     await app.stop()
+
+pyrogram.utils.TIME_DIFFERENCE = int(time.time() - pyrogram.utils._server_time())
 
 # Запускаємо авторизацію
 app.run(main())
