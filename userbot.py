@@ -31,5 +31,23 @@ def sync_time():
 # Виклик функції
 sync_time()
 
-# Запускаємо авторизацію
-app.run(main())
+# Головна функція
+async def main():
+    sync_time()
+
+    app = Client("userbot", api_id=api_id, api_hash=api_hash)
+
+    await app.start()
+    logging.info("✅ Userbot запущено!")
+
+    # Тримаємо бота живим
+    try:
+        while True:
+            await asyncio.sleep(60)
+    finally:
+        await app.stop()
+        logging.info("🛑 Userbot зупинено.")
+
+# Запуск
+if __name__ == "__main__":
+    asyncio.run(main())
