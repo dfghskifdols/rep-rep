@@ -481,45 +481,6 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Кидаем сообщение, что ID скопировано
     await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
 
-@app.message_handler()
-async def handle_top_prp(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:
-        return
-
-    text = update.message.text
-    if text and text.lower().strip() == "топ прп":
-        conn = await connect_db()
-        rows = await conn.fetch("""
-            SELECT accepted_by, COUNT(*) AS count
-            FROM user_reports
-            WHERE status = 'accepted'
-            GROUP BY accepted_by
-            ORDER BY count DESC
-            LIMIT 10
-        """)
-        await conn.close()
-
-        if not rows:
-            await update.message.reply_text("📉 Нету принятых реопртов.")
-            return
-
-        leaderboard = "<b>🏆 Топ принятых репортов:</b>\n\n"
-        for idx, row in enumerate(rows, start=1):
-            name = row["accepted_by"]
-            count = row["count"]
-
-            # Формуємо посилання
-            if name.startswith("@"):
-                link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
-            elif name.isdigit():
-                link = f"<a href='tg://user?id={name}'>Користувач</a>"
-            else:
-                link = name
-
-            leaderboard += f"{idx}. {link} — {count} 📩\n"
-
-        await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
-
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message.text.strip().lower()  # Перетворюємо на малий регістр
@@ -567,6 +528,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message in ["рафу", "рандом факт участники"]:
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
+
+    elif message.lower() == "топ прп":  # Приводимо повідомлення до нижнього регістру
+        conn = await connect_db()
+        rows = await conn.fetch("""
+            SELECT accepted_by, COUNT(*) AS count
+            FROM user_reports
+            WHERE status = 'accepted'
+            GROUP BY accepted_by
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        await conn.close()
+
+        if not rows:
+            await update.message.reply_text("📉 Немає прийнятих репортів.")
+            return
+
+        leaderboard = "<b>🏆 Топ по прийнятим репортам:</b>\n\n"
+        for idx, row in enumerate(rows, start=1):
+            name = row["accepted_by"]
+            count = row["count"]
+
+            # Посилання якщо це username або user_id
+            if name.startswith("@"):
+                link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
+            elif name.isdigit():
+                link = f"<a href='tg://user?id={name}'>{name}</a>"
+            else:
+                link = name  # Просто текст, якщо нічого не підходить
+
+            leaderboard += f"{idx}. {link} — {count} 📩\n"
+
+        await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
+        return
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
