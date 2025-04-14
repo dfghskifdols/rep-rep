@@ -1,4 +1,5 @@
 from pyrogram import Client
+import pyrogram.utils  # ← окремо імпортуємо
 import time
 import logging
 logging.basicConfig(level=logging.DEBUG)
