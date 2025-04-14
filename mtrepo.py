@@ -105,7 +105,7 @@ async def update_report_status(report_key, status, accepted_by=None):
     conn = await connect_db()
     await conn.execute('''
         UPDATE user_reports
-        SET status = $1, accepted_by = $2,
+        SET status = $1, accepted_by = $2
         WHERE report_key = $3
     ''', status, accepted_by, report_key)
     await conn.close()
