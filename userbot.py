@@ -1,4 +1,6 @@
 from pyrogram import Client
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 api_id = 20375319  # Твій api_id, отриманий на my.telegram.org
 api_hash = '4cb9df2254ee99282e0bd8b00ed1a636'  # Твій api_hash
