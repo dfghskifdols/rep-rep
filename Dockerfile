@@ -1,8 +1,8 @@
 # Встановлюємо базовий образ
 FROM python:3.10-slim
 
-# Встановлюємо необхідні пакети
-RUN apt-get update && apt-get install -y libpq-dev supervisor
+# Встановлюємо необхідні пакети для PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev
 
 # Встановлюємо робочу директорію
 WORKDIR /app
@@ -14,12 +14,5 @@ COPY . /app
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Створюємо директорію для логів
-RUN mkdir -p /app/logs
-
-# Копіюємо конфігурацію для Supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Команда для запуску Supervisor
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
+# Запускаємо скрипт бота
+CMD ["python", "mtrepo.py"]
