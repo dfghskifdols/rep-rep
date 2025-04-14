@@ -102,12 +102,15 @@ async def get_report_by_key(report_key):
 
 # Оновлення статусу репорту
 async def update_report_status(report_key, status, accepted_by=None):
+    # Перетворення accepted_by на рядок (якщо це ціле число)
+    accepted_by_str = str(accepted_by) if accepted_by is not None else None
+    
     conn = await connect_db()
     await conn.execute('''
         UPDATE user_reports
         SET status = $1, accepted_by = $2
         WHERE report_key = $3
-    ''', status, accepted_by, report_key)
+    ''', status, accepted_by_str, report_key)
     await conn.close()
 
 # Функция отправки логов в группу
