@@ -529,20 +529,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
-    elif message in ["привет", "сап", "ку"]:  # Перевірка привітань
-        if 5 <= hour < 7:
-            response = "А ты спать не хочешь?"
-        elif 7 <= hour < 13:
-            response = "Доброго утра!"
-        elif 13 <= hour < 17:
-            response = "Хорошего дня!"
-        elif 17 <= hour < 22:
-            response = "Доброго вечера!"
-        else:
-            response = "А ну ка спать!"
-
-        await update.message.reply_text(response)
-
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
