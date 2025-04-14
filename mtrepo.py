@@ -448,7 +448,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             INSERT INTO user_tickets (user_id, tickets)
             VALUES ($1, 1)
             ON CONFLICT (user_id)
-            DO UPDATE SET tickets = users_tickets.tickets + 1
+            DO UPDATE SET tickets = user_tickets.tickets + 1
         """, reported_user.id)
         await conn.close()
 
