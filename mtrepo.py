@@ -445,7 +445,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
           # Додаємо квиток користувачу в БД
         conn = await connect_db()
         await conn.execute("""
-            INSERT INTO users (user_id, tickets)
+            INSERT INTO user_tickets (user_id, tickets)
             VALUES ($1, 1)
             ON CONFLICT (user_id)
             DO UPDATE SET tickets = users.tickets + 1
@@ -627,11 +627,11 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await conn.close()
 
     # Видача
-    sent = await update.message.reply_text("🎁 Видаю!")
+    sent = await update.message.reply_text("🎁 Выдаю!")
     await userbot.send_message(update.message.chat.id, "дать миф 1", reply_to_msg_id=update.message.message_id)
     await asyncio.sleep(1)
     await userbot.delete_messages(update.message.chat.id, [update.message.message_id + 1])
-    await sent.edit_text("🎉 Видано!")
+    await sent.edit_text("🎉 Выдано!")
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
