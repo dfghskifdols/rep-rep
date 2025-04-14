@@ -1,35 +1,20 @@
-from telethon import TelegramClient, events
-import asyncio
+from pyrogram import Client
 
-# Дані для авторизації
-api_id = 20375319     # Візьми на my.telegram.org
-api_hash = '4cb9df2254ee99282e0bd8b00ed1a636'
-session_name = 'userbot'
+api_id = 20375319  # Твій api_id, отриманий на my.telegram.org
+api_hash = '4cb9df2254ee99282e0bd8b00ed1a636'  # Твій api_hash
+phone_number = '+380 68 678 24 26'  # Твій номер телефону
 
-# Ваш номер телефону
-phone_number = '+380686782426'  # Замініть на свій номер телефону
+# Створюємо об'єкт клієнта
+app = Client("userbot", api_id=api_id, api_hash=api_hash)
 
-client = TelegramClient(session_name, api_id, api_hash)
-
+# Функція авторизації
 async def main():
-    # Авторизація
-    await client.start(phone_number)
+    await app.start()
 
-    # Обробка команди /get_reward
-    @client.on(events.NewMessage(pattern='/get_reward'))
-    async def handle_reward(event):
-        sender = await event.get_sender()
-        user_id = sender.id
+    print("Userbot успішно авторизувався!")
 
-        # Відповідь "дать миф 1"
-        sent = await event.respond("дать миф 1", reply_to=event.id)
+    # Після авторизації збережеться файл session
+    await app.stop()
 
-        # Через 1 секунду видаляємо повідомлення
-        await asyncio.sleep(1)
-        await client.delete_messages(event.chat_id, sent.id)
-
-    print("Userbot працює!")
-    await client.run_until_disconnected()
-
-# Запуск
-asyncio.run(main())
+# Запускаємо авторизацію
+app.run(main())
