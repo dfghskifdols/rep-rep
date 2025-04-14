@@ -226,9 +226,7 @@ async def get_total_reports():
 
 # Показати репорти
 async def show_reports(update, context, page=1):
-    user_id = (
-        update.effective_user.id if update.effective_user else None
-    )
+    user_id = update.effective_user.id if update.effective_user else None
 
     if user_id not in ALLOWED_USERS:
         if update.message:
@@ -252,7 +250,13 @@ async def show_reports(update, context, page=1):
     message_text = "Список репортов:\n\n"
     for report in reports:
         status = report.get('status', 'not accepted')
-        accepted_by_name = report.get('accepted_by_name')  # Отримуємо ім'я адміністратора
+        accepted_by = report.get('accepted_by')
+
+        # Отримуємо ім'я адміністратора за ID
+        if accepted_by:
+            admin_name = await get_admin_name(accepted_by)  # Функція для отримання імені адміністратора
+        else:
+            admin_name = "Неизвестно"  # Якщо немає адміністратора
 
         message_text += f"🔑Ключ репорта: <code>{report['report_key']}</code>\n"
         message_text += f"🆔ID юзера: {report['user_id']}\n"
@@ -264,7 +268,7 @@ async def show_reports(update, context, page=1):
         message_text += f"💭Текст: {report['reported_text']}\n"
 
         if status == "accepted":
-            message_text += f"✅ Статус: принят (админ: {accepted_by})\n\n"  # Тепер відображаємо ім'я
+            message_text += f"✅ Статус: принят (админ: {admin_name} - {accepted_by})\n\n"
         else:
             message_text += f"🕐 Статус: не принят\n\n"
 
@@ -299,6 +303,16 @@ async def show_reports(update, context, page=1):
             disable_web_page_preview=True,
             parse_mode=ParseMode.HTML  # додаємо параметр для обробки HTML
         )
+
+# Функція для отримання імені адміністратора за ID
+async def get_admin_name(user_id):
+    conn = await connect_db()
+    row = await conn.fetchrow("SELECT full_name FROM users WHERE user_id = $1", user_id)
+    await conn.close()
+    
+    if row:
+        return row['full_name']
+    return "Неизвестно"
 
 async def button(update, context):
     query = update.callback_query
