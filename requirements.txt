@@ -6,6 +6,6 @@ asyncpg
 aiogram==2.24
 aiopg
 pyrogram==2.0.0
-tgcrypto==1.2.1
+tgcrypto
 psycopg2-binary==2.9.3
 telethon
