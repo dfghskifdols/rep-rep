@@ -1,21 +1,21 @@
-# Використовуємо офіційний Python образ
-FROM python:3.10-slim
+# Встановлюємо залежності
+RUN apt-get update && apt-get install -y libpq-dev supervisor
 
-# Встановлюємо залежності для psycopg2
-RUN apt-get update && apt-get install -y libpq-dev
-
-# Встановлюємо pip та необхідні бібліотеки
+# Встановлюємо бібліотеки Python
 RUN pip install --upgrade pip
 RUN pip install psycopg2-binary
 
-# Створюємо директорію для твоєї програми
+# Створюємо директорію для програми
 WORKDIR /app
 
-# Копіюємо файли з твоєї локальної системи в контейнер
+# Копіюємо файли бота
 COPY . /app
 
-# Встановлюємо залежності з requirements.txt, якщо вони є
+# Встановлюємо залежності
 RUN pip install -r requirements.txt
 
-# Вказуємо команду для запуску твого додатку
-CMD ["python", "mtrepo.py"]
+# Копіюємо конфігурацію для supervisor
+COPY supervisord.conf /etc/supervisord.conf
+
+# Запускаємо supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
