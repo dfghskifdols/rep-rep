@@ -580,11 +580,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not row:
             await update.message.reply_text(
-                "ℹ️ Зареєструйтесь для початку, ввівши мені в особисті повідомлення команду /start."
+                "ℹ️ Для начала зарегестрируйтесь написав мне в лс /start."
             )
         else:
             await update.message.reply_text(
-                f"🎟 У вас {row['tickets']} квитків."
+                f"🎫 У вас {row['tickets']} билетов."
             )
         return
 
