@@ -579,7 +579,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 leaderboard += f"{idx + 1} - \n"
 
-        current_user_id = str(update.message.from_user.id)
+        current_user_id = update.message.from_user.id  # Залишаємо як int
 
         if current_user_id not in ADMINS_ALLOWED:
             leaderboard += "\n🙅‍♂️ Ты не админ, и тебя здесь нет."
