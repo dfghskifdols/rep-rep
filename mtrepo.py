@@ -552,26 +552,52 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ORDER BY count DESC
             LIMIT 10
         """)
+
+        all_rows = await conn.fetch("""
+            SELECT accepted_by, COUNT(*) AS count
+            FROM user_reports
+            WHERE status = 'accepted'
+            GROUP BY accepted_by
+            ORDER BY count DESC
+        """)
         await conn.close()
 
-        if not rows:
-            await update.message.reply_text("📉 Нету принятых репортов.")
-            return
+        leaderboard = "<b>🏆 Топ 10 админов по кол-ву принятых репортов:</b>\n"
+        for idx in range(10):
+            if idx < len(rows):
+                name = rows[idx]["accepted_by"]
+                count = rows[idx]["count"]
 
-        leaderboard = "<b>📃 Топ админов по кол-ву принятых репортов:</b>\n\n"
-        for idx, row in enumerate(rows, start=1):
-            name = row["accepted_by"]
-            count = row["count"]
+                # Посилання якщо це username або user_id
+                if name.startswith("@"):
+                    link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
+                elif name.isdigit():
+                    link = f"<a href='tg://user?id={name}'>{name}</a>"
+                else:
+                    link = name
 
-            # Посилання якщо це username або user_id
-            if name.startswith("@"):
-                link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
-            elif name.isdigit():
-                link = f"<a href='tg://user?id={name}'>{name}</a>"
+                leaderboard += f"{idx + 1} - {link} — {count} 📍\n"
             else:
-                link = name  # Просто текст, якщо нічого не підходить
+                leaderboard += f"{idx + 1} - \n"
 
-            leaderboard += f"{idx}. {link} — {count} 📍\n"
+        # Визначаємо current_user
+        current_user = (
+            f"@{update.message.from_user.username}"
+            if update.message.from_user.username
+            else str(update.message.from_user.id)
+        )
+
+        # Перевірка на доступ до топу
+        if current_user not in ADMINS_ALLOWED:
+            leaderboard += "\n🙅‍♂️ Ты не админ, и тебя здесь нет."
+        else:
+            position = next((i + 1 for i, row in enumerate(all_rows) if row["accepted_by"] == current_user), None)
+            count = next((row["count"] for row in all_rows if row["accepted_by"] == current_user), 0)
+
+            if position:
+                leaderboard += f"\nТвое место - {position} - {count}"
+            else:
+                leaderboard += f"\nТвое место - {len(all_rows) + 1} - 0"
 
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
@@ -617,7 +643,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await conn.close()
 
-        text = "🏆 Топ 10 пользователей по кол-ву билетов:\n"
+        text = "🎫 Топ 10 пользователей по кол-ву билетов:\n"
 
         for i in range(10):
             if i < len(top_users):
