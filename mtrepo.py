@@ -670,8 +670,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.message.from_user.id
 
         conn = await connect_db()
-
-        # Перевіряємо, чи зареєстрований користувач в таблиці user_tickets
         user = await conn.fetchrow("SELECT * FROM user_tickets WHERE user_id = $1", user_id)
 
         if not user:
@@ -679,7 +677,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        # Перевірка на наявність промокоду
         promo = await conn.fetchrow("SELECT * FROM promo_codes WHERE code = $1", promo_code)
 
         if not promo:
@@ -687,27 +684,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        # Перевірка, чи вже використовував користувач цей промокод
         if user_id in promo["used_by"]:
             await update.message.reply_text("⚠️ Вы уже использовали этот промокод.")
             await conn.close()
             return
 
-        # Перевірка, чи не перевищено максимальну кількість використань
         if promo["max_uses"] != 0 and len(promo["used_by"]) >= promo["max_uses"]:
             await update.message.reply_text("🚫 Промокод уже ввели макс кол-во пользователей.")
             await conn.close()
             return
 
-        # Додаємо квитки користувачу
-        await conn.execute(""" 
-            INSERT INTO user_tickets (user_id, tickets)
-            VALUES ($1, $2)
-            ON CONFLICT (user_id) DO UPDATE SET tickets = user_tickets.tickets + $2
-        """, user_id, promo["reward"])
+        # Додаємо нагороди
+        tickets_reward = promo["reward_tickets"]
+        neko_reward = promo["reward_neko_coins"]
 
-        # Оновлюємо список used_by
-        await conn.execute(""" 
+        await conn.execute("""
+            UPDATE user_tickets
+            SET tickets = tickets + $1,
+                neko_coins = neko_coins + $2
+            WHERE user_id = $3
+        """, tickets_reward, neko_reward, user_id)
+
+        await conn.execute("""
             UPDATE promo_codes
             SET used_by = array_append(used_by, $1)
             WHERE code = $2
@@ -715,7 +713,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await conn.close()
 
-        await update.message.reply_text(f"✅ Промокод активирован! Вы получили {promo['reward']} 🎟️")
+        rewards = []
+        if tickets_reward:
+            rewards.append(f"{tickets_reward} 🎟️")
+        if neko_reward:
+            rewards.append(f"{neko_reward} 🍥")
+
+        reward_msg = " и ".join(rewards)
+        await update.message.reply_text(f"✅ Промокод активирован! Вы получили {reward_msg}")
         return
 
     elif message.lower().startswith("обмен "):
