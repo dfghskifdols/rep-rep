@@ -613,25 +613,63 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("Привет! Напишите /report в ответ на сообщение, чтобы отправить репорт.")
 
+USER_CHAT_ID = 5283100992  # твій Telegram ID
+
 async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.from_user.id
+    user = update.message.from_user
+    user_id = user.id
+    username = f"@{user.username}" if user.username else f"ID: {user_id}"
+
     conn = await connect_db()
     row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
 
     if not row or row['tickets'] < 10:
-        await update.message.reply_text("❌ У вас недостатньо квитків (необхідно 10).")
+        await update.message.reply_text("❌ У вас недостаточно билетов (надо 10).")
         await conn.close()
         return
 
     await conn.execute("UPDATE user_tickets SET tickets = tickets - 10 WHERE user_id = $1", user_id)
     await conn.close()
 
-    # Видача
-    sent = await update.message.reply_text("🎁 Выдаю!")
-    await userbot.send_message(update.message.chat.id, "дать миф 1", reply_to_msg_id=update.message.message_id)
-    await asyncio.sleep(1)
-    await userbot.delete_messages(update.message.chat.id, [update.message.message_id + 1])
-    await sent.edit_text("🎉 Выдано!")
+    # Повідомлення користувачу
+    await update.message.reply_text("✅ Ваш запрос на получение награды успешно отправлен!")
+
+    # Посилання на повідомлення
+    chat_id = update.message.chat.id
+    message_id = update.message.message_id
+    chat_link = f"https://t.me/c/{str(chat_id)[4:]}/{message_id}"
+
+    # Повідомлення адміну
+    admin_text = f"📥 Запит: {username}\n🔗 [Перейти до повідомлення]({chat_link})"
+
+    await context.bot.send_message(
+        chat_id=USER_CHAT_ID,
+        text=admin_text,
+        parse_mode="Markdown"
+    )
+
+# Хендлер для "Мои билеты"
+async def my_tickets_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message.text.strip()
+    if message.lower() != "мои билеты":
+        return
+
+    user_id = update.message.from_user.id
+
+    conn = await connect_db()
+    row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
+    await conn.close()
+
+    if not row:
+        await update.message.reply_text(
+            "ℹ️ Зареєструйтесь для початку, ввівши мені в особисті повідомлення команду /start."
+        )
+    else:
+        await update.message.reply_text(
+            f"🎟 У вас {row['tickets']} квитків."
+        )
+
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, my_tickets_handler))
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
