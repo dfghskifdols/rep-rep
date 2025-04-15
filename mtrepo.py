@@ -16,6 +16,7 @@ import aiopg
 import asyncpg
 import math
 from pytz import timezone
+import html
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
@@ -697,6 +698,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("Привет! Напишите /report в ответ на сообщение, чтобы отправить репорт.")
 
+def escape_markdown(text):
+    return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
+
 async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     user_id = user.id
@@ -721,13 +725,16 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_id = update.message.message_id
     chat_link = f"https://t.me/c/{str(chat_id)[4:]}/{message_id}"
 
+    # Екранування юзернейму для Markdown
+    escaped_username = escape_markdown(username)
+
     # Повідомлення адміну
-    admin_text = f"📥 Запит: {username}\n🔗 [Перейти до повідомлення]({chat_link})"
+    admin_text = f"📥 Запит: {escaped_username}\n🔗 [Перейти до повідомлення]({chat_link})"
 
     await context.bot.send_message(
         chat_id=USER_CHAT_ID,
         text=admin_text,
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 async def rban_user(update: Update, context: CallbackContext):
