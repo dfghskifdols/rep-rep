@@ -591,6 +591,32 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         return
 
+    elif message == "топ бил":
+        conn = await connect_db()
+        rows = await conn.fetch("""
+            SELECT user_id, tickets
+            FROM user_tickets
+            ORDER BY tickets DESC
+            LIMIT 10
+        """)
+        await conn.close()
+
+        if not rows:
+            await update.message.reply_text("📭 Пока что нет пользователей с билетамы.")
+            return
+
+        result = "<b>🏆 Топ 10 пользователей с билетамы:</b>\n\n"
+        for i, row in enumerate(rows, 1):
+            try:
+                user = await bot.get_chat_member(update.effective_chat.id, row["user_id"])
+                name = user.user.full_name
+            except:
+                name = f"Пользователь {row['user_id']}"
+            result += f"{i}. <b>{name}</b> — 🎟 {row['tickets']}\n"
+
+        await update.message.reply_text(result, parse_mode=ParseMode.HTML)
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
