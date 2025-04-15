@@ -542,7 +542,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = random.choice(rafu_responses)  # Відповідь для РаФу
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
-    elif message.lower() == "топ прп":  # Приводимо повідомлення до нижнього регістру
+    elif message.lower() == "топ прп":
         conn = await connect_db()
         rows = await conn.fetch("""
             SELECT accepted_by, COUNT(*) AS count
@@ -565,34 +565,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         leaderboard = "<b>🏆 Топ 10 админов по кол-ву принятых репортов:</b>\n"
         for idx in range(10):
             if idx < len(rows):
-                name = rows[idx]["accepted_by"]
+                user_id = int(rows[idx]["accepted_by"])
                 count = rows[idx]["count"]
 
-                # Посилання якщо це username або user_id
-                if name.startswith("@"):
-                    link = f"<a href='https://t.me/{name[1:]}'>{name}</a>"
-                elif name.isdigit():
-                    link = f"<a href='tg://user?id={name}'>{name}</a>"
-                else:
-                    link = name
+                try:
+                    user = await bot.get_chat(user_id)
+                    name = user.full_name
+                    link = f"<a href='tg://user?id={user_id}'>{name}</a>"
+                except:
+                    link = f"<code>{user_id}</code>"
 
                 leaderboard += f"{idx + 1} - {link} — {count} 📍\n"
             else:
                 leaderboard += f"{idx + 1} - \n"
 
-        # Визначаємо current_user
-        current_user = (
-            f"@{update.message.from_user.username}"
-            if update.message.from_user.username
-            else str(update.message.from_user.id)
-        )
+        current_user_id = str(update.message.from_user.id)
 
-        # Перевірка на доступ до топу
-        if current_user not in ADMINS_ALLOWED:
+        if current_user_id not in ADMINS_ALLOWED:
             leaderboard += "\n🙅‍♂️ Ты не админ, и тебя здесь нет."
         else:
-            position = next((i + 1 for i, row in enumerate(all_rows) if row["accepted_by"] == current_user), None)
-            count = next((row["count"] for row in all_rows if row["accepted_by"] == current_user), 0)
+            position = next((i + 1 for i, row in enumerate(all_rows) if row["accepted_by"] == current_user_id), None)
+            count = next((row["count"] for row in all_rows if row["accepted_by"] == current_user_id), 0)
 
             if position:
                 leaderboard += f"\nТвое место - {position} - {count}"
