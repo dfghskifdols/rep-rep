@@ -372,7 +372,7 @@ async def report_command(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        f"🔊Вы уверены, что хотите отправить репорт с причиной <b>{reason}</b>?",
+        f"🔊Вы уверены, что хотите отправить репорт?",
         reply_markup=reply_markup,
         parse_mode=ParseMode.HTML
     )
