@@ -544,7 +544,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message.lower() == "топ прп":
         conn = await connect_db()
-        rows = await conn.fetch("""
+        rows = await conn.fetch(""" 
             SELECT accepted_by, COUNT(*) AS count
             FROM user_reports
             WHERE status = 'accepted'
@@ -553,7 +553,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             LIMIT 10
         """)
 
-        all_rows = await conn.fetch("""
+        all_rows = await conn.fetch(""" 
             SELECT accepted_by, COUNT(*) AS count
             FROM user_reports
             WHERE status = 'accepted'
@@ -598,7 +598,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
 
-    elif message == "рбаланс":
+    elif message == "рбаланс": 
         conn = await connect_db()
         row = await conn.fetchrow("SELECT tickets, neko_coins FROM user_tickets WHERE user_id = $1", user_id)
         await conn.close()
@@ -608,8 +608,82 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "ℹ️ Для начала зарегестрируйтесь написав мне в лс /start."
             )
         else:
+            keyboard = [
+                [InlineKeyboardButton("Обмен", callback_data="exchange")],
+                [InlineKeyboardButton("Назад", callback_data="back_to_balance")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
             await update.message.reply_text(
-                f" Билеты: {row['tickets']}🎫.\nNeko коины: {row['neko_coins']}🍥"
+                f"Билеты: {row['tickets']}🎫.\nNeko коины: {row['neko_coins']}🍥",
+                reply_markup=reply_markup
+            )
+        return
+
+    # Обробка натискання кнопки "Обмен"
+    elif callback_data == "exchange":
+        keyboard = [
+            [InlineKeyboardButton("Назад", callback_data="back_to_balance")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.edit_text(
+            "Обмен:\n1 билет = 100 Neko коинов\n\nЧтобы обменять, напишите в ответ на это сообщение, например:\nбилет 2",
+            reply_markup=reply_markup
+        )
+        return
+
+    # Обробка відповіді на обмін
+    elif message.lower().startswith("билет "):
+        parts = message.split()
+        if len(parts) != 2 or not parts[1].isdigit():
+            await update.message.reply_text("❌ Неправильный формат. Напишите, например: билет 2")
+            return
+
+        ticket_count = int(parts[1])
+        conn = await connect_db()
+        row = await conn.fetchrow("SELECT tickets, neko_coins FROM user_tickets WHERE user_id = $1", user_id)
+
+        if not row or row["tickets"] < ticket_count:
+            await update.message.reply_text("❌ У вас недостаточно билетов для обмена.")
+            await conn.close()
+            return
+
+        new_ticket_count = row["tickets"] - ticket_count
+        new_neko_coins = row["neko_coins"] + (ticket_count * 100)
+
+        # Оновлюємо базу даних
+        await conn.execute("""
+            UPDATE user_tickets
+            SET tickets = $1, neko_coins = $2
+            WHERE user_id = $3
+        """, new_ticket_count, new_neko_coins, user_id)
+
+        await conn.close()
+
+        await update.message.reply_text(f"✅ Вы обменяли {ticket_count} билет(ов) на {ticket_count * 100} Neko коинов.")
+        return
+
+    # Обробка кнопки "Назад"
+    elif callback_data == "back_to_balance":
+        conn = await connect_db()
+        row = await conn.fetchrow("SELECT tickets, neko_coins FROM user_tickets WHERE user_id = $1", user_id)
+        await conn.close()
+
+        if not row:
+            await update.message.reply_text(
+                "ℹ️ Для начала зарегестрируйтесь написав мне в лс /start."
+            )
+        else:
+            keyboard = [
+                [InlineKeyboardButton("Обмен", callback_data="exchange")],
+                [InlineKeyboardButton("Назад", callback_data="back_to_balance")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_text(
+                f"Билеты: {row['tickets']}🎫.\nNeko коины: {row['neko_coins']}🍥",
+                reply_markup=reply_markup
             )
         return
 
@@ -617,7 +691,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn = await connect_db()
 
         # Отримуємо топ-10
-        top_users = await conn.fetch("""
+        top_users = await conn.fetch(""" 
             SELECT user_id, tickets
             FROM user_tickets
             ORDER BY tickets DESC
@@ -625,7 +699,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """)
 
         # Отримуємо місце користувача
-        user_rank_row = await conn.fetchrow("""
+        user_rank_row = await conn.fetchrow(""" 
             SELECT row_number FROM (
                 SELECT user_id, tickets, ROW_NUMBER() OVER (ORDER BY tickets DESC) AS row_number
                 FROM user_tickets
@@ -633,7 +707,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             WHERE user_id = $1
         """, user_id)
 
-        user_tickets_row = await conn.fetchrow("""
+        user_tickets_row = await conn.fetchrow(""" 
             SELECT tickets FROM user_tickets WHERE user_id = $1
         """, user_id)
 
@@ -700,14 +774,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Додаємо квитки користувачу
-        await conn.execute("""
+        await conn.execute(""" 
             INSERT INTO user_tickets (user_id, tickets)
             VALUES ($1, $2)
             ON CONFLICT (user_id) DO UPDATE SET tickets = user_tickets.tickets + $2
         """, user_id, promo["reward"])
 
         # Оновлюємо список used_by
-        await conn.execute("""
+        await conn.execute(""" 
             UPDATE promo_codes
             SET used_by = array_append(used_by, $1)
             WHERE code = $2
