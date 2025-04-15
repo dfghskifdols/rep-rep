@@ -666,10 +666,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Использование: рпромо <промокод>")
             return
 
-        promo_id = row["id"]
-        reward = row["reward"]
-        reward1 = row["reward1"]
-        max_uses = row["max_uses"]
+        promo_code = parts[1].lower()
+        user_id = update.message.from_user.id
 
         conn = await connect_db()
 
@@ -701,13 +699,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        await conn.execute("""
-            INSERT INTO user_tickets (user_id, tickets, neko_coins)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (user_id) DO UPDATE
-            SET tickets = user_tickets.tickets + $2,
-                neko_coins = user_tickets.neko_coins + $3
-        """, user_id, reward, reward1)
+         # Додаємо квитки користувачу
+         await conn.execute(""" 
+             INSERT INTO user_tickets (user_id, tickets)
+             VALUES ($1, $2)
+             ON CONFLICT (user_id) DO UPDATE SET tickets = user_tickets.tickets + $2
+         """, user_id, promo["reward"])
 
         # Оновлюємо список used_by
         await conn.execute(""" 
