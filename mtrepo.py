@@ -558,7 +558,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("📉 Нету принятых репортов.")
             return
 
-        leaderboard = "<b>📃 Топ принятых репортов:</b>\n\n"
+        leaderboard = "<b>📃 Топ админов по кол-ву принятых репортов:</b>\n\n"
         for idx, row in enumerate(rows, start=1):
             name = row["accepted_by"]
             count = row["count"]
@@ -605,7 +605,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("📭 Пока что нет пользователей с билетамы.")
             return
 
-        result = "<b>🏆 Топ 10 пользователей с билетамы:</b>\n\n"
+        result = "<b>🏆 Топ 10 пользователей по кол-ву билетов:</b>\n\n"
         for i, row in enumerate(rows, 1):
             try:
                 user = await bot.get_chat_member(update.effective_chat.id, row["user_id"])
