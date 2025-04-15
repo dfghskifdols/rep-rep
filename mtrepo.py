@@ -663,7 +663,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message.lower().startswith("рпромо"):
         parts = message.split()
         if len(parts) != 2:
-            await update.message.reply_text("❌ Використання: рпромо <код>")
+            await update.message.reply_text("❌ Использование: рпромо <промокод>")
             return
 
         promo_code = parts[1].lower()
@@ -673,17 +673,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         promo = await conn.fetchrow("SELECT * FROM promo_codes WHERE code = $1", promo_code)
 
         if not promo:
-            await update.message.reply_text("❌ Промокод не знайдено.")
+            await update.message.reply_text("❌ Промокод не найден.")
             await conn.close()
             return
 
         if user_id in promo["used_by"]:
-            await update.message.reply_text("⚠️ Ви вже використали цей промокод.")
+            await update.message.reply_text("⚠️ Вы уже использовали этот промокод.")
             await conn.close()
             return
 
         if len(promo["used_by"]) >= promo["max_uses"]:
-            await update.message.reply_text("🚫 Промокод вже вичерпав свою кількість використань.")
+            await update.message.reply_text("🚫 Промокод уже ввели макс кол-во пользователей.")
             await conn.close()
             return
 
@@ -702,7 +702,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """, user_id, promo_code)
 
         await conn.close()
-        await update.message.reply_text(f"✅ Промокод активовано! Ви отримали {promo['reward']} 🎟️")
+        await update.message.reply_text(f"✅ Промокод активирован! Вы получили {promo['reward']} 🎟️")
         return
 
 # Функция для отправки сообщений через бота
