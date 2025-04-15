@@ -648,7 +648,7 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await conn.close()
 
     # Повідомлення користувачу
-    await update.message.reply_text("✅ Ваш запрос на получение награды успешно отправлен!")
+    await update.message.reply_text("📝 Ваш запрос на получение награды успешно отправлен!")
 
     # Посилання на повідомлення
     chat_id = update.message.chat.id
@@ -669,12 +669,12 @@ async def rban_user(update: Update, context: CallbackContext):
 
     # Перевірка, чи є ви адміністратором
     if user_id != 5283100992:  # Ваш Telegram ID
-        await update.message.reply_text("❌ Ви не маєте прав для використання цієї команди.")
+        await update.message.reply_text("⛔️ У вас нету прав на эту команду.")
         return
 
     # Перевірка, чи є відповідь на повідомлення
     if not update.message.reply_to_message:
-        await update.message.reply_text("❌ Використовуйте у відповідь на повідомлення.")
+        await update.message.reply_text("💮 Используйте в ответ на сообщение.")
         return
 
     # Отримуємо айді користувача, якого банимо
@@ -692,19 +692,19 @@ async def rban_user(update: Update, context: CallbackContext):
     # Закриваємо з'єднання
     await conn.close()
 
-    await update.message.reply_text(f"✅ Користувач {banned_user_id} забанений і його квитки очищені.")
+    await update.message.reply_text(f"🚷 Пользователь {banned_user_id} забанен и все его билеты убраны.")
 
 async def runban_user(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
     # Перевірка, чи є ви адміністратором
     if user_id != 5283100992:  # Ваш Telegram ID
-        await update.message.reply_text("❌ Ви не маєте прав для використання цієї команди.")
+        await update.message.reply_text("⛔️ У вас нету прав на эту команду.")
         return
 
     # Перевірка, чи є відповідь на повідомлення
     if not update.message.reply_to_message:
-        await update.message.reply_text("❌ Використовуйте у відповідь на повідомлення.")
+        await update.message.reply_text("💮 Используйте в ответ на сообщение.")
         return
 
     # Отримуємо айді користувача, якого розбанюємо
@@ -719,7 +719,7 @@ async def runban_user(update: Update, context: CallbackContext):
     # Закриваємо з'єднання
     await conn.close()
 
-    await update.message.reply_text(f"✅ Користувач {unbanned_user_id} розбанений.")
+    await update.message.reply_text(f"✳️ Пользователь {unbanned_user_id} разбанен.")
 
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
 app.add_handler(CommandHandler("rban", rban_user))
