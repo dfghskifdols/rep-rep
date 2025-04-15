@@ -573,6 +573,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
 
+    elif message == "мои билеты":
+        conn = await connect_db()
+        row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
+        await conn.close()
+
+        if not row:
+            await update.message.reply_text(
+                "ℹ️ Зареєструйтесь для початку, ввівши мені в особисті повідомлення команду /start."
+            )
+        else:
+            await update.message.reply_text(
+                f"🎟 У вас {row['tickets']} квитків."
+            )
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
@@ -613,8 +628,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("Привет! Напишите /report в ответ на сообщение, чтобы отправить репорт.")
 
-USER_CHAT_ID = 5283100992  # твій Telegram ID
-
 async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     user_id = user.id
@@ -647,27 +660,6 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=admin_text,
         parse_mode="Markdown"
     )
-
-# Хендлер для "Мои билеты"
-async def my_tickets_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message.text.strip()
-    if message.lower() != "мои билеты":
-        return
-
-    user_id = update.message.from_user.id
-
-    conn = await connect_db()
-    row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
-    await conn.close()
-
-    if not row:
-        await update.message.reply_text(
-            "ℹ️ Зареєструйтесь для початку, ввівши мені в особисті повідомлення команду /start."
-        )
-    else:
-        await update.message.reply_text(
-            f"🎟 У вас {row['tickets']} квитків."
-        )
 
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, my_tickets_handler))
 
