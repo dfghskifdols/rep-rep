@@ -699,12 +699,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-         # Додаємо квитки користувачу
-         await conn.execute(""" 
-             INSERT INTO user_tickets (user_id, tickets)
-             VALUES ($1, $2)
-             ON CONFLICT (user_id) DO UPDATE SET tickets = user_tickets.tickets + $2
-         """, user_id, promo["reward"])
+        # Додаємо квитки користувачу
+        await conn.execute(""" 
+            INSERT INTO user_tickets (user_id, tickets)
+            VALUES ($1, $2)
+            ON CONFLICT (user_id) DO UPDATE SET tickets = user_tickets.tickets + $2
+        """, user_id, promo["reward"])
 
         # Оновлюємо список used_by
         await conn.execute(""" 
