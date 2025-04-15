@@ -661,8 +661,6 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, my_tickets_handler))
-
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
 
