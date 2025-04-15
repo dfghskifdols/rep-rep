@@ -562,7 +562,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """)
         await conn.close()
 
+        current_user_id = update.message.from_user.id
         leaderboard = "<b>🏆 Топ 10 админов по кол-ву принятых репортов:</b>\n"
+
         for idx in range(10):
             if idx < len(rows):
                 user_id = int(rows[idx]["accepted_by"])
@@ -575,22 +577,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 except:
                     link = f"<code>{user_id}</code>"
 
-                leaderboard += f"{idx + 1} - {link} — {count} 📍\n"
+                if user_id == current_user_id:
+                    leaderboard += f"<b>{idx + 1} - {link} — {count} 📍</b>\n"
+                else:
+                    leaderboard += f"{idx + 1} - {link} — {count} 📍\n"
             else:
                 leaderboard += f"{idx + 1} - \n"
-
-        current_user_id = update.message.from_user.id  # Залишаємо як int
 
         if current_user_id not in ADMINS_ALLOWED:
             leaderboard += "\n🙅‍♂️ Ты не админ, и тебя здесь нет."
         else:
-            position = next((i + 1 for i, row in enumerate(all_rows) if row["accepted_by"] == current_user_id), None)
-            count = next((row["count"] for row in all_rows if row["accepted_by"] == current_user_id), 0)
+            position = next((i + 1 for i, row in enumerate(all_rows) if int(row["accepted_by"]) == current_user_id), None)
+            count = next((row["count"] for row in all_rows if int(row["accepted_by"]) == current_user_id), 0)
 
             if position:
-                leaderboard += f"\nТвое место: {position} - {count}📍"
+                leaderboard += f"\n<b>Твое место: {position} - {count}📍</b>"
             else:
-                leaderboard += f"\nТвое место: {len(all_rows) + 1} - 0📍"
+                leaderboard += f"\n<b>Твое место: {len(all_rows) + 1} - 0📍</b>"
 
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
