@@ -590,7 +590,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if position:
                 leaderboard += f"\nТвое место: {position} - {count}❇️"
             else:
-                leaderboard += f"\nТвое место: {len(all_rows) + 1} - 0"
+                leaderboard += f"\nТвое место: {len(all_rows) + 1} - 0❇️"
 
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
