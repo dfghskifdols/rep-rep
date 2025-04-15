@@ -588,7 +588,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             count = next((row["count"] for row in all_rows if row["accepted_by"] == current_user_id), 0)
 
             if position:
-                leaderboard += f"\nТвое место: {position} - {count}"
+                leaderboard += f"\nТвое место: {position} - {count}❇️"
             else:
                 leaderboard += f"\nТвое место: {len(all_rows) + 1} - 0"
 
