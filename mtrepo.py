@@ -598,9 +598,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
 
-    elif message == "мои билеты":
+    elif message == "рбаланс":
         conn = await connect_db()
-        row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
+        row = await conn.fetchrow("SELECT tickets, neko_coins FROM user_tickets WHERE user_id = $1", user_id)
         await conn.close()
 
         if not row:
@@ -609,7 +609,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             await update.message.reply_text(
-                f"🎫 У вас {row['tickets']} билетов."
+                f"🎫 У вас {row['tickets']} билетов.\n🪙 Neko коины: {row['neko_coins']}"
             )
         return
 
