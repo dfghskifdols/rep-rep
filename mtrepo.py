@@ -660,6 +660,51 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
         return
 
+    elif message.lower().startswith("рпромо"):
+        parts = message.split()
+        if len(parts) != 2:
+            await update.message.reply_text("❌ Використання: рпромо <код>")
+            return
+
+        promo_code = parts[1].lower()
+        user_id = update.message.from_user.id
+
+        conn = await connect_db()
+        promo = await conn.fetchrow("SELECT * FROM promo_codes WHERE code = $1", promo_code)
+
+        if not promo:
+            await update.message.reply_text("❌ Промокод не знайдено.")
+            await conn.close()
+            return
+
+        if user_id in promo["used_by"]:
+            await update.message.reply_text("⚠️ Ви вже використали цей промокод.")
+            await conn.close()
+            return
+
+        if len(promo["used_by"]) >= promo["max_uses"]:
+            await update.message.reply_text("🚫 Промокод вже вичерпав свою кількість використань.")
+            await conn.close()
+            return
+
+        # Додаємо квитки
+        await conn.execute("""
+            INSERT INTO user_tickets (user_id, tickets)
+            VALUES ($1, $2)
+            ON CONFLICT (user_id) DO UPDATE SET tickets = user_tickets.tickets + $2
+        """, user_id, promo["reward"])
+
+        # Оновлюємо список used_by
+        await conn.execute("""
+            UPDATE promo_codes
+            SET used_by = array_append(used_by, $1)
+            WHERE code = $2
+        """, user_id, promo_code)
+
+        await conn.close()
+        await update.message.reply_text(f"✅ Промокод активовано! Ви отримали {promo['reward']} 🎟️")
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
