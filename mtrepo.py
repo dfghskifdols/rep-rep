@@ -378,9 +378,9 @@ async def report_command(update: Update, context: CallbackContext):
     )
     
     # Логування
-    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
     if reason != "п1.0":
          await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
+    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
 # Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
