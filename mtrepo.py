@@ -444,12 +444,15 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
           # Додаємо квиток користувачу в БД
         conn = await connect_db()
-        await conn.execute("""
-            INSERT INTO user_tickets (user_id, tickets)
-            VALUES ($1, 1)
-            ON CONFLICT (user_id)
-            DO UPDATE SET tickets = user_tickets.tickets + 1
-        """, reported_user.id)
+        is_banned = await conn.fetchval("SELECT banned FROM banned_users WHERE user_id = $1", reported_user.id)
+
+        if is_banned is None or not is_banned:
+            await conn.execute("""
+                INSERT INTO user_tickets (user_id, tickets)
+                VALUES ($1, 1)
+                ON CONFLICT (user_id)
+                DO UPDATE SET tickets = user_tickets.tickets + 1
+            """, reported_user.id)
         await conn.close()
 
     if admin_mentions:
@@ -660,6 +663,67 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=admin_text,
         parse_mode="Markdown"
     )
+
+async def ban_user(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    # Перевірка, чи є ви адміністратором
+    if user_id != 5283100992:  # Ваш Telegram ID
+        await update.message.reply_text("❌ Ви не маєте прав для використання цієї команди.")
+        return
+
+    # Перевірка, чи є відповідь на повідомлення
+    if not update.message.reply_to_message:
+        await update.message.reply_text("❌ Використовуйте у відповідь на повідомлення.")
+        return
+
+    # Отримуємо айді користувача, якого банимо
+    banned_user_id = update.message.reply_to_message.from_user.id
+
+    # З'єднання з базою даних
+    conn = await connect_db()
+    
+    # Додаємо користувача до таблиці забанених
+    await conn.execute("INSERT INTO banned_users (user_id, banned) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET banned = $2", banned_user_id, True)
+    
+    # Очищаємо квитки цього користувача
+    await conn.execute("UPDATE user_tickets SET tickets = 0 WHERE user_id = $1", banned_user_id)
+    
+    # Закриваємо з'єднання
+    await conn.close()
+
+    await update.message.reply_text(f"✅ Користувач {banned_user_id} забанений і його квитки очищені.")
+
+async def unban_user(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    # Перевірка, чи є ви адміністратором
+    if user_id != 5283100992:  # Ваш Telegram ID
+        await update.message.reply_text("❌ Ви не маєте прав для використання цієї команди.")
+        return
+
+    # Перевірка, чи є відповідь на повідомлення
+    if not update.message.reply_to_message:
+        await update.message.reply_text("❌ Використовуйте у відповідь на повідомлення.")
+        return
+
+    # Отримуємо айді користувача, якого розбанюємо
+    unbanned_user_id = update.message.reply_to_message.from_user.id
+
+    # З'єднання з базою даних
+    conn = await connect_db()
+
+    # Знімаємо бан з користувача
+    await conn.execute("UPDATE banned_users SET banned = FALSE WHERE user_id = $1", unbanned_user_id)
+    
+    # Закриваємо з'єднання
+    await conn.close()
+
+    await update.message.reply_text(f"✅ Користувач {unbanned_user_id} розбанений.")
+
+# Додаємо обробники для команд /ban та /unban, так само як і для /send
+app.add_handler(CommandHandler("ban", ban_user))
+app.add_handler(CommandHandler("unban", unban_user))
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
