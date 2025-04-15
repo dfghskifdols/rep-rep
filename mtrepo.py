@@ -694,7 +694,7 @@ async def rban_user(update: Update, context: CallbackContext):
 
     await update.message.reply_text(f"✅ Користувач {banned_user_id} забанений і його квитки очищені.")
 
-async def rrunban_user(update: Update, context: CallbackContext):
+async def runban_user(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
     # Перевірка, чи є ви адміністратором
