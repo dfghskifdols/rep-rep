@@ -609,7 +609,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             await update.message.reply_text(
-                f" Билеты: {row['tickets']}🎫.\n Neko коины: {row['neko_coins']}🍥"
+                f" Билеты: {row['tickets']}🎫.\nNeko коины: {row['neko_coins']}🍥"
             )
         return
 
