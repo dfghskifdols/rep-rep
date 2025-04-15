@@ -666,8 +666,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Использование: рпромо <промокод>")
             return
 
-        promo_code = parts[1].lower()
-        user_id = update.message.from_user.id
+        promo_id = row["id"]
+        reward = row["reward"]
+        reward1 = row["reward1"]
+        max_uses = row["max_uses"]
 
         conn = await connect_db()
 
