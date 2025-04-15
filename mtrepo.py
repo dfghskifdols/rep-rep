@@ -769,12 +769,12 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = await connect_db()
     row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
 
-    if not row or row['tickets'] < 10:
-        await update.message.reply_text("❌ У вас недостаточно билетов (надо 10).")
+    if not row or row['tickets'] < 15:
+        await update.message.reply_text("❌ У вас недостаточно билетов (надо 15).")
         await conn.close()
         return
 
-    await conn.execute("UPDATE user_tickets SET tickets = tickets - 10 WHERE user_id = $1", user_id)
+    await conn.execute("UPDATE user_tickets SET tickets = tickets - 15 WHERE user_id = $1", user_id)
     await conn.close()
 
     # Повідомлення користувачу
