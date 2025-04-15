@@ -664,7 +664,7 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-async def ban_user(update: Update, context: CallbackContext):
+async def rban_user(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
     # Перевірка, чи є ви адміністратором
@@ -694,7 +694,7 @@ async def ban_user(update: Update, context: CallbackContext):
 
     await update.message.reply_text(f"✅ Користувач {banned_user_id} забанений і його квитки очищені.")
 
-async def unban_user(update: Update, context: CallbackContext):
+async def rrunban_user(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
     # Перевірка, чи є ви адміністратором
@@ -722,8 +722,8 @@ async def unban_user(update: Update, context: CallbackContext):
     await update.message.reply_text(f"✅ Користувач {unbanned_user_id} розбанений.")
 
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
-app.add_handler(CommandHandler("ban", ban_user))
-app.add_handler(CommandHandler("unban", unban_user))
+app.add_handler(CommandHandler("rban", rban_user))
+app.add_handler(CommandHandler("runban", runban_user))
 
 # Добавляем команду /send
 app.add_handler(CommandHandler("send", send_message))
