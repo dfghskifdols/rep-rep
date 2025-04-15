@@ -593,28 +593,49 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message == "топ бил":
         conn = await connect_db()
-        rows = await conn.fetch("""
+
+        # Отримуємо топ-10
+        top_users = await conn.fetch("""
             SELECT user_id, tickets
             FROM user_tickets
             ORDER BY tickets DESC
             LIMIT 10
         """)
+
+        # Отримуємо місце користувача
+        user_rank_row = await conn.fetchrow("""
+            SELECT row_number FROM (
+                SELECT user_id, tickets, ROW_NUMBER() OVER (ORDER BY tickets DESC) AS row_number
+                FROM user_tickets
+            ) sub
+            WHERE user_id = $1
+        """, user_id)
+
+        user_tickets_row = await conn.fetchrow("""
+            SELECT tickets FROM user_tickets WHERE user_id = $1
+        """, user_id)
+
         await conn.close()
 
-        if not rows:
-            await update.message.reply_text("📭 Пока что нет пользователей с билетамы.")
-            return
+        text = "🏆 Топ 10 пользователей по кол-ву билетов:\n"
 
-        result = "<b>🏆 Топ 10 пользователей по кол-ву билетов:</b>\n\n"
-        for i, row in enumerate(rows, 1):
-            try:
-                user = await bot.get_chat_member(update.effective_chat.id, row["user_id"])
-                name = user.user.full_name
-            except:
-                name = f"Пользователь {row['user_id']}"
-            result += f"{i}. <b>{name}</b> — 🎟 {row['tickets']}\n"
+        for i in range(10):
+            if i < len(top_users):
+                uid = top_users[i]["user_id"]
+                tickets = top_users[i]["tickets"]
+                try:
+                    user = await bot.get_chat_member(update.effective_chat.id, uid)
+                    name = user.user.full_name
+                except:
+                    name = f"Пользователь {uid}"
+                text += f"{i+1} - {name} — {tickets} 🎟\n"
+            else:
+                text += f"{i+1} -\n"
 
-        await update.message.reply_text(result, parse_mode=ParseMode.HTML)
+        if user_rank_row and user_tickets_row:
+            text += f"\nТвое место: {user_rank_row['row_number']} - {user_tickets_row['tickets']} 🎟"
+
+        await update.message.reply_text(text, parse_mode=ParseMode.HTML)
         return
 
 # Функция для отправки сообщений через бота
