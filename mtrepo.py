@@ -719,6 +719,46 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"✅ Промокод активирован! Вы получили {promo['reward']} 🎟️")
         return
 
+    elif message.lower().startswith("обмен "):
+        parts = message.split()
+        if len(parts) != 2 or not parts[1].isdigit():
+            await update.message.reply_text("❌ Неправильный формат. Напишите, например: обмен 2")
+            return
+
+        ticket_count = int(parts[1])
+        if ticket_count <= 0:
+            await update.message.reply_text("❌ Количество билетов должно быть больше нуля.")
+            return
+
+        conn = await connect_db()
+        row = await conn.fetchrow("SELECT tickets, neko_coins FROM user_tickets WHERE user_id = $1", user_id)
+
+        if not row:
+            await update.message.reply_text("ℹ️ Для начала зарегестрируйтесь написав мне в лс /start.")
+            await conn.close()
+            return
+
+        if row["tickets"] < ticket_count:
+            await update.message.reply_text("❌ У вас недостаточно билетов для обмена.")
+            await conn.close()
+            return
+
+        new_ticket_count = row["tickets"] - ticket_count
+        new_neko_coins = row["neko_coins"] + (ticket_count * 100)
+
+        await conn.execute("""
+            UPDATE user_tickets
+            SET tickets = $1, neko_coins = $2
+            WHERE user_id = $3
+        """, new_ticket_count, new_neko_coins, user_id)
+
+        await conn.close()
+
+        await update.message.reply_text(
+            f"✅ Вы обменяли {ticket_count} билет(ов) на {ticket_count * 100} Neko коинов."
+        )
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
