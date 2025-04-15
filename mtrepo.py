@@ -670,6 +670,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.message.from_user.id
 
         conn = await connect_db()
+
+        # Перевіряємо, чи зареєстрований користувач в таблиці user_tickets
+        user = await conn.fetchrow("SELECT * FROM user_tickets WHERE user_id = $1", user_id)
+
+        if not user:
+            await update.message.reply_text("❌ Вы не зарегистрированы! Пожалуйста, используйте команду /start.")
+            await conn.close()
+            return
+
+        # Перевірка на наявність промокоду
         promo = await conn.fetchrow("SELECT * FROM promo_codes WHERE code = $1", promo_code)
 
         if not promo:
@@ -677,17 +687,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
+        # Перевірка, чи вже використовував користувач цей промокод
         if user_id in promo["used_by"]:
             await update.message.reply_text("⚠️ Вы уже использовали этот промокод.")
             await conn.close()
             return
 
-        if len(promo["used_by"]) >= promo["max_uses"]:
+        # Перевірка, чи не перевищено максимальну кількість використань
+        if promo["max_uses"] != 0 and len(promo["used_by"]) >= promo["max_uses"]:
             await update.message.reply_text("🚫 Промокод уже ввели макс кол-во пользователей.")
             await conn.close()
             return
 
-        # Додаємо квитки
+        # Додаємо квитки користувачу
         await conn.execute("""
             INSERT INTO user_tickets (user_id, tickets)
             VALUES ($1, $2)
@@ -702,6 +714,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """, user_id, promo_code)
 
         await conn.close()
+
         await update.message.reply_text(f"✅ Промокод активирован! Вы получили {promo['reward']} 🎟️")
         return
 
