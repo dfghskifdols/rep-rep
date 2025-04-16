@@ -18,7 +18,6 @@ import asyncpg
 import math
 from pytz import timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import html
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
@@ -682,13 +681,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if rows:
                 active_promos = "\n".join([
-                    f"{'🔅' if row['created_by_bot'] else '🔆'}<code>{html.escape(row['code'])}</code>" for row in rows
+                    f"{'🔅' if row['created_by_bot'] else '🔆'}<code>(row['code'])}</code>" for row in rows
                 ])
             else:
                 active_promos = "🔸Нет активных промокодов."
 
             await update.message.reply_text(
-                f"🤪 Использование: рпромо <промокод>\n"
+                f"🤪 Использование: рпромо {{промокод}}\n"
                 f"🥠список действующих промокодов:\n{active_promos}",
                 parse_mode="HTML"
             )
