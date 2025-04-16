@@ -694,10 +694,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        # Додаємо нагороди з множителями
-        tickets_reward = promo.get("reward_tickets", 0) * 2  # Множимо на 2 для квитків
-        neko_reward = promo.get("reward_neko_coins", 0) * 1.5  # Множимо на 1.5 для неко коінів
-        drops_reward = promo.get("reward_drops", 0) * 2  # Множимо на 2 для капель
+        # Перевіряємо, чи є у користувача преміум
+        is_premium = user.get("premium", False)
+
+        # Додаємо нагороди з множниками, якщо є преміум
+        if is_premium:
+            tickets_reward = promo.get("reward_tickets", 0) * 2  # Множимо на 2 для квитків
+            neko_reward = promo.get("reward_neko_coins", 0) * 1.5  # Множимо на 1.5 для неко коінів
+            drops_reward = promo.get("reward_drops", 0) * 2  # Множимо на 2 для капель
+        else:
+            tickets_reward = promo.get("reward_tickets", 0)  # Без множників для користувачів без преміум
+            neko_reward = promo.get("reward_neko_coins", 0)  # Без множників для користувачів без преміум
+            drops_reward = promo.get("reward_drops", 0)  # Без множників для користувачів без преміум
 
         await conn.execute("""
             UPDATE user_tickets
