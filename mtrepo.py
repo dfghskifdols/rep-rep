@@ -1143,8 +1143,8 @@ async def insert_promo_code(promo_code, max_users, neko_coins, drops, tickets):
     conn = await connect_db()
 
     await conn.execute("""
-        INSERT INTO promo_codes (code, reward_tickets, reward_neko_coins, reward_drops, max_uses)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO promo_codes (code, reward_tickets, reward_neko_coins, reward_drops, max_uses, created_by_bot)
+        VALUES ($1, $2, $3, $4, $5, TRUE)
     """, promo_code, tickets, neko_coins, drops, max_users)
 
     await conn.close()
