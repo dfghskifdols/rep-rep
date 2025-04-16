@@ -729,16 +729,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message.lower().startswith("обмен "):
         parts = message.split()
-        if len(parts) != 2:
-            await update.message.reply_text("❌ Неправильный формат. Напишите, например: обмен к1, обмен б100")
+        if len(parts) != 3 or not parts[2].isdigit():
+            await update.message.reply_text("❌ Неправильный формат. Напишите, например: обмен н 2500, обмен к 1, обмен б 100")
             return
 
-        typ = parts[1][0]
-        try:
-            amount = int(parts[1][1:])
-        except ValueError:
-            await update.message.reply_text("❌ Укажите корректное число.")
-            return
+        typ = parts[1].lower()
+        amount = int(parts[2])
 
         conn = await connect_db()
         user = await conn.fetchrow("SELECT * FROM user_tickets WHERE user_id = $1", user_id)
@@ -749,12 +745,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         if typ == "к":
-            # Обмін капель на Neko коїни
             if user["drops"] < amount:
                 await update.message.reply_text("❌ Недостаточно капель 💧.")
                 await conn.close()
                 return
-            neko_add = amount * 750  # 1 капля = 750 Neko коінів
+            neko_add = amount * 750
             await conn.execute("""
                 UPDATE user_tickets
                 SET drops = drops - $1,
@@ -766,12 +761,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         elif typ == "б":
-            # Обмін квитків на Neko коїни
             if user["tickets"] < amount:
                 await update.message.reply_text("❌ Недостаточно билетов 🎟️.")
                 await conn.close()
                 return
-            neko_add = amount * 100  # 1 квиток = 100 Neko коінів
+            neko_add = amount * 100
             await conn.execute("""
                 UPDATE user_tickets
                 SET tickets = tickets - $1,
@@ -783,12 +777,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         elif typ == "н":
-            # Обмін Neko коїнів на каплі
             if user["neko_coins"] < amount:
                 await update.message.reply_text("❌ Недостаточно Neko коинов 🍥.")
                 await conn.close()
                 return
-            drops_add = amount // 2500  # 2500 Neko коінів = 1 капля
+            drops_add = amount // 2500
             if drops_add == 0:
                 await update.message.reply_text("❌ Недостаточно Neko коинов для обмена на капли.")
                 await conn.close()
