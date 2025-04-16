@@ -891,30 +891,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
         return
 
-    elif message.lower() == "купить премиум":
+    elif message.lower() == "премиум купить":
         conn = await connect_db()
-        row = await conn.fetchrow("SELECT drops FROM user_tickets WHERE user_id = $1", user_id)
+        row = await conn.fetchrow("SELECT drops, premium_until FROM user_tickets WHERE user_id = $1", user_id)
 
         if not row:
             await update.message.reply_text("ℹ️ Для начала зарегестрируйтесь написав мне в лс /start.")
             await conn.close()
             return
 
-        if row["drops"] < 15:
-            await update.message.reply_text("❌ У вас недостаточно 💧 Капель для покупки премиума (нужно 15).")
+        now = datetime.datetime.utcnow()
+        if row["premium_until"] and row["premium_until"] > now:
+            await update.message.reply_text("⚠️ У вас уже есть активный Премиум.")
             await conn.close()
             return
+
+        if row["drops"] < 15:
+            await update.message.reply_text("❌ У вас недостаточно 💧 Капель для покупки Премиума (нужно 15).")
+            await conn.close()
+            return
+
+        new_until = now + datetime.timedelta(days=60)
 
         await conn.execute("""
             UPDATE user_tickets
             SET drops = drops - 15,
-                premium = TRUE
-            WHERE user_id = $1
-        """, user_id)
+                premium_until = $1
+            WHERE user_id = $2
+        """, new_until, user_id)
 
         await conn.close()
 
-        await update.message.reply_text("✅ Вы успешно приобрели Премиум за 15 💧 Капель!")
+        await update.message.reply_text("✅ Вы успешно приобрели Премиум на 2 месяца за 15 💧 Капель!")
         return
 
 # Функция для отправки сообщений через бота
