@@ -639,7 +639,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Отримуємо топ-10
         top_users = await conn.fetch(""" 
-            SELECT user_id, tickets
+            SELECT user_id, tickets, premium_until
             FROM user_tickets
             ORDER BY tickets DESC
             LIMIT 10
@@ -666,12 +666,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if i < len(top_users):
                 uid = top_users[i]["user_id"]
                 tickets = top_users[i]["tickets"]
+                premium_until = top_users[i]["premium_until"]
+
+                # Додаємо значок 💎 якщо у користувача є преміум
+                premium_icon = "💎" if premium_until and premium_until > datetime.now() else ""
+
                 try:
                     user = await bot.get_chat_member(update.effective_chat.id, uid)
                     name = user.user.full_name
                 except:
                     name = f"Пользователь {uid}"
-                text += f"{i+1} - {name} — {tickets} 🎟\n"
+                text += f"{i+1} - {premium_icon}{name} — {tickets} 🎟\n"
             else:
                 text += f"{i+1} -\n"
 
