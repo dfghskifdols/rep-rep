@@ -673,14 +673,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if len(parts) != 2:
             conn = await connect_db()
             rows = await conn.fetch("""
-                SELECT code, max_uses, array_length(used_by, 1) AS used
+                SELECT code, max_uses, array_length(used_by, 1) AS used, created_by_bot
                 FROM promo_codes
                 WHERE (array_length(used_by, 1) IS NULL OR array_length(used_by, 1) < max_uses)
             """)
             await conn.close()
 
             if rows:
-                active_promos = "\n".join([f"🔅{row['code']}" for row in rows])
+                active_promos = "\n".join([
+                    f"{'🔅' if row['created_by_bot'] else '🔆'}{row['code']}" for row in rows
+                ])
             else:
                 active_promos = "🔸Нет активных промокодов."
 
