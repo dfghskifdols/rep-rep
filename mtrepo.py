@@ -933,6 +933,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ Вы успешно приобрели Премиум на 2 месяца за 15 💧 Капель!")
         return
 
+    elif message.lower() == "мой премиум":
+        conn = await connect_db()
+        user = await conn.fetchrow("SELECT premium_until FROM user_tickets WHERE user_id = $1", user_id)
+        await conn.close()
+
+        if not user or not user["premium_until"]:
+            await update.message.reply_text("❌ У вас нет активного премиума.")
+            return
+
+        now = datetime.utcnow()
+        premium_until = user["premium_until"]
+
+        if premium_until < now:
+            await update.message.reply_text("❌ Ваш премиум истёк.")
+            return
+
+        formatted_date = premium_until.strftime("%d.%m.%Y %H:%M")
+        await update.message.reply_text(f"💎 Премиум: активен\n📅 До: {formatted_date}")
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
