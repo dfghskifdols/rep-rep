@@ -758,12 +758,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
+        # Перевірка на преміум
+        is_premium = user.get("premium_until") and user["premium_until"] > datetime.datetime.utcnow()
+
+        # Курси
+        ticket_to_coin = 200 if is_premium else 100
+        drop_to_coin = 1000 if is_premium else 750
+        coin_to_drop_cost = 2000 if is_premium else 2500
+
         if typ == "к":
             if user["drops"] < amount:
                 await update.message.reply_text("❌ Недостаточно капель 💧.")
                 await conn.close()
                 return
-            neko_add = amount * 750
+            neko_add = amount * drop_to_coin
             await conn.execute("""
                 UPDATE user_tickets
                 SET drops = drops - $1,
@@ -779,7 +787,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("❌ Недостаточно билетов 🎟️.")
                 await conn.close()
                 return
-            neko_add = amount * 100
+            neko_add = amount * ticket_to_coin
             await conn.execute("""
                 UPDATE user_tickets
                 SET tickets = tickets - $1,
@@ -795,7 +803,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("❌ Недостаточно Neko коинов 🍥.")
                 await conn.close()
                 return
-            drops_add = amount // 2500
+            drops_add = amount // coin_to_drop_cost
             if drops_add == 0:
                 await update.message.reply_text("❌ Недостаточно Neko коинов для обмена на капли.")
                 await conn.close()
