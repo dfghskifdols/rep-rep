@@ -759,7 +759,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Перевірка на преміум
-        is_premium = user.get("premium_until") and user["premium_until"] > datetime.datetime.utcnow()
+        is_premium = user.get("premium_until") and user["premium_until"] > datetime.utcnow()
 
         # Курси
         ticket_to_coin = 200 if is_premium else 100
