@@ -634,7 +634,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         return
 
-    elif message == "топ бил":
+    elif message == "топ билеты":
         conn = await connect_db()
 
         # Отримуємо топ-10
