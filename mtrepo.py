@@ -442,17 +442,23 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             disable_web_page_preview=True
         )
 
-          # Додаємо квиток користувачу в БД
+        # Додаємо квиток користувачу в БД з урахуванням преміуму
         conn = await connect_db()
         is_banned = await conn.fetchval("SELECT banned FROM banned_users WHERE user_id = $1", reported_user.id)
 
         if is_banned is None or not is_banned:
+            user = await conn.fetchrow("SELECT premium_until FROM user_tickets WHERE user_id = $1", reported_user.id)
+            now = datetime.utcnow()
+            is_premium = user and user["premium_until"] and user["premium_until"] > now
+            multiplier = 2 if is_premium else 1
+
             await conn.execute("""
                 INSERT INTO user_tickets (user_id, tickets)
-                VALUES ($1, 1)
+                VALUES ($1, $2)
                 ON CONFLICT (user_id)
-                DO UPDATE SET tickets = user_tickets.tickets + 1
-            """, reported_user.id)
+                DO UPDATE SET tickets = user_tickets.tickets + $2
+            """, reported_user.id, multiplier)
+
         await conn.close()
 
     if admin_mentions:
