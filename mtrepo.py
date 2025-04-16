@@ -600,7 +600,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message == "рбаланс":
         conn = await connect_db()
-        row = await conn.fetchrow("SELECT tickets, neko_coins FROM user_tickets WHERE user_id = $1", user_id)
+        row = await conn.fetchrow("SELECT tickets, neko_coins, drops FROM user_tickets WHERE user_id = $1", user_id)
         await conn.close()
 
         if not row:
