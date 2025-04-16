@@ -695,15 +695,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         # Додаємо нагороди
-        tickets_reward = promo["reward_tickets"]
-        neko_reward = promo["reward_neko_coins"]
+        tickets_reward = promo.get("reward_tickets", 0)
+        neko_reward = promo.get("reward_neko_coins", 0)
+        drops_reward = promo.get("reward_drops", 0)
 
         await conn.execute("""
             UPDATE user_tickets
             SET tickets = tickets + $1,
-                neko_coins = neko_coins + $2
-            WHERE user_id = $3
-        """, tickets_reward, neko_reward, user_id)
+                neko_coins = neko_coins + $2,
+                drops = drops + $3
+            WHERE user_id = $4
+        """, tickets_reward, neko_reward, drops_reward, user_id)
 
         await conn.execute("""
             UPDATE promo_codes
@@ -718,6 +720,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             rewards.append(f"{tickets_reward} 🎟️")
         if neko_reward:
             rewards.append(f"{neko_reward} 🍥")
+        if drops_reward:
+            rewards.append(f"{drops_reward} 💧")
 
         reward_msg = " и ".join(rewards)
         await update.message.reply_text(f"✅ Промокод активирован! Вы получили {reward_msg}")
