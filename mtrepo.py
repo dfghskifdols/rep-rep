@@ -1007,7 +1007,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """, user.id, user.username)
     await conn.close()
 
-    await update.message.reply_text("Привет! Напишите /report в ответ на сообщение, чтобы отправить репорт.")
+    await update.message.reply_text("Привет! Я Неко бот! Бот для репортов(наверное).")
 
 def escape_markdown(text):
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
@@ -1144,7 +1144,7 @@ async def create_promo_code():
 
     chat_id = -1002268486160  # Потрібно вказати chat_id
 
-    message = f"😝Новый промо!\n🎁рпромо <code>{promo_code}</code>\n😮кол-во активаций: {max_users}"
+    message = f"😝Новый промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
     await bot.send_message(chat_id, message, parse_mode='HTML')
 
 # Функція для запуску задачі кожного дня
