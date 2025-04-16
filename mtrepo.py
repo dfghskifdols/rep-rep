@@ -891,7 +891,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
         return
 
-    elif message.lower() == "обмен премиум":
+    elif message.lower() == "купить премиум":
         conn = await connect_db()
         row = await conn.fetchrow("SELECT drops FROM user_tickets WHERE user_id = $1", user_id)
 
