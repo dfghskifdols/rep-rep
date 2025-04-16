@@ -1023,7 +1023,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Создание клана
-    elif message == "создать клан":
+    elif message.startswith("создать клан "):
+        clan_name = message[14:].strip()  # Получаем название клана
+
+        if not clan_name:
+            await update.message.reply_text("Пожалуйста, введите название клана.")
+            return
+
         conn = await connect_db()
 
         # Получаем информацию о пользователе
@@ -1047,11 +1053,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if premium_until and premium_until > current_time and tickets >= 100 and drops >= 75 and neko_coins >= 100000:
                 # Если все в порядке, предлагаем подтверждение для создания клана
                 text = (
-                    "Вы уверены, что хотите создать клан? Для этого будут списаны:\n"
+                    f"Вы уверены, что хотите создать клан с названием '{clan_name}'? Для этого будут списаны:\n"
                     "100 квитков, 75 капель, 100000 неко коинов.\n\n"
                     "Введите 'да' чтобы подтвердить или 'нет' чтобы отменить."
                 )
 
+                # Сохраняем название клана в объекте context, чтобы потом использовать его при подтверждении
+                context.user_data['clan_name'] = clan_name
                 await update.message.reply_text(text)
                 return
 
@@ -1064,6 +1072,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Обработка подтверждения создания клана
     elif message == "да":
+        # Проверяем, что название клана сохранено в context
+        clan_name = context.user_data.get('clan_name')
+
+        if not clan_name:
+            await update.message.reply_text("Ошибка! Название клана не найдено.")
+            return
+
         conn = await connect_db()
 
         # Получаем информацию о пользователе
@@ -1085,8 +1100,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Создаем клан для пользователя
                 conn = await connect_db()
                 await conn.execute("""
-                    UPDATE user_tickets SET clans = 'My Clan' WHERE user_id = $1
-                """, user_id)
+                    UPDATE user_tickets SET clans = $1 WHERE user_id = $2
+                """, clan_name, user_id)
                 await conn.close()
 
                 # Уменьшаем ресурсы пользователя
@@ -1096,7 +1111,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 """, user_id)
                 await conn.close()
 
-                await update.message.reply_text("Клан успешно создан!")
+                # Очищаем сохранённое название клана
+                del context.user_data['clan_name']
+
+                await update.message.reply_text(f"Клан '{clan_name}' успешно создан!")
             else:
                 await update.message.reply_text("У вас недостаточно ресурсов или нет премиума для создания клана.")
         else:
