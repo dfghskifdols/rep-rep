@@ -681,7 +681,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if rows:
                 active_promos = "\n".join([
-                    f"{'🔅' if row['created_by_bot'] else '🔆'}{row['code']}" for row in rows
+                    f"{'🔅' if row['created_by_bot'] else '🔆'}<code>{row['code']}</code>" for row in rows
                 ])
             else:
                 active_promos = "🔸Нет активных промокодов."
@@ -689,6 +689,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(
                 f"🤪 Использование: рпромо <промокод>\n"
                 f"🥠список действующие промокоды:\n{active_promos}"
+                parse_mode="HTML"
             )
             return
 
