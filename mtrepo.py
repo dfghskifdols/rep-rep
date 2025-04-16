@@ -580,7 +580,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 # Перевірка, чи має користувач преміум статус
                 premium_until_row = await conn.fetchrow("""
-                    SELECT premium_until FROM users WHERE user_id = $1
+                    SELECT premium_until FROM user_tickets WHERE user_id = $1
                 """, user_id)
 
                 # Якщо поле premium_until є і дата більше поточної
