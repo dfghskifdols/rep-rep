@@ -767,6 +767,96 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    elif message == "топ капли":
+        conn = await connect_db()
+
+        top_users = await conn.fetch(""" 
+            SELECT user_id, drops
+            FROM user_tickets
+            ORDER BY drops DESC
+            LIMIT 10
+        """)
+
+        user_rank_row = await conn.fetchrow(""" 
+            SELECT row_number FROM (
+                SELECT user_id, drops, ROW_NUMBER() OVER (ORDER BY drops DESC) AS row_number
+                FROM user_tickets
+            ) sub
+            WHERE user_id = $1
+        """, user_id)
+
+        user_row = await conn.fetchrow(""" 
+            SELECT drops FROM user_tickets WHERE user_id = $1
+        """, user_id)
+
+        await conn.close()
+
+        text = "💧 Топ 10 пользователей по каплям:\n"
+
+        for i in range(10):
+            if i < len(top_users):
+                uid = top_users[i]["user_id"]
+                drops = top_users[i]["drops"]
+                try:
+                    user = await bot.get_chat_member(update.effective_chat.id, uid)
+                    name = user.user.full_name
+                except:
+                    name = f"Пользователь {uid}"
+                text += f"{i+1} - {name} — {drops} 💧\n"
+            else:
+                text += f"{i+1} -\n"
+
+        if user_rank_row and user_row:
+            text += f"\nТвое место: {user_rank_row['row_number']} - {user_row['drops']} 💧"
+
+        await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+        return
+
+    elif message == "топ неко":
+        conn = await connect_db()
+
+        top_users = await conn.fetch(""" 
+            SELECT user_id, neko_coins
+            FROM user_tickets
+            ORDER BY neko_coins DESC
+            LIMIT 10
+        """)
+
+        user_rank_row = await conn.fetchrow(""" 
+            SELECT row_number FROM (
+                SELECT user_id, neko_coins, ROW_NUMBER() OVER (ORDER BY neko_coins DESC) AS row_number
+                FROM user_tickets
+            ) sub
+            WHERE user_id = $1
+        """, user_id)
+
+        user_row = await conn.fetchrow(""" 
+            SELECT neko_coins FROM user_tickets WHERE user_id = $1
+        """, user_id)
+
+        await conn.close()
+
+        text = "🍥 Топ 10 пользователей по Neko коинам:\n"
+
+        for i in range(10):
+            if i < len(top_users):
+                uid = top_users[i]["user_id"]
+                neko = top_users[i]["neko_coins"]
+                try:
+                    user = await bot.get_chat_member(update.effective_chat.id, uid)
+                    name = user.user.full_name
+                except:
+                    name = f"Пользователь {uid}"
+                text += f"{i+1} - {name} — {neko} 🍥\n"
+            else:
+                text += f"{i+1} -\n"
+
+        if user_rank_row and user_row:
+            text += f"\nТвое место: {user_rank_row['row_number']} - {user_row['neko_coins']} 🍥"
+
+        await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
