@@ -551,7 +551,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
 
     elif message.lower() == "топ прп":
-        conn = await connect_db()
+        conn = await connect_db()  # Підключення до БД
+
         rows = await conn.fetch(""" 
             SELECT accepted_by, COUNT(*) AS count
             FROM user_reports
@@ -568,7 +569,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             GROUP BY accepted_by
             ORDER BY count DESC
         """)
-        await conn.close()
 
         current_user_id = update.message.from_user.id
         leaderboard = "<b>🏆 Топ 10 админов по кол-ву принятых репортов:</b>\n"
@@ -613,6 +613,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 leaderboard += f"\n<b>Твое место: {position} - {count}📍</b>"
             else:
                 leaderboard += f"\n<b>Твое место: {len(all_rows) + 1} - 0📍</b>"
+
+        await conn.close()  # Закриваємо з'єднання з базою після всіх операцій
 
         await update.message.reply_text(leaderboard, parse_mode=ParseMode.HTML)
         return
