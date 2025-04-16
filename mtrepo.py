@@ -1170,7 +1170,12 @@ async def create_promo_code():
     chat_id = -1002268486160  # Потрібно вказати chat_id
 
     message = f"😝Новый промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
-    await bot.send_message(chat_id, message, parse_mode='HTML')
+
+    # Надсилаємо повідомлення
+    sent_message = await bot.send_message(chat_id, message, parse_mode='HTML')
+
+    # Прикріплюємо відправлене повідомлення
+    await sent_message.pin()
 
 # Функція для запуску задачі кожного дня
 def start_daily_promo_code_task():
