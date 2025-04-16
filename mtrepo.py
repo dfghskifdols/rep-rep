@@ -688,7 +688,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await update.message.reply_text(
                 f"🤪 Использование: рпромо <промокод>\n"
-                f"🥠список действующие промокоды:\n{active_promos}"
+                f"🥠список действующие промокоды:\n{active_promos}",
                 parse_mode="HTML"
             )
             return
