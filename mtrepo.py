@@ -1027,7 +1027,7 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await conn.close()
 
     # Повідомлення користувачу
-    await update.message.reply_text("Выдаю!")
+    await update.message.reply_text("Ваш запрос на получение награды отправлен!")
 
     # Посилання на повідомлення
     chat_id = update.message.chat.id
