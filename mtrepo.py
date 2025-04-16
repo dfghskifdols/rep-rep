@@ -696,6 +696,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.message.from_user.id
 
         conn = await connect_db()
+
+        # Перевірка на бан
+        banned = await conn.fetchval("SELECT banned FROM banned_users WHERE user_id = $1", user_id)
+        if banned:
+            await update.message.reply_text("🚫 Вы забанены!")
+            await conn.close()
+            return
+
         user = await conn.fetchrow("SELECT * FROM user_tickets WHERE user_id = $1", user_id)
 
         if not user:
@@ -720,18 +728,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        # Перевіряємо, чи є у користувача преміум
         is_premium = user.get("premium", False)
 
-        # Додаємо нагороди з множниками, якщо є преміум
         if is_premium:
-            tickets_reward = promo.get("reward_tickets", 0) * 2  # Множимо на 2 для квитків
-            neko_reward = promo.get("reward_neko_coins", 0) * 1.5  # Множимо на 1.5 для неко коінів
-            drops_reward = promo.get("reward_drops", 0) * 2  # Множимо на 2 для капель
+            tickets_reward = promo.get("reward_tickets", 0) * 2
+            neko_reward = promo.get("reward_neko_coins", 0) * 1.5
+            drops_reward = promo.get("reward_drops", 0) * 2
         else:
-            tickets_reward = promo.get("reward_tickets", 0)  # Без множників для користувачів без преміум
-            neko_reward = promo.get("reward_neko_coins", 0)  # Без множників для користувачів без преміум
-            drops_reward = promo.get("reward_drops", 0)  # Без множників для користувачів без преміум
+            tickets_reward = promo.get("reward_tickets", 0)
+            neko_reward = promo.get("reward_neko_coins", 0)
+            drops_reward = promo.get("reward_drops", 0)
 
         await conn.execute("""
             UPDATE user_tickets
