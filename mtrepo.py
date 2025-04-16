@@ -1107,7 +1107,7 @@ async def runban_user(update: Update, context: CallbackContext):
 
 # Функція для генерування випадкового промокоду
 def generate_promo_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    return ''.join(random.choices(string.ascii_lowercase, k=8))
 
 # Функція для визначення капель (тільки по неділях)
 def get_drops():
@@ -1144,14 +1144,14 @@ async def create_promo_code():
 
     chat_id = -1002268486160  # Потрібно вказати chat_id
 
-    message = f"Новый промо!\nрпромо {promo_code}\nкол-во активаций: {max_users}"
-    await bot.send_message(chat_id, message)  # Відправка повідомлення
+    message = f"😝Новый промо!\n🎁рпромо <code>{promo_code}</code>\n😮кол-во активаций: {max_users}"
+    await bot.send_message(chat_id, message, parse_mode='HTML')
 
 # Функція для запуску задачі кожного дня
 def start_daily_promo_code_task():
     scheduler = AsyncIOScheduler()
     # Запускаємо задачу о 9:00 по МСК кожного дня
-    scheduler.add_job(create_promo_code, 'cron', hour=18, minute=10, timezone='Europe/Moscow')
+    scheduler.add_job(create_promo_code, 'cron', hour=18, minute=25, timezone='Europe/Moscow')
     scheduler.start()
 
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
