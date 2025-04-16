@@ -578,10 +578,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 user_id = int(rows[idx]["accepted_by"])
                 count = rows[idx]["count"]
 
+                # Перевірка, чи має користувач преміум статус
+                premium_until_row = await conn.fetchrow("""
+                    SELECT premium_until FROM users WHERE user_id = $1
+                """, user_id)
+
+                # Якщо поле premium_until є і дата більше поточної
+                if premium_until_row and premium_until_row["premium_until"] > datetime.now():
+                    premium_icon = "💎"  # Додаємо значок для користувачів з преміум
+                else:
+                    premium_icon = ""  # Якщо преміум не активний
+
                 try:
                     user = await bot.get_chat(user_id)
                     name = user.full_name
-                    link = f"<a href='tg://user?id={user_id}'>{name}</a>"
+                    link = f"<a href='tg://user?id={user_id}'>{premium_icon} {name}</a>"
                 except:
                     link = f"<code>{user_id}</code>"
 
