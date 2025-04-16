@@ -3,6 +3,7 @@ import asyncio
 import logging
 import random
 import re
+import string
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.constants import ParseMode
@@ -16,6 +17,7 @@ import aiopg
 import asyncpg
 import math
 from pytz import timezone
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
@@ -1103,6 +1105,55 @@ async def runban_user(update: Update, context: CallbackContext):
 
     await update.message.reply_text(f"✳️ Пользователь {unbanned_user_id} разбанен.")
 
+# Функція для генерування випадкового промокоду
+def generate_promo_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+# Функція для визначення капель (тільки по неділях)
+def get_drops():
+    if datetime.now().weekday() == 6:  # Якщо сьогодні неділя
+        return random.randint(1, 2)
+    return 0
+
+# Функція для генерації нагород
+def generate_rewards():
+    neko_coins = random.randint(10, 150)  # Випадкова кількість Neko коїнів
+    drops = get_drops()  # Отримуємо каплі, якщо сьогодні неділя
+    tickets = 0  # Квитки завжди 0
+    return neko_coins, drops, tickets
+
+# Функція для збереження промокоду в базі даних
+async def insert_promo_code(promo_code, max_users, neko_coins, drops, tickets):
+    conn = await connect_db()
+
+    await conn.execute("""
+        INSERT INTO promo_codes (code, reward_tickets, reward_neko_coins, reward_drops, max_uses)
+        VALUES ($1, $2, $3, $4, $5)
+    """, promo_code, tickets, neko_coins, drops, max_users)
+
+    await conn.close()
+
+# Основна функція для створення промокоду
+async def create_promo_code():
+    promo_code = generate_promo_code()  # Генерація промокоду
+    neko_coins, drops, tickets = generate_rewards()  # Генерація нагород
+
+    max_users = random.choice([30, 40, 50])  # Випадковий вибір з 30, 40 або 50
+
+    await insert_promo_code(promo_code, max_users, neko_coins, drops, tickets)
+
+    chat_id = -1002268486160  # Потрібно вказати chat_id
+
+    message = f"Новый промо!\nрпромо {promo_code}\nкол-во активаций: {max_users}"
+    await bot.send_message(chat_id, message)  # Відправка повідомлення
+
+# Функція для запуску задачі кожного дня
+def start_daily_promo_code_task():
+    scheduler = AsyncIOScheduler()
+    # Запускаємо задачу о 9:00 по МСК кожного дня
+    scheduler.add_job(create_promo_code, 'cron', hour=17, minute=55, timezone='Europe/Moscow')
+    scheduler.start()
+
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
 app.add_handler(CommandHandler("rban", rban_user))
 app.add_handler(CommandHandler("runban", runban_user))
@@ -1131,11 +1182,15 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\
 app.add_handler(MessageHandler(filters.Chat(GROUP_ID) & filters.TEXT, handle_message))
 app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
+# Основна функція для запуску бота
 async def main():
     print("🚀 Бот запущений!")
 
+    # Запускаємо планувальник для генерації промокодів
+    start_daily_promo_code_task()
+
     # Запуск polling і фонової перевірки одночасно
-    await asyncio.gather(app.run_polling())
+    await asyncio.gather(app.run_polling())  # Це має бути твій Telegram бот
 
 if __name__ == "__main__":
     asyncio.run(main())
