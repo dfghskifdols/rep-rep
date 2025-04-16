@@ -900,7 +900,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         if row["premium_until"] and row["premium_until"] > now:
             await update.message.reply_text("⚠️ У вас уже есть активный Премиум.")
             await conn.close()
