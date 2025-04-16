@@ -911,7 +911,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        new_until = now + datetime.timedelta(days=60)
+        new_until = now + timedelta(days=60)
 
         await conn.execute("""
             UPDATE user_tickets
