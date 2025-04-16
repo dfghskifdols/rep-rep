@@ -671,7 +671,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message.lower().startswith("рпромо"):
         parts = message.split()
         if len(parts) != 2:
-            await update.message.reply_text("❌ Использование: рпромо <промокод>")
+            conn = await connect_db()
+            rows = await conn.fetch("""
+                SELECT code, max_uses, array_length(used_by, 1) AS used
+                FROM promo_codes
+                WHERE (array_length(used_by, 1) IS NULL OR array_length(used_by, 1) < max_uses)
+            """)
+            await conn.close()
+
+            if rows:
+                active_promos = "\n".join([f"🔅{row['code']}" for row in rows])
+            else:
+                active_promos = "🔸Нет активных промокодов."
+
+            await update.message.reply_text(
+                f"🤪 Использование: рпромо <промокод>\n"
+                f"🥠список действующие промокоды:\n{active_promos}"
+            )
             return
 
         promo_code = parts[1].lower()
