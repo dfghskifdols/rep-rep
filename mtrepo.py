@@ -729,43 +729,84 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message.lower().startswith("обмен "):
         parts = message.split()
-        if len(parts) != 2 or not parts[1].isdigit():
-            await update.message.reply_text("❌ Неправильный формат. Напишите, например: обмен 2")
+        if len(parts) != 2:
+            await update.message.reply_text("❌ Неправильный формат. Напишите, например: обмен к1, обмен б100")
             return
 
-        ticket_count = int(parts[1])
-        if ticket_count <= 0:
-            await update.message.reply_text("❌ Количество билетов должно быть больше нуля.")
+        typ = parts[1][0]
+        try:
+            amount = int(parts[1][1:])
+        except ValueError:
+            await update.message.reply_text("❌ Укажите корректное число.")
             return
 
         conn = await connect_db()
-        row = await conn.fetchrow("SELECT tickets, neko_coins FROM user_tickets WHERE user_id = $1", user_id)
+        user = await conn.fetchrow("SELECT * FROM user_tickets WHERE user_id = $1", user_id)
 
-        if not row:
-            await update.message.reply_text("ℹ️ Для начала зарегестрируйтесь написав мне в лс /start.")
+        if not user:
+            await update.message.reply_text("❌ Вы не зарегистрированы! Пожалуйста, используйте команду /start.")
             await conn.close()
             return
 
-        if row["tickets"] < ticket_count:
-            await update.message.reply_text("❌ У вас недостаточно билетов для обмена.")
+        if typ == "к":
+            # Обмін капель на Neko коїни
+            if user["drops"] < amount:
+                await update.message.reply_text("❌ Недостаточно капель 💧.")
+                await conn.close()
+                return
+            neko_add = amount * 750  # 1 капля = 750 Neko коінів
+            await conn.execute("""
+                UPDATE user_tickets
+                SET drops = drops - $1,
+                    neko_coins = neko_coins + $2
+                WHERE user_id = $3
+            """, amount, neko_add, user_id)
             await conn.close()
+            await update.message.reply_text(f"✅ Обмен успешно! Вы обменяли {amount} 💧 на {neko_add} 🍥")
             return
 
-        new_ticket_count = row["tickets"] - ticket_count
-        new_neko_coins = row["neko_coins"] + (ticket_count * 100)
+        elif typ == "б":
+            # Обмін квитків на Neko коїни
+            if user["tickets"] < amount:
+                await update.message.reply_text("❌ Недостаточно билетов 🎟️.")
+                await conn.close()
+                return
+            neko_add = amount * 100  # 1 квиток = 100 Neko коінів
+            await conn.execute("""
+                UPDATE user_tickets
+                SET tickets = tickets - $1,
+                    neko_coins = neko_coins + $2
+                WHERE user_id = $3
+            """, amount, neko_add, user_id)
+            await conn.close()
+            await update.message.reply_text(f"✅ Обмен успешно! Вы обменяли {amount} 🎟️ на {neko_add} 🍥")
+            return
 
-        await conn.execute("""
-            UPDATE user_tickets
-            SET tickets = $1, neko_coins = $2
-            WHERE user_id = $3
-        """, new_ticket_count, new_neko_coins, user_id)
+        elif typ == "н":
+            # Обмін Neko коїнів на каплі
+            if user["neko_coins"] < amount:
+                await update.message.reply_text("❌ Недостаточно Neko коинов 🍥.")
+                await conn.close()
+                return
+            drops_add = amount // 2500  # 2500 Neko коінів = 1 капля
+            if drops_add == 0:
+                await update.message.reply_text("❌ Недостаточно Neko коинов для обмена на капли.")
+                await conn.close()
+                return
+            await conn.execute("""
+                UPDATE user_tickets
+                SET neko_coins = neko_coins - $1,
+                    drops = drops + $2
+                WHERE user_id = $3
+            """, amount, drops_add, user_id)
+            await conn.close()
+            await update.message.reply_text(f"✅ Обмен успешно! Вы обменяли {amount} 🍥 на {drops_add} 💧")
+            return
 
-        await conn.close()
-
-        await update.message.reply_text(
-            f"✅ Вы обменяли {ticket_count} билет(ов) на {ticket_count * 100} Neko коинов."
-        )
-        return
+        else:
+            await update.message.reply_text("❌ Неизвестный тип обмена. Используйте к (капли), б (билеты) или н (неко коины).")
+            await conn.close()
+            return
 
     elif message == "топ капли":
         conn = await connect_db()
