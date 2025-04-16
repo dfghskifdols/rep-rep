@@ -1181,7 +1181,7 @@ async def create_promo_code():
 def start_daily_promo_code_task():
     scheduler = AsyncIOScheduler()
     # Запускаємо задачу о 9:00 по МСК кожного дня
-    scheduler.add_job(create_promo_code, 'cron', hour=20, minute=00, timezone='Europe/Moscow')
+    scheduler.add_job(create_promo_code, 'cron', hour=9, minute=30, timezone='Europe/Moscow')
     scheduler.start()
 
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
