@@ -18,6 +18,7 @@ import asyncpg
 import math
 from pytz import timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import json
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
@@ -1446,7 +1447,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message == "клан хранилище":
         conn = await connect_db()
 
-        # Получаем информацию о пользователе
         user_data = await conn.fetchrow("SELECT clans FROM user_tickets WHERE user_id = $1", user_id)
         if not user_data or not user_data["clans"]:
             await conn.close()
@@ -1455,7 +1455,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         clan_name = user_data["clans"]
 
-        # Получаем хранилище клана
         clan_data = await conn.fetchrow("SELECT storage FROM clans WHERE name = $1", clan_name)
         await conn.close()
 
@@ -1463,7 +1462,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❗ Клан не найден.")
             return
 
-        storage = clan_data["storage"] or {"tickets": 0, "neko": 0, "drops": 0}
+        # Преобразуем JSON-строку в словарь
+        try:
+            storage = json.loads(clan_data["storage"])
+        except Exception:
+            storage = {"tickets": 0, "neko": 0, "drops": 0}
 
         tickets = storage.get("tickets", 0)
         neko = storage.get("neko", 0)
@@ -1472,7 +1475,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             f"📦 Хранилище клана <b>{clan_name}</b>:\n\n"
             f"🎫 Билеты: <b>{tickets}</b>\n"
-            f"🍥 Неко коины: <b>{neko}</b>\n"
+            f"🐾 Неко коины: <b>{neko}</b>\n"
             f"💧 Капли: <b>{drops}</b>"
         )
 
