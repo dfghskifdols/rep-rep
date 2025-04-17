@@ -1124,6 +1124,106 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Создание клана отменено.")
         return
 
+    # Обработка команды "мой клан"
+    elif message == "мой клан":
+        conn = await connect_db()
+
+        # Получаем информацию о пользователе
+        user_row = await conn.fetchrow(""" 
+            SELECT clans, rank FROM user_tickets WHERE user_id = $1
+        """, user_id)
+
+        await conn.close()
+
+        if user_row:
+            clan_name = user_row["clans"]
+            user_rank = user_row["rank"]
+
+            if clan_name and clan_name != "NULL":
+                # Если пользователь состоит в клане
+                conn = await connect_db()
+
+                # Получаем список всех участников клана
+                clan_members = await conn.fetch(""" 
+                    SELECT user_id, rank FROM user_tickets WHERE clans = $1
+                """, clan_name)
+
+                await conn.close()
+
+                if clan_members:
+                    text = f"Ваш клан: {clan_name}\n\n"
+
+                    # Выводим участников клана с их рангами
+                    for member in clan_members:
+                        member_user_id = member["user_id"]
+                        rank = member["rank"]
+                        try:
+                            user = await bot.get_chat_member(update.effective_chat.id, member_user_id)
+                            name = user.user.full_name
+                        except:
+                            name = f"Пользователь {member_user_id}"
+
+                        if rank == "creator":
+                            text += f"{name} - создатель\n"
+                        else:
+                            text += f"{name} - участник\n"
+
+                    await update.message.reply_text(text)
+                else:
+                    await update.message.reply_text(f"В вашем клане нет участников кроме вас.")
+            else:
+                await update.message.reply_text("Вы не состоите в клане.")
+        else:
+            await update.message.reply_text("Информация о вашем аккаунте не найдена.")
+        return
+
+    # Обработка команды "клан вступить {название клана}"
+    elif message.startswith("клан вступить "):
+        clan_name = message[14:].strip()  # Получаем название клана
+
+        if not clan_name:
+            await update.message.reply_text("Пожалуйста, введите название клана.")
+            return
+
+        conn = await connect_db()
+
+        # Получаем информацию о пользователе
+        user_row = await conn.fetchrow(""" 
+            SELECT clans, rank FROM user_tickets WHERE user_id = $1
+        """, user_id)
+
+        await conn.close()
+
+        if user_row:
+            user_clan = user_row["clans"]
+
+            if user_clan and user_clan != "NULL":
+                # Если пользователь уже в клане
+                await update.message.reply_text("Вы уже состоите в другом клане.")
+                return
+
+            # Проверяем, существует ли клан с таким названием
+            conn = await connect_db()
+            clan_row = await conn.fetchrow(""" 
+                SELECT COUNT(*) FROM user_tickets WHERE clans = $1
+            """, clan_name)
+            await conn.close()
+
+            if clan_row["count"] > 0:
+                # Если клан существует, присоединяем пользователя
+                conn = await connect_db()
+                await conn.execute(""" 
+                    UPDATE user_tickets SET clans = $1, rank = 'member' WHERE user_id = $2
+                """, clan_name, user_id)
+                await conn.close()
+
+                await update.message.reply_text(f"Вы успешно вступили в клан '{clan_name}'!")
+            else:
+                await update.message.reply_text(f"Клан с названием '{clan_name}' не существует.")
+        else:
+            await update.message.reply_text("Информация о вашем аккаунте не найдена.")
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
