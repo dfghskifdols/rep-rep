@@ -1229,13 +1229,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Проверяем, существует ли клан с таким названием
             conn = await connect_db()
             clan_row = await conn.fetchrow("""
-                SELECT COUNT(*) FROM user_tickets WHERE clans = $1
+                SELECT COUNT(*), members FROM clans WHERE name = $1
             """, clan_name)
             await conn.close()
 
             if clan_row["count"] > 0:
                 # Если клан существует, присоединяем пользователя
                 conn = await connect_db()
+                # Добавляем пользователя в список участников клана
+                await conn.execute("""
+                    UPDATE clans SET members = array_append(members, $1) WHERE name = $2
+                """, user_id, clan_name)
+
+                # Обновляем данные пользователя в таблице user_tickets
                 await conn.execute("""
                     UPDATE user_tickets SET clans = $1, rank = 'member' WHERE user_id = $2
                 """, clan_name, user_id)
