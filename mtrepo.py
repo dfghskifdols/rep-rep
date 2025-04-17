@@ -1521,10 +1521,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             storage = json.loads(clan_data["storage"])
         except Exception:
-            storage = {"tickets": 0, "neko": 0, "drops": 0}
+            storage = {"tickets": 0, "neko_coins": 0, "drops": 0}
 
         tickets = storage.get("tickets", 0)
-        neko = storage.get("neko", 0)
+        neko_coins = storage.get("neko_coins", 0)
         drops = storage.get("drops", 0)
 
         text = (
