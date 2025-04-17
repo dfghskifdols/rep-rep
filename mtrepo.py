@@ -1472,7 +1472,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Логируем выдачу
             await conn.execute("""
-                INSERT INTO clan_take_log (user_id, clan, resource, amount, timestamp)
+                INSERT INTO clan_take_log (user_id, clan, resource, amount, date)
                 VALUES ($1, $2, $3, $4, NOW())
             """, user_id, clan_name, resource, quantity)
 
