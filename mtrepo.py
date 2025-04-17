@@ -1202,7 +1202,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
         return
 
-    # Обработка команды "клан вступить {название клана}"
     elif message.startswith("клан вступить "):
         clan_name = message[14:].strip()  # Получаем название клана
 
@@ -1213,7 +1212,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn = await connect_db()
 
         # Получаем информацию о пользователе
-        user_row = await conn.fetchrow(""" 
+        user_row = await conn.fetchrow("""
             SELECT clans, rank FROM user_tickets WHERE user_id = $1
         """, user_id)
 
@@ -1229,7 +1228,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Проверяем, существует ли клан с таким названием
             conn = await connect_db()
-            clan_row = await conn.fetchrow(""" 
+            clan_row = await conn.fetchrow("""
                 SELECT COUNT(*) FROM user_tickets WHERE clans = $1
             """, clan_name)
             await conn.close()
@@ -1237,7 +1236,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if clan_row["count"] > 0:
                 # Если клан существует, присоединяем пользователя
                 conn = await connect_db()
-                await conn.execute(""" 
+                await conn.execute("""
                     UPDATE user_tickets SET clans = $1, rank = 'member' WHERE user_id = $2
                 """, clan_name, user_id)
                 await conn.close()
