@@ -1530,7 +1530,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = (
             f"📦 Хранилище клана <b>{clan_name}</b>:\n\n"
             f"🎫 Билеты: <b>{tickets}</b>\n"
-            f"🐾 Неко коины: <b>{neko}</b>\n"
+            f"🐾 Неко коины: <b>{neko_coins}</b>\n"
             f"💧 Капли: <b>{drops}</b>"
         )
 
