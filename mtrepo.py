@@ -1104,14 +1104,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if premium_until and premium_until > current_time and tickets >= 100 and drops >= 75 and neko_coins >= 100000:
                 conn = await connect_db()
+                # Обновляем данные о пользователе, добавляем его как создателя клана
                 await conn.execute("""
-                    UPDATE user_tickets SET clans = $1, tickets = tickets - 100, drops = drops - 75, neko_coins = neko_coins - 100000
+                    UPDATE user_tickets SET clans = $1, tickets = tickets - 100, drops = drops - 75, neko_coins = neko_coins - 100000, rank = 'creator'
                     WHERE user_id = $2
                 """, clan_name, user_id)
                 await conn.close()
 
                 del context.user_data['clan_create']
-                await update.message.reply_text(f"Клан '{clan_name}' успешно создан!")
+                await update.message.reply_text(f"Клан '{clan_name}' успешно создан! Вы стали создателем этого клана.")
             else:
                 await update.message.reply_text("У вас недостаточно ресурсов или нет премиума для создания клана.")
         else:
