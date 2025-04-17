@@ -1032,93 +1032,85 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         conn = await connect_db()
 
+        lower_clan_name = clan_name.lower()
+
+        existing_clan = await conn.fetchval("""
+            SELECT COUNT(*) FROM user_tickets WHERE LOWER(clans) = $1
+        """, lower_clan_name)
+
+        if existing_clan and existing_clan > 0:
+            await conn.close()
+            await update.message.reply_text("Клан с таким названием уже существует. Пожалуйста, выберите другое имя.")
+            return
+
         # Получаем информацию о пользователе
         user_row = await conn.fetchrow("""
             SELECT tickets, drops, neko_coins, premium_until, clans
             FROM user_tickets WHERE user_id = $1
         """, user_id)
 
-        # Закрываем соединение с БД
         await conn.close()
 
-        # Проверка на премиум и достаточные ресурсы
         if user_row:
+            if user_row["clans"]:
+                await update.message.reply_text("Вы уже состоите в клане.")
+                return
+
             tickets = user_row["tickets"]
             drops = user_row["drops"]
             neko_coins = user_row["neko_coins"]
             premium_until = user_row["premium_until"]
-            user_clan = user_row["clans"]
             current_time = datetime.now()
 
-            if user_clan:
-                await update.message.reply_text(f"Вы уже состоите в клане: {user_clan}")
-                return
-
-            # Проверка на премиум и ресурсы
             if premium_until and premium_until > current_time and tickets >= 100 and drops >= 75 and neko_coins >= 100000:
-                # Если все в порядке, предлагаем подтверждение для создания клана
                 text = (
                     f"Вы уверены, что хотите создать клан с названием '{clan_name}'? Для этого будут списаны:\n"
                     "100 квитков, 75 капель, 100000 неко коинов.\n\n"
                     "Введите 'да' чтобы подтвердить или 'нет' чтобы отменить."
                 )
-
-                # Сохраняем название клана в объекте context, чтобы потом использовать его при подтверждении
                 context.user_data['clan_create'] = {'name': clan_name}
                 await update.message.reply_text(text)
-                return
-
             else:
-                # Если недостаточно ресурсов или нет премиума
                 await update.message.reply_text("У вас недостаточно ресурсов или нет премиума для создания клана.")
         else:
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
         return
 
     # Обработка подтверждения создания клана
-    elif message == "да" and 'clan_create' in context.user_data:
-        # Проверяем, что название клана сохранено в context
-        clan_name = context.user_data['clan_create']['name']
+    elif message == "да":
+        clan_info = context.user_data.get('clan_create')
+        if not clan_info:
+            return
+
+        clan_name = clan_info['name']
 
         conn = await connect_db()
-
-        # Получаем информацию о пользователе
         user_row = await conn.fetchrow("""
             SELECT tickets, drops, neko_coins, premium_until, clans
             FROM user_tickets WHERE user_id = $1
         """, user_id)
-
         await conn.close()
 
         if user_row:
+            if user_row["clans"]:
+                await update.message.reply_text("Вы уже состоите в клане.")
+                return
+
             tickets = user_row["tickets"]
             drops = user_row["drops"]
             neko_coins = user_row["neko_coins"]
             premium_until = user_row["premium_until"]
-            user_clan = user_row["clans"]
             current_time = datetime.now()
 
-            if user_clan:
-                await update.message.reply_text(f"Вы уже состоите в клане: {user_clan}")
-                del context.user_data['clan_create']
-                return
-
             if premium_until and premium_until > current_time and tickets >= 100 and drops >= 75 and neko_coins >= 100000:
-                # Создаем клан для пользователя и уменьшаем ресурсы
                 conn = await connect_db()
                 await conn.execute("""
-                    UPDATE user_tickets 
-                    SET clans = $1, 
-                        tickets = tickets - 100, 
-                        drops = drops - 75, 
-                        neko_coins = neko_coins - 100000 
+                    UPDATE user_tickets SET clans = $1, tickets = tickets - 100, drops = drops - 75, neko_coins = neko_coins - 100000
                     WHERE user_id = $2
                 """, clan_name, user_id)
                 await conn.close()
 
-                # Очищаем сохранённое название клана
                 del context.user_data['clan_create']
-
                 await update.message.reply_text(f"Клан '{clan_name}' успешно создан!")
             else:
                 await update.message.reply_text("У вас недостаточно ресурсов или нет премиума для создания клана.")
@@ -1126,10 +1118,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
         return
 
-    elif message == "нет" and 'clan_create' in context.user_data:
-        # Если пользователь отказался
-        del context.user_data['clan_create']
-        await update.message.reply_text("Создание клана отменено.")
+    elif message == "нет":
+        if context.user_data.get('clan_create'):
+            del context.user_data['clan_create']
+            await update.message.reply_text("Создание клана отменено.")
         return
 
 # Функция для отправки сообщений через бота
