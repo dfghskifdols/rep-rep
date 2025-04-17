@@ -1092,7 +1092,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
         return
 
-    # Обработка подтверждения создания клана
     elif message == "да":
         clan_info = context.user_data.get('clan_create')
         if not clan_info:
@@ -1105,10 +1104,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             SELECT tickets, drops, neko_coins, premium_until, clans
             FROM user_tickets WHERE user_id = $1
         """, user_id)
-        await conn.close()
 
         if user_row:
             if user_row["clans"]:
+                await conn.close()
                 await update.message.reply_text("Вы уже состоите в клане.")
                 return
 
@@ -1119,19 +1118,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             current_time = datetime.now()
 
             if premium_until and premium_until > current_time and tickets >= 100 and drops >= 75 and neko_coins >= 100000:
-                conn = await connect_db()
-                # Обновляем данные о пользователе, добавляем его как создателя клана
+                # Оновлюємо дані користувача
                 await conn.execute("""
-                    UPDATE user_tickets SET clans = $1, tickets = tickets - 100, drops = drops - 75, neko_coins = neko_coins - 100000, rank = 'creator'
+                    UPDATE user_tickets
+                    SET clans = $1, tickets = tickets - 100, drops = drops - 75, neko_coins = neko_coins - 100000, rank = 'creator'
                     WHERE user_id = $2
                 """, clan_name, user_id)
+
+                # Додаємо новий клан у таблицю clans
+                await conn.execute("""
+                    INSERT INTO clans (name, members, leader)
+                    VALUES ($1, ARRAY[$2]::BIGINT[], $2)
+                """, clan_name, user_id)
+
                 await conn.close()
 
                 del context.user_data['clan_create']
                 await update.message.reply_text(f"Клан '{clan_name}' успешно создан! Вы стали создателем этого клана.")
             else:
+                await conn.close()
                 await update.message.reply_text("У вас недостаточно ресурсов или нет премиума для создания клана.")
         else:
+            await conn.close()
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
         return
 
