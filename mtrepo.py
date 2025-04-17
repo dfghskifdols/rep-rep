@@ -1373,24 +1373,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🚫 Теперь только лидер может брать ресурсы из хранилища.")
 
     elif message.startswith("клан взять "):
-        # Разделяем команду на части
+        # Розділяємо команду на частини
         parts = message.split()
-        
-        if len(parts) < 3:
-            await update.message.reply_text("❗ Формат: клан взять [ресурс] [количество]")
-            return
-        
-        resource = parts[1]  # Ресурс: 'билет', 'нека', 'капли'
-        quantity = parts[2]  # Количество ресурса
 
+        if len(parts) < 3:
+            await update.message.reply_text("❗ Формат: клан взять [ресурс] [кількість]")
+            return
+
+        resource = parts[1]  # Ресурс: 'билет', 'нека', 'каплі'
+        quantity = parts[2]  # Кількість ресурсу
+
+        # Перевіряємо, чи є quantity числом
         try:
             quantity = int(quantity)
         except ValueError:
-            await update.message.reply_text("❗ Количество должно быть числом.")
+            await update.message.reply_text("❗ Кількість повинна бути цілим числом.")
             return
-        
-        if resource not in ["билет", "нека", "капли"]:
-            await update.message.reply_text("❗ Ресурс должен быть один из: билет, нека, капли.")
+
+        if resource not in ["билет", "нека", "каплі"]:
+            await update.message.reply_text("❗ Ресурс повинен бути один із: билет, нека, каплі.")
             return
 
         conn = await connect_db()
@@ -1398,7 +1399,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if not user_data or not user_data["clans"]:
             await conn.close()
-            await update.message.reply_text("❗ Вы не состоите в клане.")
+            await update.message.reply_text("❗ Ви не входите в жоден клан.")
             return
         
         clan_name = user_data["clans"]
@@ -1406,42 +1407,42 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if user_rank != "creator":
             await conn.close()
-            await update.message.reply_text("❗ Только лидер клана может забрать ресурсы из хранилища.")
+            await update.message.reply_text("❗ Тільки лідер клану може забирати ресурси з хранилища.")
             return
 
-        # Получаем данные о клане
+        # Отримуємо дані про клан
         clan_data = await conn.fetchrow("SELECT storage FROM clans WHERE name = $1", clan_name)
         await conn.close()
 
         if not clan_data:
-            await update.message.reply_text("❗ Клан не найден.")
+            await update.message.reply_text("❗ Клан не знайдено.")
             return
 
-        # Преобразуем JSON-строку в словарь
+        # Перетворюємо JSON-стрічку в словник
         try:
             storage = json.loads(clan_data["storage"])
         except Exception:
             storage = {"tickets": 0, "neko": 0, "drops": 0}
 
-        # Проверяем, есть ли нужный ресурс в хранилище
+        # Перевіряємо, чи є потрібний ресурс у хранилищі
         if resource == "билет" and storage["tickets"] >= quantity:
             storage["tickets"] -= quantity
         elif resource == "нека" and storage["neko"] >= quantity:
             storage["neko"] -= quantity
-        elif resource == "капли" and storage["drops"] >= quantity:
+        elif resource == "каплі" and storage["drops"] >= quantity:
             storage["drops"] -= quantity
         else:
-            await update.message.reply_text(f"❗ Недостаточно {resource} в хранилище клана.")
+            await update.message.reply_text(f"❗ Недостатньо {resource} в хранилищі клану.")
             return
 
-        # Обновляем хранилище клана в базе данных
+        # Оновлюємо хранилище клану в базі даних
         conn = await connect_db()
         await conn.execute("""
             UPDATE clans SET storage = $1 WHERE name = $2
         """, json.dumps(storage), clan_name)
         await conn.close()
 
-        await update.message.reply_text(f"✅ Вы успешно забрали {quantity} {resource} из хранилища клана.")
+        await update.message.reply_text(f"✅ Ви успішно забрали {quantity} {resource} з хранилища клану.")
 
     elif message == "клан хранилище":
         conn = await connect_db()
