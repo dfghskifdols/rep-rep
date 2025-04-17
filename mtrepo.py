@@ -1442,7 +1442,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """, json.dumps(storage), clan_name)
         await conn.close()
 
-        await update.message.reply_text(f"✅ Вы успешно забрали {quantity} {resource} из хранилища клана."
+        await update.message.reply_text(f"✅ Вы успешно забрали {quantity} {resource} из хранилища клана.")
 
     elif message == "клан хранилище":
         conn = await connect_db()
