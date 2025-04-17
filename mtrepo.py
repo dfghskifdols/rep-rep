@@ -1443,6 +1443,41 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(f"✅ Вы забрали {amount} {input_resource} из хранилища клана.")
 
+    elif message == "клан хранилище":
+        conn = await connect_db()
+
+        # Получаем информацию о пользователе
+        user_data = await conn.fetchrow("SELECT clans FROM user_tickets WHERE user_id = $1", user_id)
+        if not user_data or not user_data["clans"]:
+            await conn.close()
+            await update.message.reply_text("❗ Вы не состоите в клане.")
+            return
+
+        clan_name = user_data["clans"]
+
+        # Получаем хранилище клана
+        clan_data = await conn.fetchrow("SELECT storage FROM clans WHERE name = $1", clan_name)
+        await conn.close()
+
+        if not clan_data:
+            await update.message.reply_text("❗ Клан не найден.")
+            return
+
+        storage = clan_data["storage"] or {"tickets": 0, "neko": 0, "drops": 0}
+
+        tickets = storage.get("tickets", 0)
+        neko = storage.get("neko", 0)
+        drops = storage.get("drops", 0)
+
+        text = (
+            f"📦 Хранилище клана <b>{clan_name}</b>:\n\n"
+            f"🎫 Билеты: <b>{tickets}</b>\n"
+            f"🍥 Неко коины: <b>{neko}</b>\n"
+            f"💧 Капли: <b>{drops}</b>"
+        )
+
+        await update.message.reply_text(text, parse_mode="HTML")
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
