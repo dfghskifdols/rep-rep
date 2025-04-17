@@ -1380,28 +1380,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❗ Формат: клан взять [ресурс] [количество]")
             return
 
-        resource = parts[1]  # Ресурс: 'билет', 'нека', 'капли'
-        quantity = parts[2].strip()  # Количество ресурса
+        resource_input = parts[1].lower()
+        quantity_input = parts[2].strip()
 
-        # Проверяем, является ли quantity числом
-        if not quantity.isdigit():
-            await update.message.reply_text("❗ Количество должно быть целым числом.")
-            return
+        resource_map = {
+            "билет": "tickets",
+            "билеты": "tickets",
+            "нека": "neko",
+            "неко": "neko",
+            "койны": "neko",
+            "капля": "drops",
+            "капли": "drops",
+            "кап": "drops"
+        }
 
-        quantity = int(quantity)
-
-        if resource not in ["билет", "нека", "капли"]:
+        if resource_input not in resource_map:
             await update.message.reply_text("❗ Ресурс должен быть один из: билет, нека, капли.")
             return
 
+        # Проверяем, является ли quantity числом
+        if not quantity_input.isdigit():
+            await update.message.reply_text("❗ Количество должно быть целым числом.")
+            return
+
+        quantity = int(quantity_input)
+        resource = resource_map[resource_input]
+
         conn = await connect_db()
         user_data = await conn.fetchrow("SELECT clans, rank FROM user_tickets WHERE user_id = $1", user_id)
-        
+
         if not user_data or not user_data["clans"]:
             await conn.close()
             await update.message.reply_text("❗ Вы не входите в ни один клан.")
             return
-        
+
         clan_name = user_data["clans"]
         user_rank = user_data["rank"]
 
@@ -1425,14 +1437,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             storage = {"tickets": 0, "neko": 0, "drops": 0}
 
         # Проверяем, есть ли нужный ресурс в хранилище
-        if resource == "билет" and storage["tickets"] >= quantity:
+        if resource == "tickets" and storage["tickets"] >= quantity:
             storage["tickets"] -= quantity
-        elif resource == "нека" and storage["neko"] >= quantity:
+        elif resource == "neko" and storage["neko"] >= quantity:
             storage["neko"] -= quantity
-        elif resource == "капли" and storage["drops"] >= quantity:
+        elif resource == "drops" and storage["drops"] >= quantity:
             storage["drops"] -= quantity
         else:
-            await update.message.reply_text(f"❗ Недостаточно {resource} в хранилище клана.")
+            await update.message.reply_text(f"❗ Недостаточно {resource_input} в хранилище клана.")
             return
 
         # Обновляем хранилище клана в базе данных
@@ -1442,7 +1454,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """, json.dumps(storage), clan_name)
         await conn.close()
 
-        await update.message.reply_text(f"✅ Вы успешно забрали {quantity} {resource} из хранилища клана.")
+        await update.message.reply_text(f"✅ Вы успешно забрали {quantity} {resource_input} из хранилища клана.")
 
     elif message == "клан хранилище":
         conn = await connect_db()
