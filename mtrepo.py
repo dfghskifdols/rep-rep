@@ -1448,7 +1448,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if user_rank != "creator" and resource in limits:
                 daily_taken = await conn.fetchval("""
                     SELECT SUM(amount) FROM clan_take_log
-                    WHERE user_id = $1 AND clan = $2 AND resource = $3 AND DATE(timestamp) = CURRENT_DATE
+                    WHERE user_id = $1 AND clan = $2 AND resource = $3 AND DATE(date) = CURRENT_DATE
                 """, user_id, clan_name, resource)
 
                 daily_taken = daily_taken or 0
