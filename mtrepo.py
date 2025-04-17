@@ -1277,6 +1277,172 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="HTML"
         )
 
+    elif message.startswith("клан положить "):
+        parts = message.split()
+        if len(parts) != 3:
+            await update.message.reply_text("❗ Формат: клан положить [ресурс] [количество]")
+            return
+
+        resource_map = {
+            "билет": "tickets",
+            "билеты": "tickets",
+            "неко": "neko",
+            "койны": "neko",
+            "капля": "drops",
+            "капли": "drops",
+            "кап": "drops"
+        }
+
+        input_resource = parts[1].lower()
+        resource = resource_map.get(input_resource)
+
+        if resource not in ["tickets", "neko", "drops"]:
+            await update.message.reply_text("❗ Можно положить только: билеты, неко коины или капли.")
+            return
+
+        try:
+            amount = int(parts[2])
+            if amount <= 0:
+                raise ValueError
+        except ValueError:
+            await update.message.reply_text("❗ Укажите корректное количество (целое число > 0).")
+            return
+
+        conn = await connect_db()
+
+        # Получаем название клана пользователя
+        clan_info = await conn.fetchrow("SELECT clans FROM user_tickets WHERE user_id = $1", user_id)
+        if not clan_info or not clan_info["clans"]:
+            await conn.close()
+            await update.message.reply_text("❗ Вы не состоите в клане.")
+            return
+
+        clan_name = clan_info["clans"]
+
+        # Получаем текущее хранилище клана
+        clan_row = await conn.fetchrow("SELECT storage FROM clans WHERE name = $1", clan_name)
+        if not clan_row:
+            await conn.close()
+            await update.message.reply_text("❗ Клан не найден.")
+            return
+
+        storage = clan_row["storage"] or {"tickets": 0, "neko": 0, "drops": 0}
+        storage[resource] = storage.get(resource, 0) + amount
+
+        # Обновляем хранилище клана
+        await conn.execute("UPDATE clans SET storage = $1 WHERE name = $2", storage, clan_name)
+        await conn.close()
+
+        await update.message.reply_text(f"✅ Вы положили {amount} {input_resource} в хранилище клана.")
+
+    elif message == "клан брать разрешить":
+        conn = await connect_db()
+
+        user_data = await conn.fetchrow("SELECT clans, rank FROM user_tickets WHERE user_id = $1", user_id)
+        if not user_data or not user_data["clans"]:
+            await conn.close()
+            await update.message.reply_text("❗ Вы не состоите в клане.")
+            return
+
+        if user_data["rank"] != "leader":
+            await conn.close()
+            await update.message.reply_text("❗ Только лидер клана может разрешить доступ.")
+            return
+
+        await conn.execute("UPDATE clans SET allow_take = TRUE WHERE name = $1", user_data["clans"])
+        await conn.close()
+        await update.message.reply_text("✅ Теперь участники клана могут брать ресурсы из хранилища.")
+
+    elif message == "клан брать запретить":
+        conn = await connect_db()
+
+        user_data = await conn.fetchrow("SELECT clans, rank FROM user_tickets WHERE user_id = $1", user_id)
+        if not user_data or not user_data["clans"]:
+            await conn.close()
+            await update.message.reply_text("❗ Вы не состоите в клане.")
+            return
+
+        if user_data["rank"] != "leader":
+            await conn.close()
+            await update.message.reply_text("❗ Только лидер клана может запретить доступ.")
+            return
+
+        await conn.execute("UPDATE clans SET allow_take = FALSE WHERE name = $1", user_data["clans"])
+        await conn.close()
+        await update.message.reply_text("🚫 Теперь только лидер может брать ресурсы из хранилища.")
+
+    elif message.startswith("клан взять "):
+        parts = message.split()
+        if len(parts) != 3:
+            await update.message.reply_text("❗ Формат: клан взять [ресурс] [количество]")
+            return
+
+        resource_map = {
+            "билет": "tickets",
+            "билеты": "tickets",
+            "неко": "neko",
+            "койны": "neko",
+            "капля": "drops",
+            "капли": "drops",
+            "кап": "drops"
+        }
+
+        input_resource = parts[1].lower()
+        resource = resource_map.get(input_resource)
+
+        if resource not in ["tickets", "neko", "drops"]:
+            await update.message.reply_text("❗ Можно взять только: билеты, неко коины или капли.")
+            return
+
+        try:
+            amount = int(parts[2])
+            if amount <= 0:
+                raise ValueError
+        except ValueError:
+            await update.message.reply_text("❗ Укажите корректное количество (целое число > 0).")
+            return
+
+        conn = await connect_db()
+
+        # Получаем информацию о пользователе
+        user_data = await conn.fetchrow("SELECT clans, rank FROM user_tickets WHERE user_id = $1", user_id)
+        if not user_data or not user_data["clans"]:
+            await conn.close()
+            await update.message.reply_text("❗ Вы не состоите в клане.")
+            return
+
+        clan_name = user_data["clans"]
+        user_rank = user_data["rank"]
+
+        # Получаем хранилище и флаг allow_take
+        clan_row = await conn.fetchrow("SELECT storage, allow_take FROM clans WHERE name = $1", clan_name)
+        if not clan_row:
+            await conn.close()
+            await update.message.reply_text("❗ Клан не найден.")
+            return
+
+        if not clan_row["allow_take"] and user_rank != "leader":
+            await conn.close()
+            await update.message.reply_text("🚫 Только лидер может брать ресурсы из хранилища.")
+            return
+
+        storage = clan_row["storage"] or {"tickets": 0, "neko": 0, "drops": 0}
+        if storage.get(resource, 0) < amount:
+            await conn.close()
+            await update.message.reply_text("❗ В хранилище недостаточно ресурсов.")
+            return
+
+        # Обновляем хранилище
+        storage[resource] -= amount
+        await conn.execute("UPDATE clans SET storage = $1 WHERE name = $2", storage, clan_name)
+
+        # Добавляем ресурсы пользователю
+        await conn.execute(f"UPDATE user_tickets SET {resource} = {resource} + $1 WHERE user_id = $2", amount, user_id)
+
+        await conn.close()
+
+        await update.message.reply_text(f"✅ Вы забрали {amount} {input_resource} из хранилища клана.")
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
