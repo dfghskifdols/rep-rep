@@ -1024,7 +1024,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Создание клана
     elif message.startswith("создать клан "):
-        clan_name = message[14:].strip()  # Получаем название клана
+        clan_name = message[13:].strip()  # Получаем название клана
 
         if not clan_name:
             await update.message.reply_text("Пожалуйста, введите название клана.")
