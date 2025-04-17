@@ -747,16 +747,32 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             return
 
-        is_premium = user.get("premium", False)
+        # Визначаємо множники
+        in_clan = bool(user["clans"])
+        premium_until = user.get("premium_until")
+        now = datetime.now()
+        is_premium = premium_until and premium_until > now
 
-        if is_premium:
-            tickets_reward = promo.get("reward_tickets", 0) * 2
-            neko_reward = promo.get("reward_neko_coins", 0) * 1.5
-            drops_reward = promo.get("reward_drops", 0) * 2
+        if in_clan and is_premium:
+            mult_tickets = 4
+            mult_neko = 3.5
+            mult_drops = 4
+        elif not in_clan and is_premium:
+            mult_tickets = 2
+            mult_neko = 1.5
+            mult_drops = 2
+        elif in_clan and not is_premium:
+            mult_tickets = 2
+            mult_neko = 2
+            mult_drops = 2
         else:
-            tickets_reward = promo.get("reward_tickets", 0)
-            neko_reward = promo.get("reward_neko_coins", 0)
-            drops_reward = promo.get("reward_drops", 0)
+            mult_tickets = 1
+            mult_neko = 1
+            mult_drops = 1
+
+        tickets_reward = promo.get("reward_tickets", 0) * mult_tickets
+        neko_reward = promo.get("reward_neko_coins", 0) * mult_neko
+        drops_reward = promo.get("reward_drops", 0) * mult_drops
 
         await conn.execute("""
             UPDATE user_tickets
@@ -764,7 +780,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 neko_coins = neko_coins + $2,
                 drops = drops + $3
             WHERE user_id = $4
-        """, tickets_reward, neko_reward, drops_reward, user_id)
+        """, int(tickets_reward), int(neko_reward), int(drops_reward), user_id)
 
         await conn.execute("""
             UPDATE promo_codes
