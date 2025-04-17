@@ -1381,14 +1381,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         resource = parts[1]  # Ресурс: 'билет', 'нека', 'капли'
-        quantity = parts[2]  # Количество ресурса
+        quantity = parts[2].strip()  # Количество ресурса
 
         # Проверяем, является ли quantity числом
-        try:
-            quantity = int(quantity)
-        except ValueError:
+        if not quantity.isdigit():
             await update.message.reply_text("❗ Количество должно быть целым числом.")
             return
+
+        quantity = int(quantity)
 
         if resource not in ["билет", "нека", "капли"]:
             await update.message.reply_text("❗ Ресурс должен быть один из: билет, нека, капли.")
