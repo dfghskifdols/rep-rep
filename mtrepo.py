@@ -1241,6 +1241,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
         return
 
+    elif message.lower() == "кланы":
+        conn = await connect_db()
+        clans = await conn.fetch("""
+            SELECT name, array_length(members, 1) AS count
+            FROM clans
+            ORDER BY count DESC NULLS LAST
+        """)
+        await conn.close()
+
+        if not clans:
+            await update.message.reply_text("❌ Кланы пока не созданы.")
+            return
+
+        clan_list = "\n".join([
+            f"🏰 <b>{clan['name']}</b> — {clan['count'] or 0} участников"
+            for clan in clans
+        ])
+
+        await update.message.reply_text(
+            f"📜 Список всех кланов:\n\n{clan_list}",
+            parse_mode="HTML"
+        )
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
