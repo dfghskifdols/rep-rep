@@ -1217,41 +1217,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             SELECT clans, rank FROM user_tickets WHERE user_id = $1
         """, user_id)
 
-        await conn.close()
-
         if user_row:
             user_clan = user_row["clans"]
 
             if user_clan and user_clan != "NULL":
                 # Если пользователь уже в клане
+                await conn.close()
                 await update.message.reply_text("Вы уже состоите в другом клане.")
                 return
 
             # Проверяем, существует ли клан с таким названием
-            conn = await connect_db()
             clan_row = await conn.fetchrow("""
-                SELECT COUNT(*), members FROM clans WHERE name = $1
+                SELECT members FROM clans WHERE name = $1
             """, clan_name)
-            await conn.close()
 
-            if clan_row["count"] > 0:
-                # Если клан существует, присоединяем пользователя
-                conn = await connect_db()
-                # Добавляем пользователя в список участников клана
+            if clan_row:
+                members = clan_row["members"]
+                if user_id in members:
+                    await conn.close()
+                    await update.message.reply_text("Вы уже состоите в этом клане.")
+                    return
+
+                # Присоединяем пользователя
                 await conn.execute("""
                     UPDATE clans SET members = array_append(members, $1) WHERE name = $2
                 """, user_id, clan_name)
 
-                # Обновляем данные пользователя в таблице user_tickets
+                # Обновляем данные пользователя
                 await conn.execute("""
                     UPDATE user_tickets SET clans = $1, rank = 'member' WHERE user_id = $2
                 """, clan_name, user_id)
-                await conn.close()
 
+                await conn.close()
                 await update.message.reply_text(f"Вы успешно вступили в клан '{clan_name}'!")
             else:
+                await conn.close()
                 await update.message.reply_text(f"Клан с названием '{clan_name}' не существует.")
         else:
+            await conn.close()
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
         return
 
