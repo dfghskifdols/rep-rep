@@ -1388,10 +1388,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.execute("UPDATE clans SET storage = $1 WHERE name = $2", json.dumps(storage), clan_name)
 
             # Обновляем баланс пользователя
-            await conn.execute(f"""
-                UPDATE user_tickets SET {resource} = {resource} + $1 WHERE user_id = $2
-            """, quantity, user_id)
-          
+            if resource == "neko":
+                await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + $1 WHERE user_id = $2", quantity, user_id)
+            elif resource == "tickets":
+                await conn.execute("UPDATE user_tickets SET tickets = tickets + $1 WHERE user_id = $2", quantity, user_id)
+            elif resource == "drops":
+                await conn.execute("UPDATE user_tickets SET drops = drops + $1 WHERE user_id = $2", quantity, user_id)
+
             await conn.close()
             await update.message.reply_text(f"✅ Вы успешно забрали {quantity} {resource_input} из хранилища клана.")
 
@@ -1399,10 +1402,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             storage[resource] = storage.get(resource, 0) + quantity
 
             # Зменшуємо ресурс у користувача
-            await conn.execute(f"""
-                UPDATE user_tickets SET {resource} = {resource} - $1 WHERE user_id = $2
-            """, quantity, user_id)
-          
+            if resource == "neko":
+                await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins - $1 WHERE user_id = $2", quantity, user_id)
+            elif resource == "tickets":
+                await conn.execute("UPDATE user_tickets SET tickets = tickets - $1 WHERE user_id = $2", quantity, user_id)
+            elif resource == "drops":
+                await conn.execute("UPDATE user_tickets SET drops = drops - $1 WHERE user_id = $2", quantity, user_id)
+
             await conn.execute("UPDATE clans SET storage = $1 WHERE name = $2", json.dumps(storage), clan_name)
             await conn.close()
             await update.message.reply_text(f"✅ Вы положили {quantity} {resource_input} в хранилище клана.")
