@@ -1684,7 +1684,7 @@ def get_drops():
 
 # Функція для генерації нагород
 def generate_rewards():
-    neko_coins = random.randint(10, 150)  # Випадкова кількість Neko коїнів
+    neko_coins = random.randint(10, 100)  # Випадкова кількість Neko коїнів
     drops = get_drops()  # Отримуємо каплі, якщо сьогодні неділя
     tickets = 0  # Квитки завжди 0
     return neko_coins, drops, tickets
@@ -1705,7 +1705,7 @@ async def create_promo_code():
     promo_code = generate_promo_code()  # Генерація промокоду
     neko_coins, drops, tickets = generate_rewards()  # Генерація нагород
 
-    max_users = random.choice([30, 40, 50])  # Випадковий вибір з 30, 40 або 50
+    max_users = random.choice([15, 20, 25])  # Випадковий вибір з 30, 40 або 50
 
     await insert_promo_code(promo_code, max_users, neko_coins, drops, tickets)
 
