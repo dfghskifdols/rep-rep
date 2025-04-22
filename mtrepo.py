@@ -1543,6 +1543,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    elif message.lower() == "рфакт":
+        async def get_random_fact():
+            import httpx
+
+            prompt = "Сгенерируй интересный, но не политический факт на русском языке. Один факт, без пояснений."
+
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": "Bearer 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",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "openai/gpt-3.5-turbo",
+                        "messages": [
+                            {"role": "system", "content": "Ты генератор случайных фактов."},
+                            {"role": "user", "content": prompt}
+                        ]
+                    }
+                )
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+
+        try:
+            fact = await get_random_fact()
+            await update.message.reply_text(fact)
+        except Exception as e:
+            await update.message.reply_text("❌ Произошла ошибка при получении факта.")
+            print(f"[Ошибка рфакт]: {e}")
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
