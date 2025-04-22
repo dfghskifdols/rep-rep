@@ -1547,7 +1547,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async def get_random_fact():
             import httpx
 
-            prompt = "Сгенерируй интересный, но не политический факт на русском языке. Один факт, без пояснений."
+            prompt = (
+                "Сгенерируй один интересный, но не политический факт на русском языке. "
+                "Добавь в начале факта один подходящий эмодзи, соответствующий теме факта. "
+                "Факт должен быть кратким и без пояснений. Например: 🐢 Черепахи могут дышать через задний проход."
+            )
 
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -1559,13 +1563,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     json={
                         "model": "openai/gpt-3.5-turbo",
                         "messages": [
-                            {"role": "system", "content": "Ты генератор случайных фактов."},
+                            {"role": "system", "content": "Ты генератор случайных фактов с подходящим эмодзи в начале."},
                             {"role": "user", "content": prompt}
                         ]
                     }
                 )
                 data = response.json()
-                return data["choices"][0]["message"]["content"]
+                fact_text = data["choices"][0]["message"]["content"]
+                return fact_text.strip()
 
         try:
             fact = await get_random_fact()
