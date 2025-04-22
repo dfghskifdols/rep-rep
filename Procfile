@@ -1,1 +1,1 @@
-worker: python3 mtrepo.py
+worker: bash start.sh
