@@ -1563,11 +1563,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         now = datetime.now()
         user_requests = rfact_requests[user_id]
 
-        # Очищення старих запитів
+        # Видаляємо старі запити старші за 1 хвилину
         rfact_requests[user_id] = [t for t in user_requests if now - t < timedelta(minutes=1)]
 
         if len(rfact_requests[user_id]) >= 3:
-            return  # Ігноруємо, якщо більше 3 запитів за хвилину
+            await update.message.reply_text("⏳ Лимит исчерпан! Попробуйте еще раз через минуту!")
+            return
 
         rfact_requests[user_id].append(now)
 
