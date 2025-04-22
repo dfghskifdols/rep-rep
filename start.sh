@@ -1,6 +1,6 @@
 #!/bin/bash
 while true
 do
-  python mtrepo.py
+  python3 mtrepo.py
   sleep 1
 done
