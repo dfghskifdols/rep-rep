@@ -505,6 +505,10 @@ async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Перевірка на наявність тексту в повідомленні
+    if not update.message or not update.message.text:
+        return  # Ігноруємо не-текстові повідомлення
+
     message = update.message.text.strip().lower()  # Перетворюємо на малий регістр
     user_id = update.message.from_user.id
 
