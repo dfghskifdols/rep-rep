@@ -9,6 +9,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from urllib.parse import urlparse
+from telegram import CopyTextButton
 import sqlite3
 import pytz
 import time
@@ -20,9 +21,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta
-from keep_alive import keep_alive
-
-keep_alive()
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
@@ -491,24 +489,23 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("❌ Репорт отменен.")
         await log_action(f"❌ Репорт отменён пользователем {query.from_user.full_name} ({query.from_user.id})")
 
-# Функція одержання ID чату
+# Функция одержания ID чату
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    # Використовуємо InlineKeyboardButton для кнопки копіювання ID
-    button = InlineKeyboardButton(text="Скопировать ID", callback_data=f"copy_{chat_id}")
+    # Юзаем InlineKeyboardButton для кнопки копирования ID
+    button = InlineKeyboardButton(text="Скопировать", copy_text=CopyTextButton(text=chat_id))
     keyboard = [[button]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(f"🆔 ID этого чата: {chat_id}", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
 
-# Обробка кнопки Copy ID
+# Оброботка кнопки Copy ID
 async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     chat_id = query.data.split('_')[1]
-    await query.answer()  # Відповідаємо на запит
+    await query.answer()  # Отвечаем на запрос
 
-    # Відправляємо повідомлення, що ID чату скопійовано
-    await query.edit_message_text(f"✅ ID чата: {chat_id} скопійовано!")
-
+# Кидаем сообщение, что ID скопировано
+    await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
 
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
