@@ -534,15 +534,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif message in ["неко", "где неко"]:
-        admins = await context.bot.get_chat_administrators(ADMIN_CHAT_ID)
-        if admins:
-            random_admin = random.choice(admins)
-            random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
-            sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
-            await asyncio.sleep(2)
-            await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
+        # Перевірка типу чату
+        if update.message.chat.type in ['group', 'supergroup']:
+            try:
+                admins = await context.bot.get_chat_administrators(ADMIN_CHAT_ID)
+                if admins:
+                    random_admin = random.choice(admins)
+                    random_username = random_admin.user.username if random_admin.user.username else "unknown_user"
+                    sent_message = await update.message.reply_text("вычисления кошко-девочки по айпи💻")
+                    await asyncio.sleep(2)
+                    await sent_message.edit_text(f"Кошко-девочка вычислена! Она находится у @{random_username}")
+                else:
+                    await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
+            except Exception as e:
+                print(f"Ошибка при получении админов: {e}")
+                await update.message.reply_text("❌ Ошибка при получении информации об администраторах.")
         else:
-            await update.message.reply_text("❌ Не удалось получить администраторов для вычислений!")
+            await update.message.reply_text("😸 В личке кошкодевочки отдыхают. Напиши мне в группе!")
 
     elif message == "пинг":
         await update.message.reply_text("А нахуя он тебе?")
