@@ -19,6 +19,10 @@ import math
 from pytz import timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import json
+from collections import defaultdict
+from datetime import datetime, timedelta
+
+rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
 moscow_tz = timezone('Europe/Moscow')
 current_time = datetime.now(moscow_tz)
@@ -1556,6 +1560,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif message.lower() == "рфакт":
+        now = datetime.now()
+        user_requests = rfact_requests[user_id]
+
+        # Очищення старих запитів
+        rfact_requests[user_id] = [t for t in user_requests if now - t < timedelta(minutes=1)]
+
+        if len(rfact_requests[user_id]) >= 3:
+            return  # Ігноруємо, якщо більше 3 запитів за хвилину
+
+        rfact_requests[user_id].append(now)
+
         async def get_random_fact():
             import httpx
 
