@@ -5,11 +5,10 @@ import random
 import re
 import string
 from datetime import datetime, timedelta
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, Bot
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from urllib.parse import urlparse
-from telegram import CopyTextButton
 import sqlite3
 import pytz
 import time
@@ -21,6 +20,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta
+from keep_alive import keep_alive
+
+keep_alive()
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
@@ -72,7 +74,7 @@ rafa_responses = [
     "<b>Exponnentik главный пупс кирича(кирич этого не знает)</b>",
     "<b>РаФа - сокращенно Рандом Факт про Андминов</b>"
 ]
-  
+
 # Возможные ответы для "РаФу"
 rafu_responses = [
     "<b>Интересный факт! SsVladiSlaveSs не знает этот факт</b>", 
@@ -492,20 +494,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Функция одержания ID чату
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    # Юзаем InlineKeyboardButton для кнопки копирования ID
-    button = InlineKeyboardButton(text="Скопировать", copy_text=CopyTextButton(text=chat_id))
-    keyboard = [[button]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(f"🆔 ID этого чата: {chat_id}", parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
-
-# Оброботка кнопки Copy ID
-async def handle_copy_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    chat_id = query.data.split('_')[1]
-    await query.answer()  # Отвечаем на запрос
-
-# Кидаем сообщение, что ID скопировано
-    await query.edit_message_text(f"✅ ID чата: {chat_id} скопировано!")
+    await update.message.reply_text(f"🆔 ID этого чата: `{chat_id}`", parse_mode=ParseMode.MARKDOWN)
 
 # Основна функція обробки повідомлень
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1561,9 +1550,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message.lower() == "рфакт":
         now = datetime.now()
-        user_requests = rfact_requests[user_id]
+        user_requests = rfact_requests.get(user_id, [])
 
-        # Видаляємо старі запити старші за 1 хвилину
+        # Очищаем запросы старше минуты
         rfact_requests[user_id] = [t for t in user_requests if now - t < timedelta(minutes=1)]
 
         if len(rfact_requests[user_id]) >= 3:
@@ -1577,7 +1566,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             prompt = (
                 "Сгенерируй один короткий, интересный факт на русском языке, не связанный с политикой. "
-                "Перед фактом добавь подходящий эмодзи, который точно отражает суть или тему факта — животные, космос, наука, еда и т.п. "
+                "Перед фактом выбери и добавь один подходящий эмодзи, используя ЛЮБОЙ из существующих. "
+                "выбирай тот, который максимально точно отражает суть факта. "
+                "Тема факта должна отличаться от тем 15 предыдущих фактов — пример: если была тема океана, избегай её. "
+                "Если один из 15 предыдущих фактов был про какую то страну избегай ее следиющие 15 фактов - пример: если был факт про Китай, избегай его. "
                 "Факт должен быть в одном предложении, без пояснений, в живом и легком стиле. "
                 "Пример: 🐘 У слонов есть уникальные отпечатки пальцев на ногах."
             )
@@ -1586,20 +1578,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response = await client.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers={
-                        "Authorization": "Bearer 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",
+                        "Authorization": "Bearer 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",
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "openai/gpt-3.5-turbo",
+                        "model": "meta-llama/llama-4-maverick:free",
                         "messages": [
-                            {"role": "system", "content": "Ты генератор случайных фактов с подходящим эмодзи в начале."},
-                            {"role": "user", "content": prompt}
+                            {"role": "system", "content": "Ты генератор коротких фактов с эмодзи в начале."},
+                            {"role": "user",   "content": prompt}
                         ]
                     }
                 )
                 data = response.json()
-                fact_text = data["choices"][0]["message"]["content"]
-                return fact_text.strip()
+                # Проверяем наличие ключа "choices"
+                if "choices" not in data:
+                    raise ValueError("В ответе API отсутствует ключ 'choices'")
+                return data["choices"][0]["message"]["content"].strip()
 
         try:
             fact = await get_random_fact()
@@ -1825,9 +1819,7 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
-app.add_handler(CallbackQueryHandler(handle_copy_id, pattern="^copy_"))
 
-# Основна функція для запуску бота
 async def main():
     print("🚀 Бот запущений!")
 
@@ -1838,4 +1830,10 @@ async def main():
     await asyncio.gather(app.run_polling())  # Це має бути твій Telegram бот
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        loop.close()
