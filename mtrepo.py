@@ -20,9 +20,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta
-from keep_alive import keep_alive
-
-keep_alive()
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
