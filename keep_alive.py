@@ -1,15 +1,13 @@
+import threading
 from flask import Flask
-from threading import Thread
+from my_telegram_bot import start_bot  # припустимо, твоя функція запуску бота
 
-app = Flask('')
+app = Flask(__name__)
 
-@app.route('/')
+@app.route("/")
 def home():
-    return "I'm alive!"
+    return "Bot is running!"
 
-def run():
-    app.run(host='0.0.0.0', port=3000)
+threading.Thread(target=start_bot).start()
 
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
+app.run(host="0.0.0.0", port=3000)
