@@ -1,2 +1,7 @@
-[requires]
-python_version = "3.10"
+[build]
+  base = "/"
+  publish = "build"
+  command = "pip install -r requirements.txt && python your_script.py"
+  
+[build.environment]
+  PYTHON_VERSION = "3.10"
