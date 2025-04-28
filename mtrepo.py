@@ -20,6 +20,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta
+import threading
+import os
+import socket
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
@@ -1817,6 +1820,15 @@ app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
+def dummy_server():
+    port = int(os.environ.get("PORT", 10000))  # Стандартний порт або той, що дасть Render
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('0.0.0.0', port))
+    s.listen(1)
+    while True:
+        conn, addr = s.accept()
+        conn.close()
+
 async def main():
     print("🚀 Бот запущений!")
 
@@ -1827,6 +1839,10 @@ async def main():
     await asyncio.gather(app.run_polling())  # Це має бути твій Telegram бот
 
 if __name__ == "__main__":
+    # Спочатку запускаємо dummy сервер для Render
+    threading.Thread(target=dummy_server, daemon=True).start()
+
+    # Потім запускаємо основний цикл бота
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(main())
