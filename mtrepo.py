@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 import threading
 import os
 import socket
+from apscheduler.schedulers.background import BackgroundScheduler
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
@@ -1820,7 +1821,11 @@ app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
-# Функція dummy серверу для Render (щоб бот працював на безкоштовних хостингах)
+# Функція для підтримки з'єднання
+def keep_alive():
+    print("Bot is still alive!")
+
+# Функція для запуску dummy сервера
 def dummy_server():
     port = int(os.environ.get("PORT", 10000))  # Стандартний порт або той, що дасть Render
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1830,7 +1835,7 @@ def dummy_server():
         conn, addr = s.accept()
         conn.close()
 
-# Основна функція для запуску бота
+# Основна асинхронна функція
 async def main():
     print("🚀 Бот запущений!")
 
@@ -1838,14 +1843,22 @@ async def main():
     start_daily_promo_code_task()
 
     # Запуск polling і фонової перевірки одночасно
-    await app.run_polling()  # Це має бути твій Telegram бот
+    await asyncio.gather(app.run_polling())  # Це має бути твій Telegram бот
 
 if __name__ == "__main__":
     # Спочатку запускаємо dummy сервер для Render
     threading.Thread(target=dummy_server, daemon=True).start()
 
+    # Запускаємо планувальник
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(keep_alive, 'interval', minutes=10)  # Пінгуємо кожні 10 хвилин
+    scheduler.start()
+
     # Потім запускаємо основний цикл бота
+    loop = asyncio.get_event_loop()
     try:
-        asyncio.run(main())  # використовуємо asyncio.run для правильної роботи з асинхронним кодом
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         pass
+    finally:
+        loop.close()
