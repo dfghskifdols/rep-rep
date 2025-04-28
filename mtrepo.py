@@ -1578,7 +1578,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response = await client.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers={
-                        "Authorization": "Bearer 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",
+                        "Authorization": "Bearer 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",
                         "Content-Type": "application/json"
                     },
                     json={
