@@ -1,8 +1,8 @@
 # Встановлюємо базовий образ
 FROM python:3.10-slim
 
-# Встановлюємо необхідні пакети для PostgreSQL
-RUN apt-get update && apt-get install -y libpq-dev
+# Встановлюємо необхідні пакети для PostgreSQL і чистимо кеш
+RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
 # Встановлюємо робочу директорію
 WORKDIR /app
