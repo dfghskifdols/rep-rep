@@ -23,7 +23,6 @@ from datetime import datetime, timedelta
 import threading
 import os
 from aiohttp import web
-from apscheduler.schedulers.background import BackgroundScheduler
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
@@ -1883,9 +1882,9 @@ async def main():
 
 if __name__ == "__main__":
     # Планувальник keep_alive + перевірка профілів
-    scheduler = BackgroundScheduler()
+    scheduler = AsyncIOScheduler()
     scheduler.add_job(keep_alive, 'interval', minutes=10)
-    scheduler.add_job(lambda: asyncio.create_task(check_user_profiles()), 'interval', minutes=10)
+    scheduler.add_job(check_user_profiles, 'interval', minutes=10)
     scheduler.start()
 
     # Запуск основного циклу
