@@ -1629,21 +1629,20 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
 
-    # Отримуємо username з @, якщо є
     username = f"@{user.username}" if user.username else None
-
-    # Отримуємо повне ім'я користувача
     nickname = user.full_name
 
     conn = await connect_db()
     await conn.execute("""
         INSERT INTO user_tickets (user_id, username, nickname)
         VALUES ($1, $2, $3)
-        ON CONFLICT (user_id) DO NOTHING
+        ON CONFLICT (user_id) DO UPDATE
+        SET username = EXCLUDED.username,
+            nickname = EXCLUDED.nickname
     """, user.id, username, nickname)
     await conn.close()
 
-    await update.message.reply_text("Привет! Я Неко бот! Бот для репортов(наверное).\nПомощь по боту - рпромощь.")
+    await update.message.reply_text("Привет!\nЯ Неко бот!\nБот для репортов(наверное).\nПомощь по боту - рпомощь.")
 
 def escape_markdown(text):
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
