@@ -761,17 +761,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_premium = premium_until and premium_until > now
 
         if in_clan and is_premium:
-            mult_tickets = 4
+            mult_tickets = 2
             mult_neko = 3.5
-            mult_drops = 4
+            mult_drops = 2
         elif not in_clan and is_premium:
             mult_tickets = 2
             mult_neko = 1.5
             mult_drops = 2
         elif in_clan and not is_premium:
-            mult_tickets = 2
+            mult_tickets = 1
             mult_neko = 2
-            mult_drops = 2
+            mult_drops = 1
         else:
             mult_tickets = 1
             mult_neko = 1
