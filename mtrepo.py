@@ -1156,12 +1156,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Создание клана отменено.")
         return
 
-    # Обработка команды "мой клан"
     elif message == "мой клан":
         conn = await connect_db()
 
         # Получаем информацию о пользователе
-        user_row = await conn.fetchrow(""" 
+        user_row = await conn.fetchrow("""
             SELECT clans, rank FROM user_tickets WHERE user_id = $1
         """, user_id)
 
@@ -1172,12 +1171,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_rank = user_row["rank"]
 
             if clan_name and clan_name != "NULL":
-                # Если пользователь состоит в клане
                 conn = await connect_db()
 
-                # Получаем список всех участников клана
-                clan_members = await conn.fetch(""" 
-                    SELECT user_id, rank FROM user_tickets WHERE clans = $1
+                # Получаем список всех участников клана с их никами
+                clan_members = await conn.fetch("""
+                    SELECT user_id, rank, nickname FROM user_tickets WHERE clans = $1
                 """, clan_name)
 
                 await conn.close()
@@ -1185,20 +1183,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if clan_members:
                     text = f"Ваш клан: {clan_name}\n\n"
 
-                    # Выводим участников клана с их рангами
+                    # Выводим участников клана с их никами и рангами
                     for member in clan_members:
-                        member_user_id = member["user_id"]
+                        member_nickname = member["nickname"] or f"ID: {member['user_id']}"
                         rank = member["rank"]
-                        try:
-                            user = await bot.get_chat_member(update.effective_chat.id, member_user_id)
-                            name = user.user.full_name
-                        except:
-                            name = f"Пользователь {member_user_id}"
 
                         if rank == "creator":
-                            text += f"{name} - создатель\n"
+                            text += f"{member_nickname} — создатель\n"
                         else:
-                            text += f"{name} - участник\n"
+                            text += f"{member_nickname} — участник\n"
 
                     await update.message.reply_text(text)
                 else:
@@ -1207,6 +1200,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Вы не состоите в клане.")
         else:
             await update.message.reply_text("Информация о вашем аккаунте не найдена.")
+        
         return
 
     elif message.startswith("клан вступить "):
@@ -1634,15 +1628,28 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
+    user_id = user.id
+    nickname = user.username or user.full_name or "Без ніку"
+
     conn = await connect_db()
-    await conn.execute("""
-        INSERT INTO user_tickets (user_id, username)
-        VALUES ($1, $2)
-        ON CONFLICT (user_id) DO NOTHING
-    """, user.id, user.username)
+
+    # Перевіряємо, чи користувач уже є в таблиці
+    existing = await conn.fetchrow("SELECT user_id FROM user_tickets WHERE user_id = $1", user_id)
+    if not existing:
+        # Додаємо нового користувача, якщо його немає
+        await conn.execute("""
+            INSERT INTO user_tickets (user_id, tickets, nickname)
+            VALUES ($1, 0, $2)
+        """, user_id, nickname)
+    else:
+        # Оновлюємо нік, якщо він змінився
+        await conn.execute("""
+            UPDATE user_tickets SET nickname = $1 WHERE user_id = $2
+        """, nickname, user_id)
+
     await conn.close()
 
-    await update.message.reply_text("Привет! Я Неко бот! Бот для репортов(наверное).")
+    await update.message.reply_text("Поздравляю! Вы успешно зарегистрированы!✅")
 
 def escape_markdown(text):
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
