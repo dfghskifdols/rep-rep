@@ -31,7 +31,6 @@ current_time = datetime.now(moscow_tz)
 hour = current_time.hour
 
 bot_paused_until = None
-scheduler = AsyncIOScheduler()
 
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
 waiting_for_question = set()
@@ -1875,6 +1874,12 @@ async def main():
     # HTTP сервер для Render
     await start_http_server()
 
+    # Планувальник
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(keep_alive, 'interval', minutes=10)
+    scheduler.add_job(check_user_profiles, 'interval', minutes=10)
+    scheduler.start()
+
     # Планувальник для промокодів
     start_daily_promo_code_task()
 
@@ -1882,11 +1887,4 @@ async def main():
     await app.run_polling()
 
 if __name__ == "__main__":
-    # Планувальник keep_alive + перевірка профілів
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(keep_alive, 'interval', minutes=10)
-    scheduler.add_job(check_user_profiles, 'interval', minutes=10)
-    scheduler.start()
-
-    # Запуск основного циклу
     asyncio.run(main())
