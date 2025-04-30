@@ -1841,6 +1841,33 @@ async def start_http_server():
     await site.start()
     print(f"🌐 HTTP сервер запущено на порту {port}")
 
+# Фонове оновлення username/nickname
+async def check_user_profiles():
+    conn = await connect_db()
+    users = await conn.fetch("SELECT user_id, username, nickname FROM user_tickets")
+
+    for user in users:
+        user_id = user["user_id"]
+        old_username = user["username"]
+        old_nickname = user["nickname"]
+
+        try:
+            tg_user = await bot.get_chat(user_id)
+            new_username = f"@{tg_user.username}" if tg_user.username else None
+            new_nickname = tg_user.full_name
+
+            if new_username != old_username or new_nickname != old_nickname:
+                await conn.execute("""
+                    UPDATE user_tickets
+                    SET username = $1, nickname = $2
+                    WHERE user_id = $3
+                """, new_username, new_nickname, user_id)
+                print(f"[UPDATE] Оновлено профіль для ID {user_id}")
+        except Exception as e:
+            print(f"[ERROR] Не вдалося оновити профіль {user_id}: {e}")
+
+    await conn.close()
+
 # Основна асинхронна функція
 async def main():
     print("🚀 Бот запущений!")
@@ -1855,9 +1882,10 @@ async def main():
     await app.run_polling()
 
 if __name__ == "__main__":
-    # Планувальник keep_alive
+    # Планувальник keep_alive + перевірка профілів
     scheduler = BackgroundScheduler()
     scheduler.add_job(keep_alive, 'interval', minutes=10)
+    scheduler.add_job(lambda: asyncio.create_task(check_user_profiles()), 'interval', minutes=10)
     scheduler.start()
 
     # Запуск основного циклу
