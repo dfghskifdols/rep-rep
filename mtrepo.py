@@ -31,6 +31,7 @@ current_time = datetime.now(moscow_tz)
 hour = current_time.hour
 
 bot_paused_until = None
+scheduler = AsyncIOScheduler()
 
 # Глобальна змінна для зберігання ID користувачів, які написали "Репорт-бот-вопрос"
 waiting_for_question = set()
