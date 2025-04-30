@@ -1628,28 +1628,22 @@ async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
-    user_id = user.id
-    nickname = user.username or "Нет никнейма."  # Якщо у користувача немає нікнейму, використовується "Без ніку"
+
+    # Отримуємо username з @, якщо є
+    username = f"@{user.username}" if user.username else None
+
+    # Отримуємо повне ім'я користувача
+    nickname = user.full_name
 
     conn = await connect_db()
-
-    # Перевіряємо, чи користувач вже є в таблиці
-    existing = await conn.fetchrow("SELECT user_id FROM user_tickets WHERE user_id = $1", user_id)
-    if not existing:
-        # Додаємо нового користувача, якщо його немає
-        await conn.execute("""
-            INSERT INTO user_tickets (user_id, tickets, nickname)
-            VALUES ($1, 0, $2)
-        """, user_id, nickname)
-    else:
-        # Оновлюємо нік, якщо він змінився
-        await conn.execute("""
-            UPDATE user_tickets SET nickname = $1 WHERE user_id = $2
-        """, nickname, user_id)
-
+    await conn.execute("""
+        INSERT INTO user_tickets (user_id, username, nickname)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id) DO NOTHING
+    """, user.id, username, nickname)
     await conn.close()
 
-    await update.message.reply_text(f"Поздравляю, {nickname}! Вы успешно зарегестрированы! ✅")
+    await update.message.reply_text("Привет! Я Неко бот! Бот для репортов(наверное).\nПомощь по боту - рпромощь.")
 
 def escape_markdown(text):
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
