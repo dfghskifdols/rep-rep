@@ -22,7 +22,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import threading
 import os
-import socket
+from aiohttp import web
 from apscheduler.schedulers.background import BackgroundScheduler
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
@@ -1825,40 +1825,40 @@ app.add_handler(MessageHandler(filters.TEXT, handle_message))
 def keep_alive():
     print("Bot is still alive!")
 
-# Функція для запуску dummy сервера
-def dummy_server():
-    port = int(os.environ.get("PORT", 10000))  # Стандартний порт або той, що дасть Render
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('0.0.0.0', port))
-    s.listen(1)
-    while True:
-        conn, addr = s.accept()
-        conn.close()
+# HTTP handler
+async def handle(request):
+    return web.Response(text="Bot is alive!")
+
+# HTTP-сервер для Render (замість dummy_server)
+async def start_http_server():
+    port = int(os.environ.get("PORT", 10000))
+    app = web.Application()
+    app.router.add_get("/", handle)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"🌐 HTTP сервер запущено на порту {port}")
 
 # Основна асинхронна функція
 async def main():
     print("🚀 Бот запущений!")
 
-    # Запускаємо планувальник для генерації промокодів
+    # HTTP сервер для Render
+    await start_http_server()
+
+    # Планувальник для промокодів
     start_daily_promo_code_task()
 
-    # Запуск polling і фонової перевірки одночасно
-    await asyncio.gather(app.run_polling())  # Це має бути твій Telegram бот
+    # Запуск Telegram-бота
+    await app.run_polling()
 
 if __name__ == "__main__":
-    # Спочатку запускаємо dummy сервер для Render
-    threading.Thread(target=dummy_server, daemon=True).start()
-
-    # Запускаємо планувальник
+    # Планувальник keep_alive
     scheduler = BackgroundScheduler()
-    scheduler.add_job(keep_alive, 'interval', minutes=10)  # Пінгуємо кожні 10 хвилин
+    scheduler.add_job(keep_alive, 'interval', minutes=10)
     scheduler.start()
 
-    # Потім запускаємо основний цикл бота
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(main())
-    except KeyboardInterrupt:
-        pass
-    finally:
-        loop.close()
+    # Запуск основного циклу
+    asyncio.run(main())
