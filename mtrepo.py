@@ -389,7 +389,7 @@ async def report_command(update: Update, context: CallbackContext):
     # Логування
     if reason != "п1.0":
          await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
-    await log_action(f"📌 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
+    await log_action(f"💮 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
 # Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -435,7 +435,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"👤 <b>Пользователь:</b> {reported_user_mention}\n"
             f"💬 <b>Сообщение:</b>\n<blockquote>{message_text}</blockquote>\n</blockquote>"
             f"🔗 <b>Ссылка:</b> {link_text}\n"
-            f"🔑 <b>Ключ репорту:</b> <code>{report_key}</code>" 
+            f"🔑 <b>Ключ репорта:</b> <code>{report_key}</code>" 
         )
 
         await query.message.edit_text("⏳ Отправка...")
@@ -1641,7 +1641,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """, user.id, username, nickname)
     await conn.close()
 
-    await update.message.reply_text("Привет!\nЯ Неко бот!\nБот для репортов(наверное).\nПомощь по боту - рпомощь.")
+    await update.message.reply_text("Привет👋\n \nЯ Неко бот🐈\nБот для репортов и не только.\n \nПомощь по боту - рпомощь😉.\nПравила - в разработке📝")
 
 def escape_markdown(text):
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
@@ -1778,7 +1778,7 @@ async def create_promo_code():
 
     chat_id = -1002268486160  # Потрібно вказати chat_id
 
-    message = f"😝Новый промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
+    message = f"😝Ждали? Новый промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
 
     # Надсилаємо повідомлення
     sent_message = await bot.send_message(chat_id, message, parse_mode='HTML')
