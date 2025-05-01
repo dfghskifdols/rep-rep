@@ -23,6 +23,12 @@ from datetime import datetime, timedelta
 import threading
 import os
 from aiohttp import web
+import sys
+print("CWD:", os.getcwd())
+for root, dirs, files in os.walk("."):
+    for name in dirs + files:
+        print(os.path.join(root, name))
+sys.exit(0)
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
