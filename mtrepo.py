@@ -1597,7 +1597,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"[Ошибка рфакт]: {e}")
         return
 
-    elif text == "клан покинуть":
+    elif message.lower() == "клан покинуть":
         user = await get_user(user_id)
         if not user["clan"]:
             await message.reply("❌ Ви не перебуваєте в жодному клані.")
@@ -1611,7 +1611,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.execute("UPDATE user_tickets SET clan = NULL, rank = NULL WHERE user_id = $1", user_id)
         await message.reply("✅ Ви покинули клан.")
 
-    elif text == "клан удалить":
+    elif message.lower() == "клан удалить":
         user = await get_user(user_id)
         if not user["clan"]:
             await message.reply("❌ Ви не перебуваєте в жодному клані.")
