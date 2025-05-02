@@ -1498,7 +1498,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
             await update.message.reply_text(f"✅ Вы положили {quantity} {resource_input} в хранилище клана.")
 
-    elif message == "клан хранилище":
+    elif message.lower() == "клан хранилище":
         conn = await connect_db()
 
         user_data = await conn.fetchrow("SELECT clans FROM user_tickets WHERE user_id = $1", user_id)
@@ -1597,7 +1597,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"[Ошибка рфакт]: {e}")
         return
 
-    elif message.text.lower() == "клан покинуть":
+    elif message.lower() == "клан покинуть":
         conn = await pool.acquire()
         try:
             user_data = await conn.fetchrow(
@@ -1625,7 +1625,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         finally:
             await pool.release(conn)
 
-    elif message.text.lower() == "клан удалить":
+    elif message.lower() == "клан удалить":
         conn = await pool.acquire()
         try:
             user_data = await conn.fetchrow(
