@@ -1597,44 +1597,75 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"[Ошибка рфакт]: {e}")
         return
 
-    elif message.lower() == "клан покинуть":
-        user_data = await conn.fetchrow("SELECT * FROM user_tickets WHERE user_id = $1", user_id)
-        if not user["clan"]:
-            await message.reply("❌ Ви не перебуваєте в жодному клані.")
-            return
+    elif message.text.lower() == "клан покинуть":
+        conn = await pool.acquire()
+        try:
+            user_data = await conn.fetchrow(
+                "SELECT clan FROM user_tickets WHERE user_id = $1", user_id
+            )
+            if not user_data or not user_data["clan"]:
+                await message.reply("❌ Ви не перебуваєте в жодному клані.")
+                return
 
-        clan = await get_clan(user["clan"])
-        if clan and clan["leader_id"] == user_id:
-            await message.reply("❌ Ви є лідером клану. Спочатку передайте лідерство або видаліть клан.")
-            return
+            clan_name = user_data["clan"]
+            clan = await conn.fetchrow(
+                "SELECT leader_id FROM clans WHERE name = $1", clan_name
+            )
+            if clan and clan["leader_id"] == user_id:
+                await message.reply(
+                    "❌ Ви є лідером клану. Спочатку передайте лідерство або видаліть клан."
+                )
+                return
 
-        await db.execute("UPDATE user_tickets SET clan = NULL, rank = NULL WHERE user_id = $1", user_id)
-        await message.reply("✅ Ви покинули клан.")
+            await conn.execute(
+                "UPDATE user_tickets SET clan = NULL, rank = NULL WHERE user_id = $1",
+                user_id
+            )
+            await message.reply("✅ Ви покинули клан.")
+        finally:
+            await pool.release(conn)
 
-    elif message.lower() == "клан удалить":
-        user = await get_user(user_id)
-        if not user["clan"]:
-            await message.reply("❌ Ви не перебуваєте в жодному клані.")
-            return
+    elif message.text.lower() == "клан удалить":
+        conn = await pool.acquire()
+        try:
+            user_data = await conn.fetchrow(
+                "SELECT clan FROM user_tickets WHERE user_id = $1", user_id
+            )
+            if not user_data or not user_data["clan"]:
+                await message.reply("❌ Ви не перебуваєте в жодному клані.")
+                return
 
-        clan_name = user["clan"]
-        clan = await get_clan(clan_name)
-        if not clan:
-            await message.reply("❌ Клан не знайдено.")
-            return
+            clan_name = user_data["clan"]
+            clan = await conn.fetchrow(
+                "SELECT leader_id FROM clans WHERE name = $1", clan_name
+            )
+            if not clan:
+                await message.reply("❌ Клан не знайдено.")
+                return
+            if clan["leader_id"] != user_id:
+                await message.reply("❌ Лише лідер клану може його видалити.")
+                return
 
-        if clan["leader_id"] != user_id:
-            await message.reply("❌ Лише лідер клану може його видалити.")
-            return
+            members = await conn.fetch(
+                "SELECT user_id FROM user_tickets WHERE clan = $1", clan_name
+            )
 
-        members = await db.fetch("SELECT user_id FROM user_tickets WHERE clan = $1", clan_name)
-
-        await db.execute("DELETE FROM clans WHERE name = $1", clan_name)
-        await db.execute("UPDATE user_tickets SET clan = NULL, rank = NULL WHERE clan = $1", clan_name)
+            await conn.execute(
+                "DELETE FROM clans WHERE name = $1", clan_name
+            )
+            await conn.execute(
+                "UPDATE user_tickets SET clan = NULL, rank = NULL WHERE clan = $1",
+                clan_name
+            )
+        finally:
+            await pool.release(conn)
 
         for member in members:
             try:
-                await bot.send_message(member["user_id"], f"❗ Клан {clan_name} був розпущений лідером.")
+                await bot.send_message(
+                    member["user_id"],
+                    f"❗ Клан {clan_name} був розпущений лідером."
+                )
             except:
                 pass
 
