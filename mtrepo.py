@@ -1598,7 +1598,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif message.lower() == "клан покинуть":
-        user = await get_user(user_id)
+        user_data = await conn.fetchrow("SELECT * FROM user_tickets WHERE user_id = $1", user_id)
         if not user["clan"]:
             await message.reply("❌ Ви не перебуваєте в жодному клані.")
             return
