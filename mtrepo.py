@@ -1609,9 +1609,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             clan_name = user_data["clans"]
             clan = await conn.fetchrow(
-                "SELECT leader_id FROM clans WHERE name = $1", clan_name
+                "SELECT leader FROM clans WHERE name = $1", clan_name
             )
-            if clan and clan["leader_id"] == user_id:
+            if clan and clan["leader"] == user_id:
                 await message.reply(
                     "❌ Ви є лідером клану. Спочатку передайте лідерство або видаліть клан."
                 )
@@ -1637,12 +1637,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             clan_name = user_data["clans"]
             clan = await conn.fetchrow(
-                "SELECT leader_id FROM clans WHERE name = $1", clan_name
+                "SELECT leader FROM clans WHERE name = $1", clan_name
             )
             if not clan:
                 await message.reply("❌ Клан не знайдено.")
                 return
-            if clan["leader_id"] != user_id:
+            if clan["leader"] != user_id:
                 await message.reply("❌ Лише лідер клану може його видалити.")
                 return
 
