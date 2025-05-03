@@ -1598,7 +1598,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif message.lower() == "клан покинуть":
-        conn = await pool.acquire()
+        conn = await connect_db()
         try:
             user_data = await conn.fetchrow(
                 "SELECT clan FROM user_tickets WHERE user_id = $1", user_id
@@ -1626,7 +1626,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await pool.release(conn)
 
     elif message.lower() == "клан удалить":
-        conn = await pool.acquire()
+        conn = await connect_db()
         try:
             user_data = await conn.fetchrow(
                 "SELECT clan FROM user_tickets WHERE user_id = $1", user_id
