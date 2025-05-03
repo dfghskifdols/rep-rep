@@ -1604,7 +1604,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "SELECT clans FROM user_tickets WHERE user_id = $1", user_id
             )
             if not user_data or not user_data["clans"]:
-                await message.reply("❌ Ви не перебуваєте в жодному клані.")
+                await message.reply_text("❌ Ви не перебуваєте в жодному клані.")
                 return
 
             clan_name = user_data["clans"]
@@ -1612,7 +1612,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "SELECT leader FROM clans WHERE name = $1", clan_name
             )
             if clan and clan["leader"] == user_id:
-                await message.reply(
+                await message.reply_text(
                     "❌ Ви є лідером клану. Спочатку передайте лідерство або видаліть клан."
                 )
                 return
@@ -1621,7 +1621,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "UPDATE user_tickets SET clans = NULL, rank = NULL WHERE user_id = $1",
                 user_id
             )
-            await message.reply("✅ Ви покинули клан.")
+            await message.reply_text("✅ Ви покинули клан.")
         finally:
             await conn.close()
 
@@ -1632,7 +1632,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "SELECT clans FROM user_tickets WHERE user_id = $1", user_id
             )
             if not user_data or not user_data["clans"]:
-                await message.reply("❌ Ви не перебуваєте в жодному клані.")
+                await message.reply_text("❌ Ви не перебуваєте в жодному клані.")
                 return
 
             clan_name = user_data["clans"]
@@ -1640,10 +1640,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "SELECT leader FROM clans WHERE name = $1", clan_name
             )
             if not clan:
-                await message.reply("❌ Клан не знайдено.")
+                await message.reply_text("❌ Клан не знайдено.")
                 return
             if clan["leader"] != user_id:
-                await message.reply("❌ Лише лідер клану може його видалити.")
+                await message.reply_text("❌ Лише лідер клану може його видалити.")
                 return
 
             members = await conn.fetch(
@@ -1669,7 +1669,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except:
                 pass
 
-        await message.reply(f"🗑 Клан {clan_name} був успішно видалений.")
+        await message.reply_text(f"🗑 Клан {clan_name} був успішно видалений.")
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
