@@ -1538,7 +1538,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message.lower() == "рпомощь":
         await update.message.reply_text(
             "Нужна помощь? Почитай это:\nhttps://telegra.ph/Neko-rep-bottest-04-20\n"
-            "Не помогло? Пиши сюда: [тык](https://example.com)",
+            "Не помогло? Пиши сюда: [тык](https://t.me/Bl_Nexus)",
             parse_mode="Markdown"
         )
         return
