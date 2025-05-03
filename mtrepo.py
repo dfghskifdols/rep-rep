@@ -1601,13 +1601,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn = await connect_db()
         try:
             user_data = await conn.fetchrow(
-                "SELECT clan FROM user_tickets WHERE user_id = $1", user_id
+                "SELECT clans FROM user_tickets WHERE user_id = $1", user_id
             )
-            if not user_data or not user_data["clan"]:
+            if not user_data or not user_data["clans"]:
                 await message.reply("❌ Ви не перебуваєте в жодному клані.")
                 return
 
-            clan_name = user_data["clan"]
+            clan_name = user_data["clans"]
             clan = await conn.fetchrow(
                 "SELECT leader_id FROM clans WHERE name = $1", clan_name
             )
@@ -1618,24 +1618,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
             await conn.execute(
-                "UPDATE user_tickets SET clan = NULL, rank = NULL WHERE user_id = $1",
+                "UPDATE user_tickets SET clans = NULL, rank = NULL WHERE user_id = $1",
                 user_id
             )
             await message.reply("✅ Ви покинули клан.")
         finally:
-            await pool.release(conn)
+            await conn.close()
 
     elif message.lower() == "клан удалить":
         conn = await connect_db()
         try:
             user_data = await conn.fetchrow(
-                "SELECT clan FROM user_tickets WHERE user_id = $1", user_id
+                "SELECT clans FROM user_tickets WHERE user_id = $1", user_id
             )
-            if not user_data or not user_data["clan"]:
+            if not user_data or not user_data["clans"]:
                 await message.reply("❌ Ви не перебуваєте в жодному клані.")
                 return
 
-            clan_name = user_data["clan"]
+            clan_name = user_data["clans"]
             clan = await conn.fetchrow(
                 "SELECT leader_id FROM clans WHERE name = $1", clan_name
             )
@@ -1647,18 +1647,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
             members = await conn.fetch(
-                "SELECT user_id FROM user_tickets WHERE clan = $1", clan_name
+                "SELECT user_id FROM user_tickets WHERE clans = $1", clan_name
             )
 
             await conn.execute(
                 "DELETE FROM clans WHERE name = $1", clan_name
             )
             await conn.execute(
-                "UPDATE user_tickets SET clan = NULL, rank = NULL WHERE clan = $1",
+                "UPDATE user_tickets SET clans = NULL, rank = NULL WHERE clans = $1",
                 clan_name
             )
         finally:
-            await pool.release(conn)
+            await conn.close()
 
         for member in members:
             try:
