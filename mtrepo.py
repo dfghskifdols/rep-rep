@@ -1670,6 +1670,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(f"🗑 Клан {clan_name} был успешно удален.")
 
+    elif message.lower() == "рправила":
+        await update.message.reply_text(
+            "Настоящий свод правил бота:\nhttps://telegra.ph/Neko-bot-rules-04-30"
+        )
+        return
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
@@ -1714,7 +1720,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """, user.id, username, nickname)
     await conn.close()
 
-    await update.message.reply_text("Привет👋\n \nЯ Неко бот🐈\nБот для репортов и не только.\n \nПомощь по боту - рпомощь😉.\nПравила - в разработке📝")
+    await update.message.reply_text("Привет👋\n \nЯ Неко бот🐈\nБот для репортов и не только.\n \nПомощь по боту - рпомощь😉.\nПравила - рправила📝")
 
 def escape_markdown(text):
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
