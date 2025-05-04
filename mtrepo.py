@@ -385,11 +385,6 @@ async def report_command(update: Update, context: CallbackContext):
         reply_markup=reply_markup,
         parse_mode=ParseMode.HTML
     )
-    
-    # Логування
-    if reason != "п1.0":
-         await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
-    await log_action(f"💮 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
 # Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -438,7 +433,7 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🔑 <b>Ключ репорта:</b> <code>{report_key}</code>" 
         )
 
-        await query.message.edit_text("⏳ Отправка...")
+        await query.message.edit_text("✏️ Отправка...")
 
         # Получаем администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
@@ -450,6 +445,11 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             protect_content=True,
             disable_web_page_preview=True
         )
+
+        # Логування
+        if reason != "п1.0":
+             await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
+        await log_action(f"💮 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
 
         # Додаємо квиток користувачу в БД з урахуванням преміуму
         conn = await connect_db()
@@ -478,18 +478,16 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
         part3 = admin_mentions[third*2:]
 
         await asyncio.sleep(4)
-        await bot.send_message(ADMIN_CHAT_ID, "🔔 1: " + " ".join(part1))
+        await bot.send_message(ADMIN_CHAT_ID, "🔮 1: " + " ".join(part1))
         await asyncio.sleep(4)
-        await bot.send_message(ADMIN_CHAT_ID, "🔔 2: " + " ".join(part2))
+        await bot.send_message(ADMIN_CHAT_ID, "🔮 2: " + " ".join(part2))
         await asyncio.sleep(4)
-        await bot.send_message(ADMIN_CHAT_ID, "🔔 3: " + " ".join(part3))
+        await bot.send_message(ADMIN_CHAT_ID, "🔮 3: " + " ".join(part3))
 
         confirmed_reports.add(report_key)
-        await query.message.edit_text("✅Репорт успешно отправлен!")
-        await log_action(f"✅ Репорт подтверждён пользователем {query.from_user.full_name} ({query.from_user.id})")
+        await query.message.edit_text("📝Репорт успешно отправлен!")
     elif action == "cancel":
-        await query.message.edit_text("❌ Репорт отменен.")
-        await log_action(f"❌ Репорт отменён пользователем {query.from_user.full_name} ({query.from_user.id})")
+        await query.message.edit_text("🛑Репорт отменен.")
 
 # Функция одержания ID чату
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1180,7 +1178,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await conn.close()
 
                 if clan_members:
-                    text = f"Ваш клан: {clan_name}\n\n"
+                    text = f"Ваш клан:\n{clan_name}\n\n"
 
                     # Выводим участников клана с их никами и рангами
                     for member in clan_members:
