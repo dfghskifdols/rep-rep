@@ -24,6 +24,10 @@ import threading
 import os
 from aiohttp import web
 
+pending_reports = set()
+confirmed_reports = set()
+pending_report_data = {}
+
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
 moscow_tz = timezone('Europe/Moscow')
@@ -354,8 +358,8 @@ async def report_command(update: Update, context: CallbackContext):
         )
         return
 
-    reason = context.args[0].lower()  # <- приводимо до нижнього регістру
-    message = update.message  # отримуємо об'єкт повідомлення з update
+    reason = context.args[0].lower()
+    message = update.message
     message_id = update.message.reply_to_message.message_id
     user_id = update.message.from_user.id
     report_key = f"{user_id}_{message_id}"
@@ -364,8 +368,6 @@ async def report_command(update: Update, context: CallbackContext):
     message_link = f"https://t.me/{update.message.chat.username}/{message_id}"
     report_time = update.message.date
     reported_text = update.message.reply_to_message.text
-
-    # Перевіряємо, чи є forward_date у повідомленні, якщо немає - використовуємо date
     report_date = message.forward_date if hasattr(message, 'forward_date') else message.date
     report_date = report_date.replace(tzinfo=None)
 
@@ -373,13 +375,22 @@ async def report_command(update: Update, context: CallbackContext):
         await update.message.reply_text("⚠️ Этот репорт уже был подтверждён!")
         return
 
-    keyboard = [[
-             InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
-             InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
-         ]]
+    # Зберігаємо тимчасові дані репорту
+    pending_report_data[report_key] = {
+        "reason": reason,
+        "reporter_name": reporter_name,
+        "reported_name": reported_name,
+        "message_link": message_link,
+        "reported_text": reported_text,
+        "report_date": report_date
+    }
 
+    keyboard = [[
+        InlineKeyboardButton("✅ Да", callback_data=f"confirm_{user_id}_{message_id}"),
+        InlineKeyboardButton("❌ Нет", callback_data=f"cancel_{user_id}_{message_id}")
+    ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     await update.message.reply_text(
         f"🔊Вы уверены, что хотите отправить репорт?",
         reply_markup=reply_markup,
@@ -389,7 +400,6 @@ async def report_command(update: Update, context: CallbackContext):
 # Обробка підтвердження або відхилення репорту
 async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-
     data = query.data.split("_")
     if len(data) < 3:
         await query.message.edit_text("❌ Ошибка: неправильный формат данных!")
@@ -430,12 +440,11 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"👤 <b>Пользователь:</b> {reported_user_mention}\n"
             f"💬 <b>Сообщение:</b>\n<blockquote>{message_text}</blockquote>\n</blockquote>"
             f"🔗 <b>Ссылка:</b> {link_text}\n"
-            f"🔑 <b>Ключ репорта:</b> <code>{report_key}</code>" 
+            f"🔑 <b>Ключ репорта:</b> <code>{report_key}</code>"
         )
 
         await query.message.edit_text("✏️ Отправка...")
 
-        # Получаем администраторов
         admins = await bot.get_chat_administrators(ADMIN_CHAT_ID)
         admin_mentions = [f"@{admin.user.username}" for admin in admins if admin.user.username]
 
@@ -446,12 +455,6 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
             disable_web_page_preview=True
         )
 
-        # Логування
-        if reason != "п1.0":
-             await save_report(user_id, message_id, reason, reporter_name, reported_name, message_link, reported_text, report_date)
-        await log_action(f"💮 Репорт отправил {update.message.from_user.full_name} ({user_id}) с причиной {reason}")
-
-        # Додаємо квиток користувачу в БД з урахуванням преміуму
         conn = await connect_db()
         is_banned = await conn.fetchval("SELECT banned FROM banned_users WHERE user_id = $1", reported_user.id)
 
@@ -468,25 +471,43 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 DO UPDATE SET tickets = user_tickets.tickets + $2
             """, reported_user.id, multiplier)
 
+        # Зберігаємо репорт, якщо причина не п1.0
+        report_data = pending_report_data.get(report_key)
+        if report_data:
+            if report_data["reason"] != "п1.0":
+                await save_report(
+                    user_id=user_id,
+                    message_id=message_id,
+                    reason=report_data["reason"],
+                    reporter_name=report_data["reporter_name"],
+                    reported_name=report_data["reported_name"],
+                    message_link=report_data["message_link"],
+                    reported_text=report_data["reported_text"],
+                    report_date=report_data["report_date"]
+                )
+            await log_action(f"💮 Репорт отправил {report_data['reporter_name']} ({user_id}) с причиной {report_data['reason']}")
+            pending_report_data.pop(report_key, None)
+
         await conn.close()
 
-    if admin_mentions:
-        # Ділимо на 3 частини
-        third = len(admin_mentions) // 3
-        part1 = admin_mentions[:third]
-        part2 = admin_mentions[third:third*2]
-        part3 = admin_mentions[third*2:]
+        if admin_mentions:
+            third = len(admin_mentions) // 3
+            part1 = admin_mentions[:third]
+            part2 = admin_mentions[third:third*2]
+            part3 = admin_mentions[third*2:]
 
-        await asyncio.sleep(4)
-        await bot.send_message(ADMIN_CHAT_ID, "🔮 1: " + " ".join(part1))
-        await asyncio.sleep(4)
-        await bot.send_message(ADMIN_CHAT_ID, "🔮 2: " + " ".join(part2))
-        await asyncio.sleep(4)
-        await bot.send_message(ADMIN_CHAT_ID, "🔮 3: " + " ".join(part3))
+            await asyncio.sleep(4)
+            await bot.send_message(ADMIN_CHAT_ID, "🔮 1: " + " ".join(part1))
+            await asyncio.sleep(4)
+            await bot.send_message(ADMIN_CHAT_ID, "🔮 2: " + " ".join(part2))
+            await asyncio.sleep(4)
+            await bot.send_message(ADMIN_CHAT_ID, "🔮 3: " + " ".join(part3))
 
         confirmed_reports.add(report_key)
         await query.message.edit_text("📝Репорт успешно отправлен!")
+
     elif action == "cancel":
+        pending_report_data.pop(report_key, None)
         await query.message.edit_text("🛑Репорт отменен.")
 
 # Функция одержания ID чату
