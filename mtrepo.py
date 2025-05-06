@@ -1697,7 +1697,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message.lower() == "рбонус":
         conn = await connect_db()
         user_row = await conn.fetchrow("SELECT last_rbonus FROM user_tickets WHERE user_id = $1", user_id)
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
 
         # Перевірка часу останнього бонусу
         if user_row and user_row['last_rbonus']:
