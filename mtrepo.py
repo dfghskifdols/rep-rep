@@ -1771,7 +1771,7 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=reward_message.message_id)
 
     # Відповідь користувачу
-    confirmation_msg = await update.message.reply_text("✅Ваш запрос обработан, смотрите сообщение ниже или выше.")
+    confirmation_msg = await update.message.reply_text("✅Ваш запрос обработан, смотрите сообщение выше.")
 
     # Лінк на повідомлення
     chat_id = update.message.chat.id
