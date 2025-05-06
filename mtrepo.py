@@ -1615,7 +1615,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"[Ошибка рфакт]: {e}")
         return
 
-    elif message == "клан покинуть":
+    elif message.lower() == "клан покинуть":
         conn = await connect_db()
         try:
             user_data = await conn.fetchrow(
@@ -1643,7 +1643,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         finally:
             await conn.close()
 
-    elif message == "клан удалить":
+    elif message.lower() == "клан удалить":
         conn = await connect_db()
         try:
             user_data = await conn.fetchrow(
@@ -1692,6 +1692,72 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Настоящий свод правил бота:\nhttps://telegra.ph/Neko-bot-rules-04-30"
         )
         return
+
+    # 🧧 [3] Рандомний рбонус
+    elif message.lower() == "рбонус":
+        conn = await connect_db()
+        user_row = await conn.fetchrow("SELECT last_rbonus FROM user_tickets WHERE user_id = $1", user_id)
+        now = datetime.datetime.utcnow()
+
+        # Перевірка часу останнього бонусу
+        if user_row and user_row['last_rbonus']:
+            last_time = user_row['last_rbonus']
+            if now - last_time < datetime.timedelta(hours=24):
+                left = datetime.timedelta(hours=24) - (now - last_time)
+                total_seconds = int(left.total_seconds())
+                hours, remainder = divmod(left.seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                await update.message.reply_text(f"⏳ Вы уже получали рбонус.\n \nЕще раз можно через:\n {hours}ч. {minutes}мин. {seconds}сек.")
+                await conn.close()
+                return
+
+        # Розіграш
+        rnd = random.random()
+        reward_text = ""
+
+        if rnd < 0.001:
+            # 0.1% — преміум
+            await conn.execute("UPDATE users SET premium_until = $1 WHERE user_id = $2", now + datetime.timedelta(days=7), user_id)
+            reward_text = "🎉 Поздравляю! Вы получили премиум на 7 дней!"
+        elif rnd < 0.003:
+            # 0.2% — 3 квитки
+            await conn.execute("UPDATE user_tickets SET tickets = tickets + 3 WHERE user_id = $1", user_id)
+            reward_text = "🎟 Вы получили 3 билета!"
+        elif rnd < 0.005:
+            # 0.2% — 3 каплі
+            await conn.execute("UPDATE users SET drops = drops + 3 WHERE user_id = $1", user_id)
+            reward_text = "💧 Вы получили 3 капли!"
+        elif rnd < 0.015:
+            # 1% — 10000 неко коінів
+            await conn.execute("UPDATE users SET neko_coins = neko_coins + 10000 WHERE user_id = $1", user_id)
+            reward_text = "💰 Вы получили 10,000 неко коинов!"
+        elif rnd < 0.025:
+            # 1% — 2 каплі
+            await conn.execute("UPDATE users SET drops = drops + 2 WHERE user_id = $1", user_id)
+            reward_text = "💧 Вы получили 2 капли!"
+        elif rnd < 0.05:
+            # 2.5% — 2500 неко коінів
+            await conn.execute("UPDATE users SET neko_coins = neko_coins + 2500 WHERE user_id = $1", user_id)
+            reward_text = "💰 Вы получили 2,500 неко коинов!"
+        elif rnd < 0.10:
+            # 5% — 1 квиток
+            await conn.execute("UPDATE user_tickets SET tickets = tickets + 1 WHERE user_id = $1", user_id)
+            reward_text = "🎟 Вы получили 1 билет!"
+        elif rnd < 0.15:
+            # 5% — 1 капля
+            await conn.execute("UPDATE users SET drops = drops + 1 WHERE user_id = $1", user_id)
+            reward_text = "💧 Вы получили 1 каплю!"
+        else:
+            # 85% — 10–1000 неко коінів
+            amount = random.randint(10, 1000)
+            await conn.execute("UPDATE users SET neko_coins = neko_coins + $1 WHERE user_id = $2", amount, user_id)
+            reward_text = f"💰 Вы получили {amount} неко коинов!"
+
+        # Оновлюємо час останнього бонусу
+        await conn.execute("UPDATE user_tickets SET last_rbonus = $1 WHERE user_id = $2", now, user_id)
+        await conn.close()
+
+        await update.message.reply_text(reward_text)
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
