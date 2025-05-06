@@ -1722,7 +1722,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif rnd < 0.003:
             # 0.2% — 3 квитки
             await conn.execute("UPDATE user_tickets SET tickets = tickets + 3 WHERE user_id = $1", user_id)
-            reward_text = "🎟 Вы получили 3 билета!"
+            reward_text = "🎫 Вы получили 3 билета!"
         elif rnd < 0.005:
             # 0.2% — 3 каплі
             await conn.execute("UPDATE user_tickets SET drops = drops + 3 WHERE user_id = $1", user_id)
@@ -1742,7 +1742,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif rnd < 0.10:
             # 5% — 1 квиток
             await conn.execute("UPDATE user_tickets SET tickets = tickets + 1 WHERE user_id = $1", user_id)
-            reward_text = "🎟 Вы получили 1 билет!"
+            reward_text = "🎫 Вы получили 1 билет!"
         elif rnd < 0.15:
             # 5% — 1 капля
             await conn.execute("UPDATE user_tickets SET drops = drops + 1 WHERE user_id = $1", user_id)
