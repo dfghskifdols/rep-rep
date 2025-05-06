@@ -1702,8 +1702,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Перевірка часу останнього бонусу
         if user_row and user_row['last_rbonus']:
             last_time = user_row['last_rbonus']
-            if now - last_time < datetime.timedelta(hours=24):
-                left = datetime.timedelta(hours=24) - (now - last_time)
+            if now - last_time < timedelta(hours=24):
+                left = timedelta(hours=24) - (now - last_time)
                 total_seconds = int(left.total_seconds())
                 hours, remainder = divmod(left.seconds, 3600)
                 minutes, seconds = divmod(remainder, 60)
