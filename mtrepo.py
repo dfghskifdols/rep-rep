@@ -210,7 +210,7 @@ async def bot_stop(update: Update, context: CallbackContext):
 # Підключення до бази даних PostgreSQL
 async def connect_db():
     return await asyncpg.connect(
-        dsn='postgresql://neondb_owner:npg_PXgGyF7Z5MUJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require'
+        dsn='postgresql://neondb_owner:npg_N3junRAT1iFJ@ep-shy-feather-a2zlgfcw-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require'
     )
 
 # Отримання репортів з бази даних для сторінки
