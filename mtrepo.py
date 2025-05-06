@@ -1730,7 +1730,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif rnd < 0.015:
             # 1% — 10000 неко коінів
             await conn.execute("UPDATE users_tickets SET neko_coins = neko_coins + 10000 WHERE user_id = $1", user_id)
-            reward_text = "💰 Вы получили 10,000 неко коинов!"
+            reward_text = "🍥 Вы получили 10,000 неко коинов!"
         elif rnd < 0.025:
             # 1% — 2 каплі
             await conn.execute("UPDATE user_tickets SET drops = drops + 2 WHERE user_id = $1", user_id)
@@ -1738,7 +1738,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif rnd < 0.05:
             # 2.5% — 2500 неко коінів
             await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + 2500 WHERE user_id = $1", user_id)
-            reward_text = "💰 Вы получили 2,500 неко коинов!"
+            reward_text = "🍥 Вы получили 2,500 неко коинов!"
         elif rnd < 0.10:
             # 5% — 1 квиток
             await conn.execute("UPDATE user_tickets SET tickets = tickets + 1 WHERE user_id = $1", user_id)
@@ -1751,7 +1751,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # 85% — 10–1000 неко коінів
             amount = random.randint(10, 1000)
             await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + $1 WHERE user_id = $2", amount, user_id)
-            reward_text = f"💰 Вы получили {amount} неко коинов!"
+            reward_text = f"🍥 Вы получили {amount} неко коинов!"
 
         # Оновлюємо час останнього бонусу
         await conn.execute("UPDATE user_tickets SET last_rbonus = $1 WHERE user_id = $2", now, user_id)
