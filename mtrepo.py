@@ -1707,7 +1707,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 total_seconds = int(left.total_seconds())
                 hours, remainder = divmod(left.seconds, 3600)
                 minutes, seconds = divmod(remainder, 60)
-                await update.message.reply_text(f"⏳ Вы уже получали рбонус.\n \nЕще раз можно через:\n {hours}ч. {minutes}мин. {seconds}сек.")
+                await update.message.reply_text(f"🎁 Бонус еще не готов!\n \nМожно получить через:\n {hours}ч. {minutes}мин. {seconds}сек.")
                 await conn.close()
                 return
 
