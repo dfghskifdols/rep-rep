@@ -98,7 +98,8 @@ rafu_responses = [
     "<b>Кот ананас стал ананасом когда на его голову свалился ананас</b>",
     "<b>🐍ɥɥƎ очень боится собак</b>",
     "<b>У Люцика сегодня экзамен</b>",
-    "<b>РаФу - сокращенно РАндом Факт про Участников</b>"
+    "<b>РаФу - сокращенно РАндом Факт про Участников</b>",
+    "<b>Дуб иногда стает фениксом или далбаёбом</b>"
 ]
 
 # Регулярное выражение для проверки формата причины репорта (например, "П1.3", "п1.3")
@@ -1739,7 +1740,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """, user.id, username, nickname)
     await conn.close()
 
-    await update.message.reply_text("Привет👋\n \nЯ Неко бот🐈\nБот для репортов и не только.\n \nПомощь по боту - рпомощь😉.\nПравила - рправила📝")
+    await update.message.reply_text("Привет👋\n \nЯ Неко бот🐈\nБот для репортов и не только.\n \nПомощь по боту - рпомощь😉.\nПравила - рправила📝\nЗадать вопрос - рбв🤔")
 
 def escape_markdown(text):
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
@@ -1749,30 +1750,46 @@ async def get_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     username = f"@{user.username}" if user.username else f"ID: {user_id}"
 
+    # Перевірка наявності аргументу
+    if not context.args:
+        return await update.message.reply_text("❗ Пример: /get_reward ник_в_MineEvo")
+
+    mine_nick = context.args[0]
+
     conn = await connect_db()
     row = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
 
     if not row or row['tickets'] < 15:
-        await update.message.reply_text("❌ У вас недостаточно билетов (надо 15).")
+        await update.message.reply_text("❌ У вас не хватает билетов (надо 15).")
         await conn.close()
         return
 
+    # Віднімаємо квитки
     await conn.execute("UPDATE user_tickets SET tickets = tickets - 15 WHERE user_id = $1", user_id)
     await conn.close()
 
-    # Повідомлення користувачу
-    await update.message.reply_text("Ваш запрос на получение награды отправлен!")
+    # Відправляємо команду .evo
+    reward_message = await update.message.reply_text(f".evo дать {mine_nick} миф 1")
+    await asyncio.sleep(2)
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=reward_message.message_id)
 
-    # Посилання на повідомлення
+    # Відповідь користувачу
+    confirmation_msg = await update.message.reply_text("✅Ваш запрос обработан, смотрите сообщение ниже или выше.")
+
+    # Лінк на повідомлення
     chat_id = update.message.chat.id
-    message_id = update.message.message_id
+    message_id = confirmation_msg.message_id
     chat_link = f"https://t.me/c/{str(chat_id)[4:]}/{message_id}"
 
-    # Екранування юзернейму для Markdown
+    # Escape Markdown для повідомлення адміну
     escaped_username = escape_markdown(username)
+    escaped_link = escape_markdown(chat_link)
 
-    # Повідомлення адміну
-    admin_text = f"📥 Запит: {escaped_username}\n🔗 [Перейти до повідомлення]({chat_link})"
+    admin_text = (
+        f"📥 Запит: {escaped_username}\n"
+        f"🎮 MineEvo нік: `{mine_nick}`\n"
+        f"🔗 [Перейти до повідомлення]({escaped_link})"
+    )
 
     await context.bot.send_message(
         chat_id=USER_CHAT_ID,
@@ -1838,7 +1855,7 @@ async def runban_user(update: Update, context: CallbackContext):
     await update.message.reply_text(f"✳️ Пользователь {unbanned_user_id} разбанен.")
 
 # Вивід списку користувачів з пагінацією
-async def user_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def user_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Сторінка з args або 1
     page = int(context.args[0]) if context.args and context.args[0].isdigit() else 1
     per_page = 25
