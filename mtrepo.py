@@ -50,7 +50,7 @@ LOG_CHAT_ID = -1002411396364
 ALLOWED_USERS = [5283100992, 5713511759, 5344318601, 6340673182]
 ADMINS_ALLOWED = [5283100992, 5713511759, 5344318601, 6340673182, 1385118926, 6139706645, 5338683046]
 GROUP_ID = -1002268486160
-LOG_CHATDEL_ID = -4665694960
+BD_LOG_CHAT = -4752175845
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -2056,6 +2056,17 @@ def start_daily_promo_code_task():
     # Запускаємо задачу о 9:00 по МСК кожного дня
     scheduler.add_job(create_promo_code, 'cron', hour=9, minute=30, timezone='Europe/Moscow')
     scheduler.start()
+
+async def log_db_action(function_name: str, command_description: str, user) -> None:
+    now = datetime.now(moscow_tz).strftime("%H:%M:%S %d.%m.%Y")
+    username = f"@{user.username}" if user.username else f"ID: {user.id}"
+    log_text = (
+        f"функція: {function_name}\n"
+        f"команда: {command_description}\n"
+        f"користувач: {user.full_name} ({username})\n"
+        f"час: {now}"
+    )
+    await bot.send_message(BD_LOG_CHAT, log_text)
 
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
 app.add_handler(CommandHandler("rban", rban_user))
