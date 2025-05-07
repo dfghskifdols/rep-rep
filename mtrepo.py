@@ -2087,7 +2087,7 @@ async def log_db_action(function_name: str, command_description: str, user) -> N
         f"користувач: {user.full_name} ({username})\n"
         f"час: {now}"
     )
-    await bot.send_message(BD_LOG_CHAT, log_text)
+    await bot.send_message(BD_CHAT_ID, log_text)
 
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
 app.add_handler(CommandHandler("rban", rban_user))
