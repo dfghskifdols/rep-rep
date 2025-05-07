@@ -1714,50 +1714,71 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Розіграш
         rnd = random.random()
         reward_text = ""
+        log_command = ""
 
         if rnd < 0.001:
             # 0.1% — преміум
-            await conn.execute("UPDATE user_tickets SET premium_until = $1 WHERE user_id = $2", now + datetime.timedelta(days=7), user_id)
+            await conn.execute("UPDATE user_tickets SET premium_until = $1 WHERE user_id = $2", now + timedelta(days=7), user_id)
             reward_text = "🎉 Поздравляю! Вы получили премиум на 7 дней!"
+            log_command = "видати преміум на 7 днів"
         elif rnd < 0.003:
             # 0.2% — 3 квитки
             await conn.execute("UPDATE user_tickets SET tickets = tickets + 3 WHERE user_id = $1", user_id)
             reward_text = "🎫 Вы получили 3 билета!"
+            log_command = "додати користувачу 3 квитків"
         elif rnd < 0.005:
             # 0.2% — 3 каплі
             await conn.execute("UPDATE user_tickets SET drops = drops + 3 WHERE user_id = $1", user_id)
             reward_text = "💧 Вы получили 3 капли!"
+            log_command = "додати користувачу 3 капель"
         elif rnd < 0.015:
             # 1% — 10000 неко коінів
-            await conn.execute("UPDATE users_tickets SET neko_coins = neko_coins + 10000 WHERE user_id = $1", user_id)
+            await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + 10000 WHERE user_id = $1", user_id)
             reward_text = "🍥 Вы получили 10,000 неко коинов!"
+            log_command = "додати користувачу 10000 неко коінів"
         elif rnd < 0.025:
             # 1% — 2 каплі
             await conn.execute("UPDATE user_tickets SET drops = drops + 2 WHERE user_id = $1", user_id)
             reward_text = "💧 Вы получили 2 капли!"
+            log_command = "додати користувачу 2 каплі"
         elif rnd < 0.05:
             # 2.5% — 2500 неко коінів
             await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + 2500 WHERE user_id = $1", user_id)
             reward_text = "🍥 Вы получили 2,500 неко коинов!"
+            log_command = "додати користувачу 2500 неко коінів"
         elif rnd < 0.10:
             # 5% — 1 квиток
             await conn.execute("UPDATE user_tickets SET tickets = tickets + 1 WHERE user_id = $1", user_id)
             reward_text = "🎫 Вы получили 1 билет!"
+            log_command = "додати користувачу 1 квиток"
         elif rnd < 0.15:
             # 5% — 1 капля
             await conn.execute("UPDATE user_tickets SET drops = drops + 1 WHERE user_id = $1", user_id)
             reward_text = "💧 Вы получили 1 каплю!"
+            log_command = "додати користувачу 1 каплю"
         else:
             # 85% — 10–1000 неко коінів
             amount = random.randint(10, 1000)
             await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + $1 WHERE user_id = $2", amount, user_id)
             reward_text = f"🍥 Вы получили {amount} неко коинов!"
+            log_command = f"додати користувачу {amount} неко коінів"
 
         # Оновлюємо час останнього бонусу
         await conn.execute("UPDATE user_tickets SET last_rbonus = $1 WHERE user_id = $2", now, user_id)
         await conn.close()
 
         await update.message.reply_text(reward_text)
+
+        # Логування
+        if log_command:
+            username = f"@{update.message.from_user.username}" if update.message.from_user.username else f"ID: {user_id}"
+            current_time = datetime.now(moscow_tz).strftime("%H:%M:%S %d.%m.%Y")
+            await log_action(
+                f"функція: рбонус\n"
+                f"команда: {log_command}\n"
+                f"користувач: {username}\n"
+                f"час: {current_time}"
+            )
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
