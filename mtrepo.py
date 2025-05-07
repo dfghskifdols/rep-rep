@@ -1771,14 +1771,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Логування
         if log_command:
-            username = f"@{update.message.from_user.username}" if update.message.from_user.username else f"ID: {user_id}"
-            current_time = datetime.now(moscow_tz).strftime("%H:%M:%S %d.%m.%Y")
-            await log_action(
-                f"функція: рбонус\n"
-                f"команда: {log_command}\n"
-                f"користувач: {username}\n"
-                f"час: {current_time}"
-            )
+            await log_db_action("рбонус", log_command, update.message.from_user)
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
