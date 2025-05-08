@@ -469,6 +469,12 @@ async def handle_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 DO UPDATE SET tickets = user_tickets.tickets + $2
             """, reported_user.id, multiplier)
 
+            await log_db_action(
+                function_name="репорт",
+                command_description=f"додати користувачу {multiplier} квиток{'и' if multiplier > 1 else ''}",
+                user=reported_user
+            )
+
         # Зберігаємо репорт, якщо причина не п1.0
         report_data = pending_report_data.get(report_key)
         if report_data:
