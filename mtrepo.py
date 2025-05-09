@@ -27,6 +27,9 @@ from aiohttp import web
 pending_reports = set()
 confirmed_reports = set()
 pending_report_data = {}
+# Глобальна змінна для зберігання ID вже оброблених повідомлень
+processed_messages = set()
+promo_task_started = False
 
 rfact_requests = defaultdict(list)  # user_id: [datetime, datetime, ...]
 
@@ -527,6 +530,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message = update.message.text.strip().lower()  # Перетворюємо на малий регістр
     user_id = update.message.from_user.id
+
+    # Захист від повторної обробки повідомлення
+    message_id = update.message.message_id
+    chat_id = update.message.chat.id
+    unique_id = f"{chat_id}_{message_id}"
+
+    if unique_id in processed_messages:
+        return  # вже оброблено
+
+    processed_messages.add(unique_id)
 
     # Обробка обох команд
     if message in ["рбв", "репорт бот вопрос"]:
@@ -2070,11 +2083,14 @@ async def create_promo_code():
     # Прикріплюємо відправлене повідомлення
     await sent_message.pin()
 
-# Функція для запуску задачі кожного дня
 def start_daily_promo_code_task():
+    global promo_task_started
+    if promo_task_started:
+        return
+    promo_task_started = True
+
     scheduler = AsyncIOScheduler()
-    # Запускаємо задачу о 9:00 по МСК кожного дня
-    scheduler.add_job(create_promo_code, 'cron', hour=9, minute=30, timezone='Europe/Moscow')
+    scheduler.add_job(create_promo_code, 'cron', hour=12, minute=50, timezone='Europe/Moscow')
     scheduler.start()
 
 async def log_db_action(function_name: str, command_description: str, user) -> None:
