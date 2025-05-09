@@ -2090,7 +2090,7 @@ def start_daily_promo_code_task():
     promo_task_started = True
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(create_promo_code, 'cron', hour=12, minute=50, timezone='Europe/Moscow')
+    scheduler.add_job(create_promo_code, 'cron', hour=9, minute=30, timezone='Europe/Moscow')
     scheduler.start()
 
 async def log_db_action(function_name: str, command_description: str, user) -> None:
