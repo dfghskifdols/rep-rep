@@ -1817,7 +1817,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         sender_id = update.message.from_user.id
 
         if target_user_id == sender_id:
-            await update.message.reply_text("⚠️ Нельзя передать валюту самому себе.")
+            await update.message.reply_text("🤔 Ты шо задумал? Самому себе передать не получится.")
             return
 
         conn = await connect_db()
