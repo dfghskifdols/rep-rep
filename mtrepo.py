@@ -2064,23 +2064,31 @@ async def insert_promo_code(promo_code, max_users, neko_coins, drops, tickets):
 
     await conn.close()
 
-# Основна функція для створення промокоду
 async def create_promo_code():
-    promo_code = generate_promo_code()  # Генерація промокоду
-    neko_coins, drops, tickets = generate_rewards()  # Генерація нагород
+    conn = await connect_db()
 
-    max_users = random.choice([15, 20, 25])  # Випадковий вибір з 30, 40 або 50
+    # Перевіряємо, чи вже є створений ботом промокод сьогодні
+    today = datetime.now(pytz.timezone("Europe/Moscow")).date()
+    existing = await conn.fetchval("""
+        SELECT 1 FROM promo_codes
+        WHERE created_by_bot = TRUE AND DATE(created_at AT TIME ZONE 'Europe/Moscow') = $1
+    """, today)
+
+    if existing:
+        await conn.close()
+        print("⚠️ Промокод вже створено сьогодні. Пропускаємо...")
+        return
+
+    promo_code = generate_promo_code()
+    neko_coins, drops, tickets = generate_rewards()
+    max_users = random.choice([15, 20, 25])
 
     await insert_promo_code(promo_code, max_users, neko_coins, drops, tickets)
+    await conn.close()
 
-    chat_id = -1002268486160  # Потрібно вказати chat_id
-
+    chat_id = -1002268486160
     message = f"😝Ждали? Новый промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
-
-    # Надсилаємо повідомлення
     sent_message = await bot.send_message(chat_id, message, parse_mode='HTML')
-
-    # Прикріплюємо відправлене повідомлення
     await sent_message.pin()
 
 def start_daily_promo_code_task():
