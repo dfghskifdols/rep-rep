@@ -1792,6 +1792,75 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if log_command:
             await log_db_action("рбонус", log_command, update.message.from_user)
 
+    # 💸 Передача валюти іншому користувачу
+    elif message.startswith("рпередать"):
+        if not update.message.reply_to_message:
+            await update.message.reply_text("⚠️ Команду нужно использовать ответом на сообщение пользователя.")
+            return
+
+        parts = update.message.text.strip().split()
+        if len(parts) != 3:
+            await update.message.reply_text("⚠️ Использование: рпередать {неко/капли/билеты} {кол-во}")
+            return
+
+        currency, amount_str = parts[1].lower(), parts[2]
+        if currency not in ["неко", "капли", "билеты"]:
+            await update.message.reply_text("⚠️ Выберите одну из валют: неко, капли, билеты.")
+            return
+
+        if not amount_str.isdigit() or int(amount_str) <= 0:
+            await update.message.reply_text("⚠️ Количество должно быть положительным числом.")
+            return
+
+        amount = int(amount_str)
+        target_user_id = update.message.reply_to_message.from_user.id
+        sender_id = update.message.from_user.id
+
+        if target_user_id == sender_id:
+            await update.message.reply_text("⚠️ Нельзя передать валюту самому себе.")
+            return
+
+        conn = await connect_db()
+
+        # Перевіряємо чи обидва користувачі зареєстровані
+        sender = await conn.fetchrow("SELECT tickets, drops, neko_coins FROM user_tickets WHERE user_id = $1", sender_id)
+        receiver = await conn.fetchrow("SELECT user_id FROM user_tickets WHERE user_id = $1", target_user_id)
+
+        if not sender:
+            await update.message.reply_text("❌ Вы не зарегистрированы в системе.")
+            await conn.close()
+            return
+
+        if not receiver:
+            await update.message.reply_text("❌ Пользователь, которому вы хотите передать валюту, не зарегистрирован.")
+            await conn.close()
+            return
+
+        enough = False
+        if currency == "неко":
+            if sender["neko_coins"] >= amount:
+                await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins - $1 WHERE user_id = $2", amount, sender_id)
+                await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + $1 WHERE user_id = $2", amount, target_user_id)
+                enough = True
+        elif currency == "капли":
+            if sender["drops"] >= amount:
+                await conn.execute("UPDATE user_tickets SET drops = drops - $1 WHERE user_id = $2", amount, sender_id)
+                await conn.execute("UPDATE user_tickets SET drops = drops + $1 WHERE user_id = $2", amount, target_user_id)
+                enough = True
+        elif currency == "билеты":
+            if sender["tickets"] >= amount:
+                await conn.execute("UPDATE user_tickets SET tickets = tickets - $1 WHERE user_id = $2", amount, sender_id)
+                await conn.execute("UPDATE user_tickets SET tickets = tickets + $1 WHERE user_id = $2", amount, target_user_id)
+                enough = True
+
+        await conn.close()
+
+        if not enough:
+            await update.message.reply_text("❌ У вас недостаточно указанной валюты.")
+        else:
+            await update.message.reply_text(f"✅ Успешно передано {amount} {currency}.")
+
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
