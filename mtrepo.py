@@ -2067,8 +2067,9 @@ async def insert_promo_code(promo_code, max_users, neko_coins, drops, tickets):
 async def create_promo_code():
     conn = await connect_db()
 
-    # Перевіряємо, чи вже є створений ботом промокод сьогодні
     today = datetime.now(pytz.timezone("Europe/Moscow")).date()
+
+    # Перевірка: чи вже є промо створене сьогодні
     existing = await conn.fetchval("""
         SELECT 1 FROM promo_codes
         WHERE created_by_bot = TRUE AND DATE(created_at AT TIME ZONE 'Europe/Moscow') = $1
@@ -2079,6 +2080,16 @@ async def create_promo_code():
         print("⚠️ Промокод вже створено сьогодні. Пропускаємо...")
         return
 
+    # Очистка бот-промо кожні 2 дні
+    day_number = (today - datetime(2025, 1, 1).date()).days
+    if day_number % 2 == 0:
+        await conn.execute("""
+            DELETE FROM promo_codes
+            WHERE created_by_bot = TRUE
+        """)
+        print("🧹 Усі промокоди створені ботом були очищені.")
+
+    # Генерація промокоду
     promo_code = generate_promo_code()
     neko_coins, drops, tickets = generate_rewards()
     max_users = random.choice([15, 20, 25])
@@ -2087,7 +2098,7 @@ async def create_promo_code():
     await conn.close()
 
     chat_id = -1002268486160
-    message = f"😝Ждали? Новый промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
+    message = f"😝Ждали? Нет? Вот вам промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
     sent_message = await bot.send_message(chat_id, message, parse_mode='HTML')
     await sent_message.pin()
 
