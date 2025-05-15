@@ -2308,7 +2308,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         need_drops = reqs.get("drops", 0)
 
         if coins < need_coins or tickets < need_tickets or drops < need_drops:
-            await query.answer("Недостатньо ресурсів для підвищення рівня!", show_alert=True)
+            await update.callback_query.answer("⛔ Недостатньо ресурсів для підвищення рівня!", show_alert=True)
             return
 
         # Оновлюємо дані в БД
