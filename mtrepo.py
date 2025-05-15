@@ -1884,7 +1884,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif message == "ур":
         user_id = update.message.from_user.id
-        username = update.message.from_user.username
 
         conn = await connect_db()
         try:
@@ -1895,7 +1894,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
 
         if not user:
-            await update.message.reply("Ти ще не зареєстрований!")
+            await update.message.reply_text("Ти ще не зареєстрований!")
             return
 
         coins = user["neko_coins"]
@@ -1925,17 +1924,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         def status_symbol(pct):
             return "✅" if pct >= 100 else "❌"
 
-        text = f"""Уровень
+        text_lines = []
 
-{status_symbol(coin_pct)} | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 
-{make_bar(coin_pct)} ({coin_pct}%)
-{status_symbol(ticket_pct)} | Билетов:  {tickets} 🎟  /  {need_tickets} 🎟 
-{make_bar(ticket_pct)} ({ticket_pct}%)
-{status_symbol(drop_pct)} | Капли:  {drops} 💧  /  {need_drops} 💧
-{make_bar(drop_pct)} ({drop_pct}%)
+        text_lines.append(f"{status_symbol(coin_pct)} | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 ")
+        text_lines.append(f"{make_bar(coin_pct)} ({coin_pct}%)")
 
-Текущий уровень: {level}
-"""
+        if need_tickets > 0:
+            text_lines.append(f"{status_symbol(ticket_pct)} | Билетов:  {tickets} 🎟  /  {need_tickets} 🎟 ")
+            text_lines.append(f"{make_bar(ticket_pct)} ({ticket_pct}%)")
+
+        if need_drops > 0:
+            text_lines.append(f"{status_symbol(drop_pct)} | Капли:  {drops} 💧  /  {need_drops} 💧")
+            text_lines.append(f"{make_bar(drop_pct)} ({drop_pct}%)")
+
+        text_lines.append(f"\nТекущий уровень: {level}")
+
+        text = "\n".join(text_lines)
 
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")]
@@ -2191,6 +2195,8 @@ async def log_db_action(function_name: str, command_description: str, user) -> N
 
 async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+
     user_id = query.from_user.id
 
     conn = await connect_db()
@@ -2219,11 +2225,22 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         need_tickets = reqs.get("tickets", 0)
         need_drops = reqs.get("drops", 0)
 
+        coin_pct = min(100, int((coins / need_coins) * 100)) if need_coins else 100
+        ticket_pct = min(100, int((tickets / need_tickets) * 100)) if need_tickets else 100
+        drop_pct = min(100, int((drops / need_drops) * 100)) if need_drops else 100
+
+        def make_bar(percent):
+            bars = int(percent / 5)
+            return "▓" * bars + "░" * (20 - bars)
+
+        def status_symbol(pct):
+            return "✅" if pct >= 100 else "❌"
+
         if coins < need_coins or tickets < need_tickets or drops < need_drops:
             await query.answer("⛔ Недостатньо ресурсів для підвищення рівня!", show_alert=True)
             return
 
-        # Оновлюємо рівень і ресурси
+        # Віднімаємо ресурси і підвищуємо рівень
         await conn.execute(
             """
             UPDATE user_tickets
@@ -2236,57 +2253,57 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             need_coins, need_tickets, need_drops, user_id
         )
 
-        # Підвантажуємо оновлені дані (щоб показати прогрес для наступного рівня)
-        user = await conn.fetchrow(
+        # Формуємо оновлений текст з новим рівнем
+        new_level = next_level
+        new_reqs = LEVEL_REQUIREMENTS.get(new_level + 1)
+
+        if new_reqs:
+            new_need_coins = new_reqs.get("coins", 0)
+            new_need_tickets = new_reqs.get("tickets", 0)
+            new_need_drops = new_reqs.get("drops", 0)
+        else:
+            new_need_coins = new_need_tickets = new_need_drops = 0
+
+        # Отримуємо оновлені дані після апгрейду
+        updated_user = await conn.fetchrow(
             "SELECT neko_coins, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id
         )
-        coins = user["neko_coins"]
-        tickets = user["tickets"]
-        drops = user["drops"]
-        level = user["level"]
+        updated_coins = updated_user["neko_coins"]
+        updated_tickets = updated_user["tickets"]
+        updated_drops = updated_user["drops"]
+        updated_level = updated_user["level"]
 
-        next_level = level + 1
-        reqs = LEVEL_REQUIREMENTS.get(next_level)
+        updated_coin_pct = min(100, int((updated_coins / new_need_coins) * 100)) if new_need_coins else 100
+        updated_ticket_pct = min(100, int((updated_tickets / new_need_tickets) * 100)) if new_need_tickets else 100
+        updated_drop_pct = min(100, int((updated_drops / new_need_drops) * 100)) if new_need_drops else 100
 
-        # Формуємо текст з оновленими даними
-        def make_bar(percent):
-            bars = int(percent / 5)
-            return "▓" * bars + "░" * (20 - bars)
+        text_lines = []
 
-        def status_symbol(pct):
-            return "✅" if pct >= 100 else "❌"
+        text_lines.append(f"{status_symbol(updated_coin_pct)} | Неко коинов:  {updated_coins} 🍥  /  {new_need_coins} 🍥 ")
+        text_lines.append(f"{make_bar(updated_coin_pct)} ({updated_coin_pct}%)")
 
-        if reqs:
-            need_coins = reqs.get("coins", 0)
-            need_tickets = reqs.get("tickets", 0)
-            need_drops = reqs.get("drops", 0)
+        if new_need_tickets > 0:
+            text_lines.append(f"{status_symbol(updated_ticket_pct)} | Билетов:  {updated_tickets} 🎟  /  {new_need_tickets} 🎟 ")
+            text_lines.append(f"{make_bar(updated_ticket_pct)} ({updated_ticket_pct}%)")
 
-            coin_pct = min(100, int((coins / need_coins) * 100)) if need_coins else 100
-            ticket_pct = min(100, int((tickets / need_tickets) * 100)) if need_tickets else 100
-            drop_pct = min(100, int((drops / need_drops) * 100)) if need_drops else 100
+        if new_need_drops > 0:
+            text_lines.append(f"{status_symbol(updated_drop_pct)} | Капли:  {updated_drops} 💧  /  {new_need_drops} 💧")
+            text_lines.append(f"{make_bar(updated_drop_pct)} ({updated_drop_pct}%)")
 
-            text = f"""Уровень
+        text_lines.append(f"\nТекущий уровень: {updated_level}")
 
-{status_symbol(coin_pct)} | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 
-{make_bar(coin_pct)} ({coin_pct}%)
-{status_symbol(ticket_pct)} | Билетов:  {tickets} 🎟  /  {need_tickets} 🎟 
-{make_bar(ticket_pct)} ({ticket_pct}%)
-{status_symbol(drop_pct)} | Капли:  {drops} 💧  /  {need_drops} 💧
-{make_bar(drop_pct)} ({drop_pct}%)
+        text = "\n".join(text_lines)
 
-Текущий уровень: {level}
-"""
-            keyboard = InlineKeyboardMarkup([[
-                InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")
-            ]])
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")]
+        ])
 
-            await query.answer(f"🎉 Вітаємо! Ти підвищив рівень до {level}!", show_alert=True)
-            await query.edit_message_text(text, reply_markup=keyboard)
+        # Відповідаємо алертом про успіх
+        await query.answer(f"🎉 Вітаємо! Ти підвищив рівень до {new_level}!", show_alert=True)
 
-        else:
-            # Якщо це максимальний рівень, просто оновлюємо повідомлення
-            await query.answer(f"🎉 Вітаємо! Ти підвищив рівень до {level}!", show_alert=True)
-            await query.edit_message_text(f"🔝 Ти досягнув максимального рівня ({level})!")
+        # Оновлюємо повідомлення з новим статусом і кнопкою
+        await query.edit_message_text(text, reply_markup=keyboard)
+
     finally:
         await conn.close()
 
