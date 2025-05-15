@@ -2267,6 +2267,47 @@ async def log_db_action(function_name: str, command_description: str, user) -> N
     )
     await bot.send_message(BD_CHAT_ID, log_text)
 
+async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()  # Відповідаємо на callback, щоб "крутилка" зникла
+
+    user_id = query.from_user.id
+
+    async with context.application.pool.acquire() as conn:
+        user = await conn.fetchrow("SELECT neko, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id)
+
+    if not user:
+        await query.edit_message_text("Ти ще не зареєстрований!")
+        return
+
+    coins = user["neko"]
+    tickets = user["tickets"]
+    drops = user["drops"]
+    level = user["level"]
+
+    next_level = level + 1
+    reqs = LEVEL_REQUIREMENTS.get(next_level)
+
+    if not reqs:
+        await query.edit_message_text(f"🔝 Ти досягнув максимального рівня ({level})!")
+        return
+
+    need_coins = reqs.get("coins", 0)
+    need_tickets = reqs.get("tickets", 0)
+    need_drops = reqs.get("drops", 0)
+
+    if coins < need_coins or tickets < need_tickets or drops < need_drops:
+        await query.answer("Недостатньо ресурсів для підвищення рівня!", show_alert=True)
+        return
+
+    # Оновлюємо дані в БД
+    await conn.execute(
+        "UPDATE user_tickets SET neko = neko - $1, tickets = tickets - $2, drops = drops - $3, level = level + 1 WHERE user_id = $4",
+        need_coins, need_tickets, need_drops, user_id
+    )
+
+    await query.edit_message_text(f"🎉 Вітаємо! Ти підвищив рівень до {next_level}!")
+
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
 app.add_handler(CommandHandler("rban", rban_user))
 app.add_handler(CommandHandler("runban", runban_user))
@@ -2295,6 +2336,7 @@ app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CommandHandler("user_list", user_list))
 app.add_handler(CallbackQueryHandler(user_list_callback, pattern=r"^userlist_page_\d+$"))
+app.add_handler(CallbackQueryHandler(level_up_callback, pattern="^level_up$"))
 
 # Функція для підтримки з'єднання
 def keep_alive():
