@@ -1886,8 +1886,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.message.from_user.id
         username = update.message.from_user.username
 
-        async with pool.acquire() as conn:
-            user = await conn.fetchrow("SELECT neko, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id)
+        conn = await connect_db()
+        try:
+            user = await conn.fetchrow(
+                "SELECT neko, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id
+            )
+        finally:
+            await conn.close()
 
         if not user:
             await update.message.reply("Ти ще не зареєстрований!")
