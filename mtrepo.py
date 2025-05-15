@@ -2311,7 +2311,6 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.callback_query.answer("⛔ Недостатньо ресурсів для підвищення рівня!", show_alert=True)
             return
 
-        # Оновлюємо дані в БД
         await conn.execute(
             """
             UPDATE user_tickets
