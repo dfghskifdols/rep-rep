@@ -1942,9 +1942,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "\n".join(text_lines)
 
         callback_data = f"level_up:{user_id}"
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📈 Повысить уровень", callback_data=callback_data)]
-        ])
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("📈 Повысить уровень", callback_data=callback_data)
+        ]])
 
         await update.message.reply_text(text, reply_markup=keyboard)
 
