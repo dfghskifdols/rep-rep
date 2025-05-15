@@ -1922,6 +1922,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             bars = int(percent / 5)
             return "▓" * bars + "░" * (20 - bars)
 
+        def status_symbol(pct):
+            return "✅" if pct >= 100 else "❌"
+
         text = f"""Уровень
 
 ❌ | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 
