@@ -2100,92 +2100,6 @@ async def runban_user(update: Update, context: CallbackContext):
 
     await update.message.reply_text(f"✳️ Пользователь {unbanned_user_id} разбанен.")
 
-# Вивід списку користувачів з пагінацією
-async def user_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Сторінка з args або 1
-    page = int(context.args[0]) if context.args and context.args[0].isdigit() else 1
-    per_page = 25
-    offset = (page - 1) * per_page
-
-    conn = await connect_db()
-    try:
-        # Припускаємо, що в user_tickets є поля user_id, nickname, username
-        rows = await conn.fetch(
-            "SELECT user_id, nickname, username FROM user_tickets ORDER BY user_id OFFSET $1 LIMIT $2",
-            offset, per_page
-        )
-        total = await conn.fetchval("SELECT count(*) FROM user_tickets")
-    finally:
-        await conn.close()
-
-    if not rows:
-        return await update.message.reply_text("⚠️ Немає зареєстрованих користувачів на цій сторінці.")
-
-    # Формуємо текст
-    lines = []
-    for r in rows:
-        uname = f"@{r['username']}" if r['username'] else "-"
-        lines.append(f"{r['user_id']}  {r['nickname']}  {uname}")
-    text = "\n".join(lines)
-
-    # Обчислюємо max сторінок
-    max_page = (total + per_page - 1) // per_page
-
-    # Кнопки пагінації
-    buttons = []
-    if page > 1:
-        buttons.append(InlineKeyboardButton("⬅️", callback_data=f"userlist_page_{page-1}"))
-    buttons.append(InlineKeyboardButton(f"{page}/{max_page}", callback_data="noop"))
-    if page < max_page:
-        buttons.append(InlineKeyboardButton("➡️", callback_data=f"userlist_page_{page+1}"))
-    markup = InlineKeyboardMarkup([buttons])
-
-    await update.message.reply_text(text, reply_markup=markup)
-
-
-# Обробка кліків пагінації
-async def user_list_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    data = query.data
-
-    if not data.startswith("userlist_page_"):
-        return await query.answer()
-
-    page = int(data.split("_")[-1])
-    per_page = 25
-    offset = (page - 1) * per_page
-
-    conn = await connect_db()
-    try:
-        rows = await conn.fetch(
-            "SELECT user_id, nickname, username FROM user_tickets ORDER BY user_id OFFSET $1 LIMIT $2",
-            offset, per_page
-        )
-        total = await conn.fetchval("SELECT count(*) FROM user_tickets")
-    finally:
-        await conn.close()
-
-    if not rows:
-        return await query.answer("⚠️ Немає користувачів на цій сторінці.", show_alert=True)
-
-    lines = []
-    for r in rows:
-        uname = f"@{r['username']}" if r['username'] else "-"
-        lines.append(f"{r['user_id']}  {r['nickname']}  {uname}")
-    text = "\n".join(lines)
-
-    max_page = (total + per_page - 1) // per_page
-    buttons = []
-    if page > 1:
-        buttons.append(InlineKeyboardButton("⬅️", callback_data=f"userlist_page_{page-1}"))
-    buttons.append(InlineKeyboardButton(f"{page}/{max_page}", callback_data="noop"))
-    if page < max_page:
-        buttons.append(InlineKeyboardButton("➡️", callback_data=f"userlist_page_{page+1}"))
-    markup = InlineKeyboardMarkup([buttons])
-
-    await query.message.edit_text(text, reply_markup=markup)
-    await query.answer()
-
 # Функція для генерування випадкового промокоду
 def generate_promo_code():
     return ''.join(random.choices(string.ascii_lowercase, k=8))
@@ -2277,8 +2191,6 @@ async def log_db_action(function_name: str, command_description: str, user) -> N
 
 async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
-
     user_id = query.from_user.id
 
     conn = await connect_db()
@@ -2353,8 +2265,6 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
-app.add_handler(CommandHandler("user_list", user_list))
-app.add_handler(CallbackQueryHandler(user_list_callback, pattern="^userlist_page_\d+$"))
 app.add_handler(CallbackQueryHandler(level_up_callback, pattern="^level_up$"))
 
 # Функція для підтримки з'єднання
