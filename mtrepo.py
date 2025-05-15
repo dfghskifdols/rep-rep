@@ -2197,7 +2197,6 @@ async def log_db_action(function_name: str, command_description: str, user) -> N
 
 async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
 
     data = query.data  # буде типу "level_up:12345678"
     if not data.startswith("level_up:"):
