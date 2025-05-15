@@ -343,6 +343,12 @@ confirmed_reports = set()
 
 # Функція обробки репорту
 async def report_command(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+
+    if chat_id != GROUP_ID:
+        await update.message.reply_text("⚠️ Репорты принимаются только в официальном чате!")
+        return
+
     if not update.message.reply_to_message:
         await update.message.reply_text(
             "⚠️ <b>Репорт можно отправить только <i>ответом на сообщение</i>!</b>\n\n"
