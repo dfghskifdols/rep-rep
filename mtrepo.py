@@ -2285,7 +2285,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Ти ще не зареєстрований!")
         return
 
-    coins = user["neko"]
+    coins = user["neko_coins"]
     tickets = user["tickets"]
     drops = user["drops"]
     level = user["level"]
@@ -2294,7 +2294,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reqs = LEVEL_REQUIREMENTS.get(next_level)
 
     if not reqs:
-        await query.edit_message_text(f"🔝 Ти досягнув максимального рівня ({level})!")
+        await update.message.reply_text(f"🔝 Ти досягнув максимального рівня ({level})!")
         return
 
     need_coins = reqs.get("coins", 0)
@@ -2307,7 +2307,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Оновлюємо дані в БД
     await conn.execute(
-        "UPDATE user_tickets SET neko = neko - $1, tickets = tickets - $2, drops = drops - $3, level = level + 1 WHERE user_id = $4",
+        "UPDATE user_tickets SET neko_coins = neko - $1, tickets = tickets - $2, drops = drops - $3, level = level + 1 WHERE user_id = $4",
         need_coins, need_tickets, need_drops, user_id
     )
 
