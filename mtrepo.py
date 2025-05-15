@@ -24,6 +24,22 @@ import threading
 import os
 from aiohttp import web
 
+LEVEL_REQUIREMENTS = {
+    1: {"coins": 100},
+    2: {"coins": 200},
+    3: {"coins": 450},
+    4: {"coins": 750},
+    5: {"coins": 1100},
+    6: {"coins": 1400},
+    7: {"coins": 1500, "tickets": 1},
+    8: {"coins": 1700, "tickets": 1},
+    9: {"coins": 2000, "tickets": 2},
+    10: {"coins": 2500, "tickets": 2},
+    11: {"coins": 2750, "tickets": 3},
+    12: {"coins": 3000, "tickets": 3},
+    13: {"coins": 4600, "tickets": 3, "drops": 1},
+}
+
 pending_reports = set()
 confirmed_reports = set()
 pending_report_data = {}
@@ -1866,6 +1882,57 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(f"✅ Успешно передано {amount} {currency}.")
 
+    elif message.text.lower() == "ур":
+        user_id = message.from_user.id
+        username = message.from_user.username
+
+        async with pool.acquire() as conn:
+            user = await conn.fetchrow("SELECT neko, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id)
+
+        if not user:
+            await message.reply("Ти ще не зареєстрований!")
+            return
+
+        coins = user["neko"]
+        tickets = user["tickets"]
+        drops = user["drops"]
+        level = user["level"]
+
+        next_level = level + 1
+        reqs = LEVEL_REQUIREMENTS.get(next_level)
+
+        if not reqs:
+            await message.reply(f"🔝 Ти досягнув максимального рівня ({level})!")
+            return
+
+        need_coins = reqs.get("coins", 0)
+        need_tickets = reqs.get("tickets", 0)
+        need_drops = reqs.get("drops", 0)
+
+        coin_pct = min(100, int((coins / need_coins) * 100)) if need_coins else 100
+        ticket_pct = min(100, int((tickets / need_tickets) * 100)) if need_tickets else 100
+        drop_pct = min(100, int((drops / need_drops) * 100)) if need_drops else 100
+
+        def make_bar(percent):
+            bars = int(percent / 5)
+            return "▓" * bars + "░" * (20 - bars)
+
+        text = f"""Уровень
+
+❌ | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 
+{make_bar(coin_pct)} ({coin_pct}%)
+❌ | Билетов:  {tickets} 🎟  /  {need_tickets} 🎟 
+{make_bar(ticket_pct)} ({ticket_pct}%)
+❌ | Капли:  {drops} 💧  /  {need_drops} 💧
+{make_bar(drop_pct)} ({drop_pct}%)
+
+Текущий уровень: {level}
+"""
+
+        keyboard = InlineKeyboardMarkup().add(
+            InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")
+        )
+        await message.reply(text, reply_markup=keyboard)
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
