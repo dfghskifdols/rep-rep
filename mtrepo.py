@@ -2279,7 +2279,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
 
     async with context.application.pool.acquire() as conn:
-        user = await conn.fetchrow("SELECT neko, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id)
+        user = await conn.fetchrow("SELECT neko_coins, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id)
 
     if not user:
         await query.edit_message_text("Ти ще не зареєстрований!")
