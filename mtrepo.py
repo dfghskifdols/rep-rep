@@ -2354,7 +2354,7 @@ app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
 app.add_handler(CommandHandler("user_list", user_list))
-app.add_handler(CallbackQueryHandler(user_list_callback, pattern=r"^userlist_page_\d+$"))
+app.add_handler(CallbackQueryHandler(user_list_callback, pattern="^userlist_page_\d+$"))
 app.add_handler(CallbackQueryHandler(level_up_callback, pattern="^level_up$"))
 
 # Функція для підтримки з'єднання
