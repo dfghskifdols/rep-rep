@@ -1882,15 +1882,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(f"✅ Успешно передано {amount} {currency}.")
 
-    elif message.lower() == "ур":
-        user_id = message.from_user.id
-        username = message.from_user.username
+    elif message == "ур":
+        user_id = update.message.from_user.id
+        username = update.message.from_user.username
 
         async with pool.acquire() as conn:
             user = await conn.fetchrow("SELECT neko, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id)
 
         if not user:
-            await message.reply("Ти ще не зареєстрований!")
+            await update.message.reply("Ти ще не зареєстрований!")
             return
 
         coins = user["neko"]
@@ -1902,7 +1902,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reqs = LEVEL_REQUIREMENTS.get(next_level)
 
         if not reqs:
-            await message.reply(f"🔝 Ти досягнув максимального рівня ({level})!")
+            await update.message.reply(f"🔝 Ти досягнув максимального рівня ({level})!")
             return
 
         need_coins = reqs.get("coins", 0)
@@ -1932,7 +1932,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = InlineKeyboardMarkup().add(
             InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")
         )
-        await message.reply(text, reply_markup=keyboard)
+        await update.message.reply(text, reply_markup=keyboard)
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
