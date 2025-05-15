@@ -2135,39 +2135,41 @@ async def insert_promo_code(promo_code, max_users, neko_coins, drops, tickets):
 
 async def create_promo_code():
     conn = await connect_db()
+    now = datetime.now()
 
-    today = datetime.now(pytz.timezone("Europe/Moscow")).date()
+    # Перевірка: чи вже створювали сьогодні?
+    last_run = await conn.fetchval("""
+        SELECT last_run FROM bot_tasks WHERE task_name = 'promo_code'
+    """)
 
-    # Перевірка: чи вже є промо створене сьогодні
-    existing = await conn.fetchval("""
-        SELECT 1 FROM promo_codes
-        WHERE created_by_bot = TRUE AND DATE(created_at AT TIME ZONE 'Europe/Moscow') = $1
-    """, today)
-
-    if existing:
+    if last_run and last_run.date() == now.date():
+        print("⛔ Промокод уже был создан сегодня.")
         await conn.close()
-        print("⚠️ Промокод вже створено сьогодні. Пропускаємо...")
-        return
+        return  # Вже створено сьогодні
 
-    # Очистка бот-промо кожні 2 дні
-    day_number = (today - datetime(2025, 1, 1).date()).days
-    if day_number % 2 == 0:
-        await conn.execute("""
-            DELETE FROM promo_codes
-            WHERE created_by_bot = TRUE
-        """)
-        print("🧹 Усі промокоди створені ботом були очищені.")
+    # Очищення старих промо
+    await conn.execute("""
+        DELETE FROM promo_codes WHERE created_by_bot = TRUE
+    """)
 
-    # Генерація промокоду
+    # Генерація нового промокоду
     promo_code = generate_promo_code()
     neko_coins, drops, tickets = generate_rewards()
     max_users = random.choice([15, 20, 25])
 
     await insert_promo_code(promo_code, max_users, neko_coins, drops, tickets)
+
+    await conn.execute("""
+        INSERT INTO bot_tasks (task_name, last_run)
+        VALUES ('promo_code', $1)
+        ON CONFLICT (task_name) DO UPDATE
+        SET last_run = $1
+    """, now)
+
     await conn.close()
 
     chat_id = -1002268486160
-    message = f"😝Ждали? Нет? Вот вам промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
+    message = f"😝Ждали? Новый промо!\n🎁<code>рпромо {promo_code}</code>\n😮кол-во активаций: {max_users}"
     sent_message = await bot.send_message(chat_id, message, parse_mode='HTML')
     await sent_message.pin()
 
