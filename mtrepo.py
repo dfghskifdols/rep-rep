@@ -1934,10 +1934,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Текущий уровень: {level}
 """
 
-        keyboard = InlineKeyboardMarkup().add(
-            InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")
-        )
-        await update.message.reply(text, reply_markup=keyboard)
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")]
+        ])
+        await update.message.reply_text(text, reply_markup=keyboard)
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
