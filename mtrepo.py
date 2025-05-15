@@ -1889,7 +1889,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn = await connect_db()
         try:
             user = await conn.fetchrow(
-                "SELECT neko, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id
+                "SELECT neko_coins, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id
             )
         finally:
             await conn.close()
