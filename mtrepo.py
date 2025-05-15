@@ -1898,7 +1898,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply("Ти ще не зареєстрований!")
             return
 
-        coins = user["neko"]
+        coins = user["neko_coins"]
         tickets = user["tickets"]
         drops = user["drops"]
         level = user["level"]
