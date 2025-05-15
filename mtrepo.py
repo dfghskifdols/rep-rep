@@ -2220,9 +2220,10 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         need_drops = reqs.get("drops", 0)
 
         if coins < need_coins or tickets < need_tickets or drops < need_drops:
-            await update.callback_query.answer("⛔ Недостатньо ресурсів для підвищення рівня!", show_alert=True)
+            await query.answer("⛔ Недостатньо ресурсів для підвищення рівня!", show_alert=True)
             return
 
+        # Оновлюємо рівень і ресурси
         await conn.execute(
             """
             UPDATE user_tickets
@@ -2235,7 +2236,57 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             need_coins, need_tickets, need_drops, user_id
         )
 
-        await query.edit_message_text(f"🎉 Вітаємо! Ти підвищив рівень до {next_level}!")
+        # Підвантажуємо оновлені дані (щоб показати прогрес для наступного рівня)
+        user = await conn.fetchrow(
+            "SELECT neko_coins, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id
+        )
+        coins = user["neko_coins"]
+        tickets = user["tickets"]
+        drops = user["drops"]
+        level = user["level"]
+
+        next_level = level + 1
+        reqs = LEVEL_REQUIREMENTS.get(next_level)
+
+        # Формуємо текст з оновленими даними
+        def make_bar(percent):
+            bars = int(percent / 5)
+            return "▓" * bars + "░" * (20 - bars)
+
+        def status_symbol(pct):
+            return "✅" if pct >= 100 else "❌"
+
+        if reqs:
+            need_coins = reqs.get("coins", 0)
+            need_tickets = reqs.get("tickets", 0)
+            need_drops = reqs.get("drops", 0)
+
+            coin_pct = min(100, int((coins / need_coins) * 100)) if need_coins else 100
+            ticket_pct = min(100, int((tickets / need_tickets) * 100)) if need_tickets else 100
+            drop_pct = min(100, int((drops / need_drops) * 100)) if need_drops else 100
+
+            text = f"""Уровень
+
+{status_symbol(coin_pct)} | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 
+{make_bar(coin_pct)} ({coin_pct}%)
+{status_symbol(ticket_pct)} | Билетов:  {tickets} 🎟  /  {need_tickets} 🎟 
+{make_bar(ticket_pct)} ({ticket_pct}%)
+{status_symbol(drop_pct)} | Капли:  {drops} 💧  /  {need_drops} 💧
+{make_bar(drop_pct)} ({drop_pct}%)
+
+Текущий уровень: {level}
+"""
+            keyboard = InlineKeyboardMarkup([[
+                InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")
+            ]])
+
+            await query.answer(f"🎉 Вітаємо! Ти підвищив рівень до {level}!", show_alert=True)
+            await query.edit_message_text(text, reply_markup=keyboard)
+
+        else:
+            # Якщо це максимальний рівень, просто оновлюємо повідомлення
+            await query.answer(f"🎉 Вітаємо! Ти підвищив рівень до {level}!", show_alert=True)
+            await query.edit_message_text(f"🔝 Ти досягнув максимального рівня ({level})!")
     finally:
         await conn.close()
 
