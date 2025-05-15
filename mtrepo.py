@@ -1941,10 +1941,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         text = "\n".join(text_lines)
 
-        callback_data = json.dumps({"action": "level_up", "user_id": user_id})
+        callback_data = f"level_up:{user_id}"
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📈 Повысить уровень", callback_data="level_up")]
+            [InlineKeyboardButton("📈 Повысить уровень", callback_data=callback_data)]
         ])
+
         await update.message.reply_text(text, reply_markup=keyboard)
 
 # Функция для отправки сообщений через бота
@@ -2198,17 +2199,17 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # Розбираємо callback_data
-    data = json.loads(query.data)
-    action = data.get("action")
-    allowed_user_id = data.get("user_id")
+    data = query.data  # буде типу "level_up:12345678"
+    if not data.startswith("level_up:"):
+        return
 
+    parts = data.split(":")
+    if len(parts) != 2:
+        return
+
+    allowed_user_id = int(parts[1])
     user_id = query.from_user.id
 
-    if action != "level_up":
-        return  # якщо інша дія — ігноруємо
-
-    # Перевірка, чи кнопка натиснута тим самим користувачем
     if user_id != allowed_user_id:
         await query.answer("⛔ Не твоя кнопка!", show_alert=True)
         return
@@ -2239,22 +2240,10 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         need_tickets = reqs.get("tickets", 0)
         need_drops = reqs.get("drops", 0)
 
-        coin_pct = min(100, int((coins / need_coins) * 100)) if need_coins else 100
-        ticket_pct = min(100, int((tickets / need_tickets) * 100)) if need_tickets else 100
-        drop_pct = min(100, int((drops / need_drops) * 100)) if need_drops else 100
-
-        def make_bar(percent):
-            bars = int(percent / 5)
-            return "▓" * bars + "░" * (20 - bars)
-
-        def status_symbol(pct):
-            return "✅" if pct >= 100 else "❌"
-
         if coins < need_coins or tickets < need_tickets or drops < need_drops:
             await query.answer("⛔ Недостаточно ресурсов для повышения уровня!", show_alert=True)
             return
 
-        # Віднімаємо ресурси і підвищуємо рівень
         await conn.execute(
             """
             UPDATE user_tickets
@@ -2267,7 +2256,6 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             need_coins, need_tickets, need_drops, user_id
         )
 
-        # Формуємо оновлений текст з новим рівнем
         new_level = next_level
         new_reqs = LEVEL_REQUIREMENTS.get(new_level + 1)
 
@@ -2278,7 +2266,6 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             new_need_coins = new_need_tickets = new_need_drops = 0
 
-        # Отримуємо оновлені дані після апгрейду
         updated_user = await conn.fetchrow(
             "SELECT neko_coins, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id
         )
@@ -2286,6 +2273,13 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         updated_tickets = updated_user["tickets"]
         updated_drops = updated_user["drops"]
         updated_level = updated_user["level"]
+
+        def make_bar(percent):
+            bars = int(percent / 5)
+            return "▓" * bars + "░" * (20 - bars)
+
+        def status_symbol(pct):
+            return "✅" if pct >= 100 else "❌"
 
         updated_coin_pct = min(100, int((updated_coins / new_need_coins) * 100)) if new_need_coins else 100
         updated_ticket_pct = min(100, int((updated_tickets / new_need_tickets) * 100)) if new_need_tickets else 100
@@ -2309,13 +2303,10 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "\n".join(text_lines)
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📈 Повысить уровень", callback_data="level_up")]
+            [InlineKeyboardButton("📈 Повысить уровень", callback_data=f"level_up:{user_id}")]
         ])
 
-        # Відповідаємо алертом про успіх
         await query.answer(f"🎉 Поздравляю! Ты повысил уровень до {new_level}!", show_alert=True)
-
-        # Оновлюємо повідомлення з новим статусом і кнопкою
         await query.edit_message_text(text, reply_markup=keyboard)
 
     finally:
