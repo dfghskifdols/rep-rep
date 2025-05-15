@@ -1941,6 +1941,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         text = "\n".join(text_lines)
 
+        callback_data = json.dumps({"action": "level_up", "user_id": user_id})
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("📈 Повысить уровень", callback_data="level_up")]
         ])
@@ -2197,7 +2198,20 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    # Розбираємо callback_data
+    data = json.loads(query.data)
+    action = data.get("action")
+    allowed_user_id = data.get("user_id")
+
     user_id = query.from_user.id
+
+    if action != "level_up":
+        return  # якщо інша дія — ігноруємо
+
+    # Перевірка, чи кнопка натиснута тим самим користувачем
+    if user_id != allowed_user_id:
+        await query.answer("⛔ Не твоя кнопка!", show_alert=True)
+        return
 
     conn = await connect_db()
     try:
