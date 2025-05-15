@@ -1894,7 +1894,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await conn.close()
 
         if not user:
-            await update.message.reply_text("Ти ще не зареєстрований!")
+            await update.message.reply_text("💮Ты не зарегестрирован! Используй /start.")
             return
 
         coins = user["neko_coins"]
@@ -1906,7 +1906,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reqs = LEVEL_REQUIREMENTS.get(next_level)
 
         if not reqs:
-            await update.message.reply_text(f"🔝 Ти досягнув максимального рівня ({level})!")
+            await update.message.reply_text(f"🔝 Ты достиг максимального уровня: ({level})!")
             return
 
         need_coins = reqs.get("coins", 0)
@@ -1942,7 +1942,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "\n".join(text_lines)
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")]
+            [InlineKeyboardButton("📈 Повысить уровень", callback_data="level_up")]
         ])
         await update.message.reply_text(text, reply_markup=keyboard)
 
@@ -2206,7 +2206,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         if not user:
-            await query.edit_message_text("Ти ще не зареєстрований!")
+            await query.edit_message_text("💮Ты еще не зарегестрирован! Используй /start.")
             return
 
         coins = user["neko_coins"]
@@ -2218,7 +2218,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reqs = LEVEL_REQUIREMENTS.get(next_level)
 
         if not reqs:
-            await query.edit_message_text(f"🔝 Ти досягнув максимального рівня ({level})!")
+            await query.edit_message_text(f"🔝 Твой уровень достиг максимума: ({level})!")
             return
 
         need_coins = reqs.get("coins", 0)
@@ -2237,7 +2237,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return "✅" if pct >= 100 else "❌"
 
         if coins < need_coins or tickets < need_tickets or drops < need_drops:
-            await query.answer("⛔ Недостатньо ресурсів для підвищення рівня!", show_alert=True)
+            await query.answer("⛔ Недостаточно ресурсов для повышения уровня!", show_alert=True)
             return
 
         # Віднімаємо ресурси і підвищуємо рівень
@@ -2295,11 +2295,11 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "\n".join(text_lines)
 
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📈 Підвищити рівень", callback_data="level_up")]
+            [InlineKeyboardButton("📈 Повысить уровень", callback_data="level_up")]
         ])
 
         # Відповідаємо алертом про успіх
-        await query.answer(f"🎉 Вітаємо! Ти підвищив рівень до {new_level}!", show_alert=True)
+        await query.answer(f"🎉 Поздравляю! Ты повысил уровень до {new_level}!", show_alert=True)
 
         # Оновлюємо повідомлення з новим статусом і кнопкою
         await query.edit_message_text(text, reply_markup=keyboard)
