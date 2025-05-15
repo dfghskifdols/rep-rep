@@ -1927,11 +1927,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         text = f"""Уровень
 
-❌ | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 
+{status_symbol(coin_pct)} | Неко коинов:  {coins} 🍥  /  {need_coins} 🍥 
 {make_bar(coin_pct)} ({coin_pct}%)
-❌ | Билетов:  {tickets} 🎟  /  {need_tickets} 🎟 
+{status_symbol(ticket_pct)} | Билетов:  {tickets} 🎟  /  {need_tickets} 🎟 
 {make_bar(ticket_pct)} ({ticket_pct}%)
-❌ | Капли:  {drops} 💧  /  {need_drops} 💧
+{status_symbol(drop_pct)} | Капли:  {drops} 💧  /  {need_drops} 💧
 {make_bar(drop_pct)} ({drop_pct}%)
 
 Текущий уровень: {level}
@@ -2277,44 +2277,56 @@ async def log_db_action(function_name: str, command_description: str, user) -> N
 
 async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()  # Відповідаємо на callback, щоб "крутилка" зникла
+    await query.answer()
 
     user_id = query.from_user.id
 
-    async with context.application.pool.acquire() as conn:
-        user = await conn.fetchrow("SELECT neko_coins, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id)
+    conn = await connect_db()
+    try:
+        user = await conn.fetchrow(
+            "SELECT neko_coins, tickets, drops, level FROM user_tickets WHERE user_id = $1", user_id
+        )
 
-    if not user:
-        await query.edit_message_text("Ти ще не зареєстрований!")
-        return
+        if not user:
+            await query.edit_message_text("Ти ще не зареєстрований!")
+            return
 
-    coins = user["neko_coins"]
-    tickets = user["tickets"]
-    drops = user["drops"]
-    level = user["level"]
+        coins = user["neko_coins"]
+        tickets = user["tickets"]
+        drops = user["drops"]
+        level = user["level"]
 
-    next_level = level + 1
-    reqs = LEVEL_REQUIREMENTS.get(next_level)
+        next_level = level + 1
+        reqs = LEVEL_REQUIREMENTS.get(next_level)
 
-    if not reqs:
-        await update.message.reply_text(f"🔝 Ти досягнув максимального рівня ({level})!")
-        return
+        if not reqs:
+            await query.edit_message_text(f"🔝 Ти досягнув максимального рівня ({level})!")
+            return
 
-    need_coins = reqs.get("coins", 0)
-    need_tickets = reqs.get("tickets", 0)
-    need_drops = reqs.get("drops", 0)
+        need_coins = reqs.get("coins", 0)
+        need_tickets = reqs.get("tickets", 0)
+        need_drops = reqs.get("drops", 0)
 
-    if coins < need_coins or tickets < need_tickets or drops < need_drops:
-        await query.answer("Недостатньо ресурсів для підвищення рівня!", show_alert=True)
-        return
+        if coins < need_coins or tickets < need_tickets or drops < need_drops:
+            await query.answer("Недостатньо ресурсів для підвищення рівня!", show_alert=True)
+            return
 
-    # Оновлюємо дані в БД
-    await conn.execute(
-        "UPDATE user_tickets SET neko_coins = neko - $1, tickets = tickets - $2, drops = drops - $3, level = level + 1 WHERE user_id = $4",
-        need_coins, need_tickets, need_drops, user_id
-    )
+        # Оновлюємо дані в БД
+        await conn.execute(
+            """
+            UPDATE user_tickets
+            SET neko_coins = neko_coins - $1,
+                tickets = tickets - $2,
+                drops = drops - $3,
+                level = level + 1
+            WHERE user_id = $4
+            """,
+            need_coins, need_tickets, need_drops, user_id
+        )
 
-    await query.edit_message_text(f"🎉 Вітаємо! Ти підвищив рівень до {next_level}!")
+        await query.edit_message_text(f"🎉 Вітаємо! Ти підвищив рівень до {next_level}!")
+    finally:
+        await conn.close()
 
 # Додаємо обробники для команд /ban та /unban, так само як і для /send
 app.add_handler(CommandHandler("rban", rban_user))
