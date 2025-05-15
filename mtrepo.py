@@ -2337,7 +2337,7 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("report", report_command))
 app.add_handler(CallbackQueryHandler(handle_report, pattern="^(confirm|cancel)_\d+_\d+$"))
 app.add_handler(MessageHandler(filters.TEXT, handle_message))
-app.add_handler(CallbackQueryHandler(level_up_callback, pattern="^level_up$"))
+app.add_handler(CallbackQueryHandler(level_up_callback, pattern=r"^level_up:\d+$"))
 
 # Функція для підтримки з'єднання
 def keep_alive():
