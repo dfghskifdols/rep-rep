@@ -1882,7 +1882,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(f"✅ Успешно передано {amount} {currency}.")
 
-    elif message.text.lower() == "ур":
+    elif message.lower() == "ур":
         user_id = message.from_user.id
         username = message.from_user.username
 
