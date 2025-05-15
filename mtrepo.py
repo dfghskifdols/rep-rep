@@ -1907,7 +1907,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reqs = LEVEL_REQUIREMENTS.get(next_level)
 
         if not reqs:
-            await update.message.reply(f"🔝 Ти досягнув максимального рівня ({level})!")
+            await update.message.reply_text(f"🔝 Ти досягнув максимального рівня ({level})!")
             return
 
         need_coins = reqs.get("coins", 0)
