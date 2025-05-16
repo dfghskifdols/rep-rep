@@ -2116,7 +2116,38 @@ async def show_tree_status(update: Update, tree_type: str):
 
     keyboard = [
         [InlineKeyboardButton("Собрать", callback_data=f"collect:{tree_type}")],
-        [InlineKeyboardButton("Улучшить", callback_data=f"tree_level_up:{tree_type}")],
+        [InlineKeyboardButton("Улучшить", callback_data=f"tree_upgrade_comfirm:{tree_type}")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(text, reply_markup=reply_markup)
+    await query.answer()
+
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+
+async def tree_upgrade_confirm(update: Update, tree_type: str):
+    query = update.callback_query
+    user_id = query.from_user.id
+
+    conn = await connect_db()
+    user_tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
+    await conn.close()
+
+    if not user_tree:
+        await query.edit_message_text("У тебя нет такого дерева!")
+        await query.answer()
+        return
+
+    level = user_tree['level']
+    text = (
+        f"Тип дерева: {tree_type}\n"
+        f"Потрібно: каплі - 1\n"
+        f"Рівень дерева: {level}"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("Покращити", callback_data=f"tree_level_up_confirm:{tree_type}")],
+        [InlineKeyboardButton("Відмінити", callback_data="cancel")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -2158,35 +2189,29 @@ async def collect_callback(update: Update, context: CallbackContext):
 async def tree_level_up_callback(update: Update, context: CallbackContext):
     query = update.callback_query
     user_id = query.from_user.id
-    # Тепер callback_data формат: level_up_normal або level_up_ticket
-    tree_type = query.data.split("_")[-1]
+
+    tree_type = query.data.split(":")[-1]  # розділяємо по ":" а не по "_"
 
     conn = await connect_db()
-    user_tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1", user_id)
+    user_tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
     user_tickets = await conn.fetchrow("SELECT tickets FROM user_tickets WHERE user_id = $1", user_id)
     await conn.close()
 
-    if not user_tree or user_tree['tree_type'] != tree_type:
+    if not user_tree:
         await query.answer("У тебя нет такого дерева!", show_alert=True)
         return
 
-    level = user_tree['level']
     if not user_tickets or user_tickets['tickets'] < 1:
         await query.answer("Недостаточно капель для улучшения!", show_alert=True)
         return
 
     conn = await connect_db()
     await conn.execute("UPDATE user_tickets SET tickets = tickets - 1 WHERE user_id = $1", user_id)
-    await conn.execute("UPDATE user_trees SET level = level + 1 WHERE user_id = $1", user_id)
+    await conn.execute("UPDATE user_trees SET level = level + 1 WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
     await conn.close()
 
     await query.answer("Дерево улучшено!")
     await show_tree_status(update, tree_type)
-
-async def cancel_callback(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.edit_message_text("Действие отменено.")
-    await query.answer()
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
