@@ -2116,7 +2116,7 @@ async def show_tree_status(update: Update, tree_type: str):
 
     keyboard = [
         [InlineKeyboardButton("Собрать", callback_data=f"collect:{tree_type}")],
-        [InlineKeyboardButton("Улучшить", callback_data=f"tree_upgrade_comfirm:{tree_type}")],
+        [InlineKeyboardButton("Улучшить", callback_data=f"tree_upgrade_confirm:{tree_type}")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
