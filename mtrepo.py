@@ -2213,6 +2213,11 @@ async def tree_level_up_callback(update: Update, context: CallbackContext):
     await query.answer("Дерево улучшено!")
     await show_tree_status(update, tree_type)
 
+async def cancel_callback(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.edit_message_text("Дію скасовано.")
+    await query.answer()
+
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Проверка доступа
