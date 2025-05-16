@@ -2643,6 +2643,7 @@ app.add_handler(CallbackQueryHandler(buy_tree_callback, pattern=r"^buy_tree:(tic
 app.add_handler(CallbackQueryHandler(collect_callback, pattern=r"^collect:(normal|ticket)$"))
 app.add_handler(CallbackQueryHandler(tree_level_up_callback, pattern=r"^level_up:(normal|ticket)$"))
 app.add_handler(CallbackQueryHandler(cancel_callback, pattern=r"^cancel$"))
+app.add_handler(CallbackQueryHandler(tree_upgrade_confirm_callback, pattern=r"^tree_upgrade_confirm:(normal|ticket)$"))
 
 # Функція для підтримки з'єднання
 def keep_alive():
