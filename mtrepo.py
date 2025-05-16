@@ -1948,27 +1948,50 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(text, reply_markup=keyboard)
 
-    elif message == "топ ур":
+    elif message.lower() == "топ ур":
         conn = await connect_db()
-        rows = await conn.fetch("""
-            SELECT user_id, username, nickname, level
+
+        # Топ 10 по рівнях
+        top_rows = await conn.fetch("""
+            SELECT user_id, username, nickname, level, premium_until
             FROM user_tickets
             WHERE level IS NOT NULL
             ORDER BY level DESC
             LIMIT 10
         """)
+
+        # Місце користувача
+        user_rank_row = await conn.fetchrow("""
+            SELECT row_number FROM (
+                SELECT user_id, level, ROW_NUMBER() OVER (ORDER BY level DESC) AS row_number
+                FROM user_tickets
+                WHERE level IS NOT NULL
+            ) sub
+            WHERE user_id = $1
+        """, user_id)
+
+        user_level_row = await conn.fetchrow("""
+            SELECT level FROM user_tickets WHERE user_id = $1
+        """, user_id)
+
         await conn.close()
 
-        if not rows:
-            await bot.send_message(message.chat.id, "Ще немає даних про рівні користувачів.")
+        if not top_rows:
+            await update.message.reply_text("Ще немає даних про рівні користувачів.")
             return
 
-        response = "🏆 <b>ТОП 10 по рівнях:</b>\n\n"
-        for i, row in enumerate(rows, start=1):
-            name = row["nickname"] or row["username"] or f"<code>{row['user_id']}</code>"
-            response += f"{i}. {name} — {row['level']} ур.\n"
+        response = "📊 Топ 10 пользователей по уровням:\n"
 
-        await update.message.reply_text(response, parse_mode="HTML")
+        for i, row in enumerate(top_rows, start=1):
+            uid = row["user_id"]
+            name = row["nickname"] or row["username"] or f"Пользователь {uid}"
+            premium_icon = "💎" if row["premium_until"] and row["premium_until"] > datetime.now() else ""
+            response += f"{i} - {premium_icon}{name} — {row['level']} 🧬\n"
+
+        if user_rank_row and user_level_row:
+            response += f"\nТвое место: {user_rank_row['row_number']} - {user_level_row['level']} 🧬"
+
+        await update.message.reply_text(response, parse_mode=ParseMode.HTML)
         return
 
 # Функция для отправки сообщений через бота
