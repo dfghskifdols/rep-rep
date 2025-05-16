@@ -2174,16 +2174,6 @@ async def create_promo_code():
     sent_message = await bot.send_message(chat_id, message, parse_mode='HTML')
     await sent_message.pin()
 
-def start_daily_promo_code_task():
-    global promo_task_started
-    if promo_task_started:
-        return
-    promo_task_started = True
-
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(create_promo_code, 'cron', hour=9, minute=30, timezone='Europe/Moscow')
-    scheduler.start()
-
 async def log_db_action(function_name: str, command_description: str, user) -> None:
     now = datetime.now(moscow_tz).strftime("%H:%M:%S %d.%m.%Y")
     username = f"@{user.username}" if user.username else f"ID: {user.id}"
@@ -2397,10 +2387,11 @@ async def main():
     scheduler = AsyncIOScheduler()
     scheduler.add_job(keep_alive, 'interval', minutes=10)
     scheduler.add_job(check_user_profiles, 'interval', minutes=10)
-    scheduler.start()
 
-    # Планувальник для промокодів
-    start_daily_promo_code_task()
+    # Додати щоденний промокод в той самий планувальник
+    scheduler.add_job(create_promo_code, 'cron', hour=9, minute=30, timezone='Europe/Moscow')
+
+    scheduler.start()
 
     # Запуск Telegram-бота
     await app.run_polling()
