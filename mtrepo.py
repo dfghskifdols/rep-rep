@@ -2125,7 +2125,7 @@ async def show_tree_status(update: Update, tree_type: str):
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
-async def tree_upgrade_confirm(update: Update, tree_type: str):
+async def tree_upgrade_confirm_callback(update: Update, tree_type: str):
     query = update.callback_query
     user_id = query.from_user.id
 
