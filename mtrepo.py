@@ -2715,7 +2715,7 @@ async def main():
 
     # Додати щоденний промокод в той самий планувальник
     scheduler.add_job(create_promo_code, 'cron', hour=9, minute=30, timezone='Europe/Moscow')
-    scheduler.add_job(update_tree_income, trigger=IntervalTrigger(hours=1))
+    scheduler.add_job(update_tree_income, 'interval', hours=1)
 
     scheduler.start()
 
