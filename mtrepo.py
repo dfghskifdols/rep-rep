@@ -1882,7 +1882,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(f"✅ Успешно передано {amount} {currency}.")
 
-    elif message == "ур":
+    elif message.lower() == "ур":
         user_id = update.message.from_user.id
 
         conn = await connect_db()
@@ -1947,6 +1947,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]])
 
         await update.message.reply_text(text, reply_markup=keyboard)
+
+    elif message.lower() == "топ ур":
+        conn = await connect_db()
+        rows = await conn.fetch("""
+            SELECT user_id, username, nickname, level
+            FROM user_tickets
+            WHERE level IS NOT NULL
+            ORDER BY level DESC
+            LIMIT 10
+        """)
+        await conn.close()
+
+        if not rows:
+            await bot.send_message(message.chat.id, "Ще немає даних про рівні користувачів.")
+            return
+
+        response = "🏆 <b>ТОП 10 по рівнях:</b>\n\n"
+        for i, row in enumerate(rows, start=1):
+            name = row["nickname"] or row["username"] or f"<code>{row['user_id']}</code>"
+            response += f"{i}. {name} — {row['level']} ур.\n"
+
+        await bot.send_message(message.chat.id, response, parse_mode="HTML")
+        return
 
 # Функция для отправки сообщений через бота
 async def send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
