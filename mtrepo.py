@@ -1968,7 +1968,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             name = row["nickname"] or row["username"] or f"<code>{row['user_id']}</code>"
             response += f"{i}. {name} — {row['level']} ур.\n"
 
-        await bot.send_message(message.chat.id, response, parse_mode="HTML")
+        await update.message.reply_text(response, parse_mode="HTML")
         return
 
 # Функция для отправки сообщений через бота
