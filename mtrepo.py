@@ -2011,57 +2011,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
         return
 
-    if message == "дерево":
-        conn = await connect_db()
-        user_tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1", user_id)
-        await conn.close()
-
+    elif message == "дерево":
         keyboard = [
-            [InlineKeyboardButton("Билетное", callback_data="tree_type:ticket"),
-             InlineKeyboardButton("Обычное", callback_data="tree_type:normal")]
+            [
+                InlineKeyboardButton("Билетное", callback_data="tree_type:ticket"),
+                InlineKeyboardButton("Обычное", callback_data="tree_type:normal")
+            ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        if not user_tree:
-            await update.message.reply_text(
-                "Выбери дерево:",
-                reply_markup=reply_markup
-            )
-        else:
-            # Показати стан дерева
-            tree_type = user_tree['tree_type']
-            level = user_tree['level']
-            basket = user_tree['basket'] or 0
-            last_collect = user_tree['last_collect'] or datetime.now() - timedelta(hours=1)
-            next_income_in = max(0, 3600 - int((datetime.now() - last_collect).total_seconds()))
-            
-            if tree_type == "normal":
-                income_text = f"{level * 10} неко/час"
-                basket_text = f"{basket} неко"
-                tree_name = "Обычное"
-            else:
-                income_per_level = max(0, level - 1)  # 1 уровень - 0 билетов, 2 уровень - 1 билет и тд
-                income_text = f"{income_per_level} билетов/час"
-                basket_text = f"{basket} билетов"
-                tree_name = "Билетное"
-
-            text = (
-                f"Дерево \"{tree_name}\"\n\n"
-                f"Уровень дерева: {level}\n"
-                f"Доход: {income_text}\n"
-                f"Владелец: {update.message.from_user.full_name}\n\n"
-                f"Корзина:\n"
-                f"{basket_text}\n\n"
-                f"Следующий доход: {next_income_in} секунд\n"
-            )
-
-            keyboard = [
-                [InlineKeyboardButton("Собрать", callback_data=f"collect:{tree_type}")],
-                [InlineKeyboardButton("Улучшить", callback_data=f"level_up:{tree_type}")]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            await update.message.reply_text(text, reply_markup=reply_markup)
+        # Кожен раз пропонуємо вибрати дерево, навіть якщо воно вже є
+        await update.message.reply_text(
+            "Выбери дерево:",
+            reply_markup=reply_markup
+        )
 
 # --- Callback-функції ---
 async def tree_type_callback(update: Update, context: CallbackContext):
@@ -2153,7 +2116,7 @@ async def show_tree_status(update: Update, tree_type: str):
 
     keyboard = [
         [InlineKeyboardButton("Собрать", callback_data=f"collect:{tree_type}")],
-        [InlineKeyboardButton("Улучшить", callback_data=f"level_up:{tree_type}")],
+        [InlineKeyboardButton("Улучшить", callback_data=f"tree_level_up:{tree_type}")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -2192,10 +2155,11 @@ async def collect_callback(update: Update, context: CallbackContext):
     await query.answer("Ресурсы собраны!")
     await show_tree_status(update, tree_type)
 
-async def level_up_callback(update: Update, context: CallbackContext):
+async def tree_level_up_callback(update: Update, context: CallbackContext):
     query = update.callback_query
     user_id = query.from_user.id
-    tree_type = query.data.split(":")[1]
+    # Тепер callback_data формат: level_up_normal або level_up_ticket
+    tree_type = query.data.split("_")[-1]
 
     conn = await connect_db()
     user_tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1", user_id)
@@ -2211,17 +2175,13 @@ async def level_up_callback(update: Update, context: CallbackContext):
         await query.answer("Недостаточно капель для улучшения!", show_alert=True)
         return
 
-    # Списати 1 каплю
     conn = await connect_db()
     await conn.execute("UPDATE user_tickets SET tickets = tickets - 1 WHERE user_id = $1", user_id)
-
-    # Підняти рівень дерева
     await conn.execute("UPDATE user_trees SET level = level + 1 WHERE user_id = $1", user_id)
     await conn.close()
 
     await query.answer("Дерево улучшено!")
     await show_tree_status(update, tree_type)
-
 
 async def cancel_callback(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -2651,7 +2611,7 @@ app.add_handler(CallbackQueryHandler(level_up_callback, pattern=r"^level_up:\d+$
 app.add_handler(CallbackQueryHandler(tree_type_callback, pattern=r"^tree_type:(normal|ticket)$"))
 app.add_handler(CallbackQueryHandler(buy_tree_callback, pattern=r"^buy_tree:(ticket)$"))
 app.add_handler(CallbackQueryHandler(collect_callback, pattern=r"^collect:(normal|ticket)$"))
-app.add_handler(CallbackQueryHandler(level_up_callback, pattern=r"^level_up:(normal|ticket)$"))
+app.add_handler(CallbackQueryHandler(tree_level_up_callback, pattern=r"^level_up:(normal|ticket)$"))
 app.add_handler(CallbackQueryHandler(cancel_callback, pattern=r"^cancel$"))
 
 # Функція для підтримки з'єднання
