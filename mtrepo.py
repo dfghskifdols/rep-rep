@@ -1948,7 +1948,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(text, reply_markup=keyboard)
 
-    elif message.lower() == "топ ур":
+    elif message == "топ ур":
         conn = await connect_db()
         rows = await conn.fetch("""
             SELECT user_id, username, nickname, level
