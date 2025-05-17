@@ -2081,7 +2081,7 @@ async def tree_get_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.bot.send_message(chat_id=chat_id, text="🌳 Дерево добавлено!")
     await send_tree_status(update, context, tree_type, chat_id)
 
-async def send_tree_status(update: Update, tree_type: str):
+async def send_tree_status(update: Update, context: ContextTypes.DEFAULT_TYPE, tree_type: str, chat_id: int):
     if update.callback_query:
         user_id = update.callback_query.from_user.id
         send_func = update.callback_query.message.reply_text
