@@ -2012,7 +2012,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(response, parse_mode=ParseMode.HTML)
         return
 
-    elif message == "дерево":
+    elif message == "мое дерево":
         keyboard = [
             [InlineKeyboardButton("🍀 Обычное", callback_data="tree_type:normal")],
             [InlineKeyboardButton("🎟 Билетное", callback_data="tree_type:ticket")]
