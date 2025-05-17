@@ -2081,15 +2081,13 @@ async def tree_get_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.bot.send_message(chat_id=chat_id, text="🌳 Дерево добавлено!")
     await send_tree_status(update, context, tree_type, chat_id)
 
-async def send_tree_status(update: Update, context: ContextTypes.DEFAULT_TYPE, tree_type: str, chat_id=None):
+async def send_tree_status(update: Update, tree_type: str):
     if update.callback_query:
         user_id = update.callback_query.from_user.id
-        if chat_id is None:
-            chat_id = update.callback_query.message.chat.id
+        send_func = update.callback_query.message.reply_text
     else:
         user_id = update.message.from_user.id
-        if chat_id is None:
-            chat_id = update.message.chat.id
+        send_func = update.message.reply_text
 
     conn = await connect_db()
     tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
@@ -2128,7 +2126,7 @@ async def send_tree_status(update: Update, context: ContextTypes.DEFAULT_TYPE, t
         [InlineKeyboardButton("↩ Назад", callback_data="tree_back")]
     ]
 
-    await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+    await send_func(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
 
 async def tree_upgrade_confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
