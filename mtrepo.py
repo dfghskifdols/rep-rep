@@ -2082,7 +2082,19 @@ async def tree_get_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_tree_status(update, context, tree_type, chat_id)
 
 async def send_tree_status(update: Update, context: ContextTypes.DEFAULT_TYPE, tree_type: str, chat_id: int):
-    user_id = update.effective_user.id
+    # Визначаємо, хто натиснув кнопку
+    if update.callback_query:
+        user_id = update.callback_query.from_user.id
+        message_user_id = update.callback_query.message.from_user.id
+    else:
+        user_id = update.message.from_user.id
+        message_user_id = update.message.from_user.id
+
+    # Перевірка, чи користувач є власником повідомлення
+    if user_id != message_user_id:
+        if update.callback_query:
+            await update.callback_query.answer("Это не твое дерево!", show_alert=True)
+        return
 
     conn = await connect_db()
     tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
@@ -2116,11 +2128,12 @@ async def send_tree_status(update: Update, context: ContextTypes.DEFAULT_TYPE, t
     )
 
     buttons = [
-        [InlineKeyboardButton("📥 Собрать", callback_data=f"tree_collect:{tree_type}:{user_id}")],
-        [InlineKeyboardButton("🔼 Улучшить", callback_data=f"tree_upgrade_confirm:{tree_type}:{user_id}")],
-        [InlineKeyboardButton("↩ Назад", callback_data=f"tree_back:{user_id}")]
+        [InlineKeyboardButton("📥 Собрать", callback_data=f"tree_collect:{tree_type}")],
+        [InlineKeyboardButton("🔼 Улучшить", callback_data=f"tree_upgrade_confirm:{tree_type}")],
+        [InlineKeyboardButton("↩ Назад", callback_data="tree_back")]
     ]
 
+    # Відправляємо повідомлення напряму через бот, не використовуючи reply
     await context.bot.send_message(
         chat_id=chat_id,
         text=text,
