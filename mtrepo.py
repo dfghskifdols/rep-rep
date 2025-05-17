@@ -2091,7 +2091,6 @@ async def send_tree_status(update: Update, tree_type: str):
         return
 
     level = tree["level"]
-    basket = tree["basket"]
     last_collect = tree["last_collect"]
     seconds_passed = int((datetime.now() - last_collect).total_seconds())
     next_income_in = max(0, 3600 - seconds_passed)
@@ -2099,10 +2098,12 @@ async def send_tree_status(update: Update, tree_type: str):
     if tree_type == "normal":
         title = "🍀 Обычное"
         income = level * 10
+        basket = tree["basket_neko"] or 0
         unit = "неко"
     else:
         title = "🎟 Билетное"
         income = max(0, level - 1)
+        basket = tree["basket_tickets"] or 0
         unit = "билетов"
 
     text = (
@@ -2118,7 +2119,11 @@ async def send_tree_status(update: Update, tree_type: str):
         [InlineKeyboardButton("🔼 Улучшить", callback_data=f"tree_upgrade_confirm:{tree_type}")],
         [InlineKeyboardButton("↩ Назад", callback_data="tree_back")]
     ]
-    await update.callback_query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+
+    if update.callback_query:
+        await update.callback_query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
+    else:
+        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons), parse_mode="HTML")
 
 async def tree_upgrade_confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
