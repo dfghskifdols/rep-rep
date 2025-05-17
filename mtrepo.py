@@ -2141,6 +2141,7 @@ async def tree_upgrade_confirm_callback(update: Update, context: ContextTypes.DE
     await conn.close()
 
     tree_label = "🍀 Обычное" if tree_type == "normal" else "🎟 Билетное"
+    tree_drops = "1 капля" if tree_type == "normal" else "3 капли"
 
     text = (
         f"🌿 Улучшение дерева {tree_label}\n\n"
@@ -2211,33 +2212,38 @@ async def tree_upgrade_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
     conn = await connect_db()
 
-    # Отримуємо інформацію про користувача
+    # Отримуємо інформацію про дерево
     tree = await conn.fetchrow(
         "SELECT level FROM user_trees WHERE user_id = $1 AND tree_type = $2",
         user_id, tree_type
     )
+
+    # Отримуємо інформацію про користувача
     user = await conn.fetchrow(
         "SELECT drops FROM user_tickets WHERE user_id = $1",
         user_id
     )
 
     if not tree:
-        await query.message.reply_text("🌳 У тебя нет этого дерева!")
+        await query.message.reply_text("🌳 У тебя еще нету дерева!")
         await conn.close()
         return
 
-    if not user or user["drops"] < 1:
-        await query.message.reply_text("💧 Недостаточно капель для улучшения дерева!")
+    # Визначаємо потрібну кількість капель
+    required_drops = 3 if tree_type == "ticket" else 1
+
+    if not user or user["drops"] < required_drops:
+        await query.message.reply_text(f"💧 Надо {required_drops} капель для улучшения дерева!")
         await conn.close()
         return
 
-    # Зменшуємо кількість капель та підвищуємо рівень дерева
-    await conn.execute("UPDATE user_tickets SET drops = drops - 1 WHERE user_id = $1", user_id)
+    # Оновлюємо дані
+    await conn.execute("UPDATE user_tickets SET drops = drops - $1 WHERE user_id = $2", required_drops, user_id)
     await conn.execute("UPDATE user_trees SET level = level + 1 WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
+
     await conn.close()
 
-    await query.message.reply_text("🎉 Твоє дерево успішно покращено!")
-    # Після покращення показуємо оновлений статус дерева
+    await query.message.reply_text("🎉 Твое дерево успешно улучшено!")
     await show_tree_status_from_callback(update, context, tree_type)
 
 async def cancel_callback(update: Update, context: CallbackContext):
