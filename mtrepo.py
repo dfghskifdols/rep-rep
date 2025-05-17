@@ -2072,41 +2072,63 @@ async def buy_tree_callback(update: Update, context: CallbackContext):
     await query.answer()
     await show_tree_status(update, tree_type)
 
-async def show_tree_status(update: Update, tree_type: str):
+async def show_tree_status(update: Update, context: ContextTypes.DEFAULT_TYPE, tree_type: str):
     query = update.callback_query
     user_id = query.from_user.id
 
     conn = await connect_db()
-    user_tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
+    user_tree = await conn.fetchrow(
+        "SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2",
+        user_id, tree_type
+    )
     await conn.close()
 
     if not user_tree:
-        await query.edit_message_text("У тебя нет этого дерева!")
-        await query.answer()
+        await query.answer("У тебя нет этого дерева!", show_alert=True)
         return
 
-    level = user_tree['level']
-    last_collect = user_tree['last_collect'] or datetime.now() - timedelta(hours=1)
-    now = datetime.now()
-    next_income = max(0, 3600 - int((now - last_collect).total_seconds()))
+    level = user_tree["level"]
+    basket = user_tree["basket"] or 0
+    last_collect = user_tree["last_collect"] or datetime.now() - timedelta(hours=1)
+    next_income_in = max(0, 3600 - int((datetime.now() - last_collect).total_seconds()))
 
     if tree_type == "normal":
-        income = level * 10
-        basket = user_tree['basket_neko']
-        text = f"🌳 Обычное дерево\nУровень: {level}\nДоход: {income} неко/ч\nКорзина: {basket} 🍥\nСледующий доход через: {next_income} сек"
+        income_text = f"{level * 10} неко/час"
+        basket_text = f"{basket} неко"
+        tree_name = "Обычное"
     else:
-        income = max(0, level - 1)
-        basket = user_tree['basket_tickets']
-        text = f"🎫 Билетное дерево\nУровень: {level}\nДоход: {income} бил/ч\nКорзина: {basket} 🎟\nСледующий доход через: {next_income} сек"
+        income_per_level = max(0, level - 1)
+        income_text = f"{income_per_level} билетов/час"
+        basket_text = f"{basket} билетов"
+        tree_name = "Билетное"
 
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Собрать", callback_data=f"collect:{tree_type}")],
-        [InlineKeyboardButton("Улучшить", callback_data=f"tree_upgrade_confirm:{tree_type}")],
-        [InlineKeyboardButton("⬅️ Назад", callback_data="tree_back")]
-    ])
+    text = (
+        f"🌳 Дерево \"{tree_name}\"\n\n"
+        f"📈 Уровень дерева: {level}\n"
+        f"💰 Доход: {income_text}\n"
+        f"👤 Владелец: {query.from_user.full_name}\n\n"
+        f"🧺 Корзина: {basket_text}\n"
+        f"⏰ Следующий доход: {next_income_in} сек.\n"
+    )
 
-    await query.edit_message_text(text, reply_markup=keyboard)
+    keyboard = [
+        [InlineKeyboardButton("🍯 Собрать", callback_data=f"collect:{tree_type}")],
+        [InlineKeyboardButton("🪴 Улучшить", callback_data=f"tree_upgrade_menu:{tree_type}")],
+        [InlineKeyboardButton("🔙 Назад", callback_data="tree_back")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await query.answer()
+    try:
+        await query.message.delete()
+    except:
+        pass
+
+    await context.bot.send_message(
+        chat_id=query.message.chat_id,
+        text=text,
+        reply_markup=reply_markup
+    )
 
 async def tree_upgrade_confirm_callback(update: Update, context: CallbackContext):
     query = update.callback_query
