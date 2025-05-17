@@ -2016,7 +2016,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🍀 Обычное", callback_data="tree_type:normal")],
             [InlineKeyboardButton("🎟 Билетное", callback_data="tree_type:ticket")]
         ]
-        await update.message.reply_text("Выбери дерево:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await update.message("Выбери дерево:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 # --- Callback-функції ---
 async def tree_type_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
