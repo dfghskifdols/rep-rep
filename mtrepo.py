@@ -2021,13 +2021,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # --- Callback-функції ---
 async def tree_type_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    user_id = query.from_user.id
+    chat_id = query.message.chat_id
 
-    chat_id = query.message.chat.id
+    await query.answer()
     await query.message.delete()
 
     tree_type = query.data.split(":")[1]
-    user_id = query.from_user.id
 
     conn = await connect_db()
     tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
@@ -2046,7 +2046,12 @@ async def tree_type_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 [InlineKeyboardButton("🛒 Купить (1 капля)", callback_data=f"tree_get:{tree_type}")],
                 [InlineKeyboardButton("↩ Назад", callback_data="tree_back")]
             ]
-        await query.bot.send_message(chat_id=chat_id, text=text, reply_markup=InlineKeyboardMarkup(buttons))
+
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
         return
 
     await send_tree_status(update, context, tree_type, chat_id)
