@@ -2611,7 +2611,7 @@ async def update_tree_income():
             level = tree["level"]
 
             if tree_type == "normal":
-                income = level * 10
+                income = level * 15
                 await conn.execute("""
                     UPDATE user_trees
                     SET basket_neko = basket_neko + $1
