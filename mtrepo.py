@@ -2060,22 +2060,25 @@ async def tree_get_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     conn = await connect_db()
 
+    # Якщо квиткове дерево — потрібна 1 капля
     if tree_type == "ticket":
         drops = await conn.fetchval("SELECT drops FROM user_tickets WHERE user_id = $1", user_id)
         if drops < 1:
-            await query.message.reply_text("Недостаточно капель!")
             await conn.close()
+            await query.message.reply_text("Недостаточно капель для покупки билетного дерева!")
             return
         await conn.execute("UPDATE user_tickets SET drops = drops - 1 WHERE user_id = $1", user_id)
 
+    # Додавання нового дерева
     await conn.execute("""
-        INSERT INTO user_trees (user_id, tree_type, level, basket, last_collect)
-        VALUES ($1, $2, 1, 0, $3)
+        INSERT INTO user_trees (user_id, tree_type, level, basket_neko, basket_tickets, last_collect)
+        VALUES ($1, $2, 1, 0, 0, $3)
     """, user_id, tree_type, datetime.now())
+
     await conn.close()
 
     await query.message.reply_text("🌳 Дерево добавлено!")
-    await send_tree_status(update, tree_type)
+    await send_tree_status(update, user_id, tree_type)
 
 async def send_tree_status(update: Update, tree_type: str):
     user_id = update.callback_query.from_user.id if update.callback_query else update.message.from_user.id
@@ -2146,33 +2149,52 @@ async def tree_upgrade_confirm_callback(update: Update, context: ContextTypes.DE
     ])
     await query.message.reply_text(text, reply_markup=keyboard)
 
-async def tree_collect_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def tree_collect_callback(update: Update, context: CallbackContext):
     query = update.callback_query
-    await query.answer()
-    await query.message.delete()
-
-    tree_type = query.data.split(":")[1]
     user_id = query.from_user.id
+    tree_type = query.data.split(":")[1]
 
     conn = await connect_db()
-    tree = await conn.fetchrow("SELECT * FROM user_trees WHERE user_id = $1 AND tree_type = $2", user_id, tree_type)
+    user_tree = await conn.fetchrow("""
+        SELECT basket_neko, basket_tickets FROM user_trees
+        WHERE user_id = $1 AND tree_type = $2
+    """, user_id, tree_type)
 
-    if not tree or tree["basket"] <= 0:
-        await query.message.reply_text("🚫 Нечего собирать!")
+    if not user_tree:
+        await query.answer("У тебя нет такого дерева!", show_alert=True)
         await conn.close()
         return
 
-    amount = tree["basket"]
+    basket_neko = user_tree["basket_neko"] or 0
+    basket_tickets = user_tree["basket_tickets"] or 0
+
     if tree_type == "normal":
-        await conn.execute("UPDATE user_tickets SET neko_coins = neko_coins + $1 WHERE user_id = $2", amount, user_id)
-    else:
-        await conn.execute("UPDATE user_tickets SET tickets = tickets + $1 WHERE user_id = $2", amount, user_id)
+        if basket_neko <= 0:
+            await query.answer("Нет ресурсов для сбора!", show_alert=True)
+            await conn.close()
+            return
+        await conn.execute("""
+            UPDATE user_tickets SET neko_coins = neko_coins + $1 WHERE user_id = $2
+        """, basket_neko, user_id)
+        await conn.execute("""
+            UPDATE user_trees SET basket_neko = 0, last_collect = $1 WHERE user_id = $2 AND tree_type = $3
+        """, datetime.now(), user_id, tree_type)
+    elif tree_type == "ticket":
+        if basket_tickets <= 0:
+            await query.answer("Нет ресурсов для сбора!", show_alert=True)
+            await conn.close()
+            return
+        await conn.execute("""
+            UPDATE user_tickets SET tickets = tickets + $1 WHERE user_id = $2
+        """, basket_tickets, user_id)
+        await conn.execute("""
+            UPDATE user_trees SET basket_tickets = 0, last_collect = $1 WHERE user_id = $2 AND tree_type = $3
+        """, datetime.now(), user_id, tree_type)
 
-    await conn.execute("UPDATE user_trees SET basket = 0, last_collect = $1 WHERE user_id = $2 AND tree_type = $3", datetime.now(), user_id, tree_type)
     await conn.close()
+    await query.answer("✅ Ресурсы собраны!")
 
-    await query.message.reply_text(f"✅ Ты собрал {amount}!")
-    await send_tree_status(update, tree_type)
+    await send_tree_status(query, user_id, tree_type)
 
 async def tree_upgrade_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -2572,7 +2594,7 @@ async def level_up_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await conn.close()
 
 async def update_tree_income():
-    print(f"[{datetime.now()}] Починаємо оновлення пасивного доходу дерев...")
+    print(f"[{datetime.now()}] Оновлення пасивного доходу...")
 
     conn = await connect_db()
     try:
@@ -2582,35 +2604,28 @@ async def update_tree_income():
             user_id = tree["user_id"]
             tree_type = tree["tree_type"]
             level = tree["level"]
-            last_collect = tree["last_collect"] or datetime.now() - timedelta(hours=1)
-            now = datetime.now()
-
-            if (now - last_collect).total_seconds() < 3600:
-                continue  # ще не пройшла година
 
             if tree_type == "normal":
                 income = level * 10
-                basket = tree["basket_neko"] or 0
-                basket += income
                 await conn.execute("""
-                    UPDATE user_trees SET basket_neko = $1, last_collect = $2
-                    WHERE user_id = $3 AND tree_type = 'normal'
-                """, basket, now, user_id)
-                print(f"  - {user_id} -> +{income} неко (в корзині {basket})")
+                    UPDATE user_trees
+                    SET basket_neko = basket_neko + $1
+                    WHERE user_id = $2 AND tree_type = 'normal'
+                """, income, user_id)
+                print(f"[NORMAL] +{income} неко → {user_id}")
 
             elif tree_type == "ticket":
                 income = max(0, level - 1)
-                basket = tree["basket_tickets"] or 0
-                basket += income
                 await conn.execute("""
-                    UPDATE user_trees SET basket_tickets = $1, last_collect = $2
-                    WHERE user_id = $3 AND tree_type = 'ticket'
-                """, basket, now, user_id)
-                print(f"  - {user_id} -> +{income} билетов (в корзині {basket})")
+                    UPDATE user_trees
+                    SET basket_tickets = basket_tickets + $1
+                    WHERE user_id = $2 AND tree_type = 'ticket'
+                """, income, user_id)
+                print(f"[TICKET] +{income} билетов → {user_id}")
 
-        print("[✅] Доход дерев оновлено.")
+        print("[✅] Пасивний дохід оновлено")
     except Exception as e:
-        print(f"[❌ ERROR] При оновленні доходу дерев: {e}")
+        print(f"[❌ ERROR] update_tree_income: {e}")
     finally:
         await conn.close()
 
