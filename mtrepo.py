@@ -55,7 +55,6 @@ LEVEL_REQUIREMENTS = {
     28: {"coins": 4000, "tickets": 3, "drops": 2},
     29: {"coins": 4500, "tickets": 3, "drops": 2},
     30: {"coins": 5000, "tickets": 3, "drops": 2},
-    31: {"coins": 5500, "tickets": 4, "drops": 3}
 }
 
 pending_reports = set()
